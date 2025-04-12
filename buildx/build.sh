@@ -85,34 +85,6 @@ verify_image_exists() {
 }
 
 # =========================================================================
-# Function: Build and run the list-apps container
-# Arguments: $1 = base image tag to use, $2 = verification mode (optional)
-# =========================================================================
-build_and_run_list_apps() {
-  local base_tag=$1
-  local verify_mode="${2:-all}"
-  local list_apps_tag="${DOCKER_USERNAME}/001:list-apps-${CURRENT_DATE_TIME}"
-  
-  echo "--------------------------------------------------" >&2
-  echo "Building list-apps container based on $base_tag..." >&2
-  
-  # Update the FROM line in the Dockerfile-list-apps to use the correct base image
-  sed -i "s|FROM .*|FROM $base_tag|g" Dockerfile-list-apps
-  
-  # Build the list-apps container
-  docker build -t "$list_apps_tag" -f Dockerfile-list-apps .
-  if [ $? -ne 0 ]; then
-    echo "Error: Failed to build list-apps container." >&2
-    return 1
-  fi
-  
-  echo "Running list-apps container to display installed applications (mode: $verify_mode)..." >&2
-  docker run --rm "$list_apps_tag" "$verify_mode"
-  
-  return $?
-}
-
-# =========================================================================
 # Function: Run verification directly in an existing container
 # Arguments: $1 = image tag to check, $2 = verification mode (optional)
 # =========================================================================
@@ -137,6 +109,30 @@ verify_container_apps() {
   docker rm -f "$container_id" > /dev/null
   
   return $?
+}
+
+# =========================================================================
+# Function: List installed apps in the latest image
+# Arguments: $1 = image tag to check
+# =========================================================================
+list_installed_apps() {
+    local image_tag=$1
+    
+    if [ -z "$image_tag" ]; then
+        echo "Error: No image tag provided to list_installed_apps function" >&2
+        return 1
+    fi
+    
+    echo "--------------------------------------------------" >&2
+    echo "Listing installed apps in: $image_tag" >&2
+    echo "--------------------------------------------------" >&2
+    
+    # Mount the script into the container and run it
+    docker run -it --rm \
+        -v "$(pwd)/list_installed_apps.sh:/tmp/list_installed_apps.sh" \
+        --entrypoint /bin/bash \
+        "$image_tag" \
+        -c "chmod +x /tmp/list_installed_apps.sh && /tmp/list_installed_apps.sh"
 }
 
 # =========================================================================
@@ -411,7 +407,7 @@ if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
             echo "1) Start an interactive shell" >&2
             echo "2) Run quick verification (common tools and packages)" >&2
             echo "3) Run full verification (all system packages, may be verbose)" >&2
-            echo "4) Build and run dedicated list-apps container" >&2
+            echo "4) List installed apps in the container" >&2
             echo "5) Skip (do nothing)" >&2
             read -p "Enter your choice (1-5): " user_choice
             
@@ -427,7 +423,7 @@ if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
                     verify_container_apps "$TIMESTAMPED_LATEST_TAG" "all"
                     ;;
                 4)
-                    build_and_run_list_apps "$TIMESTAMPED_LATEST_TAG" "all"
+                    list_installed_apps "$TIMESTAMPED_LATEST_TAG"
                     ;;
                 5)
                     echo "Skipping container run." >&2
@@ -483,36 +479,6 @@ if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
 else
     # Message remains relevant if BUILT_TAGS is empty
     echo "No images were recorded as successfully built/pushed/pulled/verified, skipping final verification." >&2
-fi
-
-# Function to list installed apps in the latest image
-list_installed_apps() {
-    local image_tag=$1
-    
-    if [ -z "$image_tag" ]; then
-        echo "Error: No image tag provided to list_installed_apps function" >&2
-        return 1
-    fi
-    
-    echo "--------------------------------------------------" >&2
-    echo "Listing installed apps in: $image_tag" >&2
-    echo "--------------------------------------------------" >&2
-    
-    # Mount the script into the container and run it
-    docker run -it --rm \
-        -v "$(pwd)/list_installed_apps.sh:/tmp/list_installed_apps.sh" \
-        --entrypoint /bin/bash \
-        "$image_tag" \
-        -c "chmod +x /tmp/list_installed_apps.sh && /tmp/list_installed_apps.sh"
-}
-
-# Add this where you want to trigger the function
-if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
-    # Ask if user wants to list installed apps
-    read -p "Do you want to list installed apps in the final image? (y/n): " list_apps
-    if [[ "$list_apps" == "y" ]]; then
-        list_installed_apps "$TIMESTAMPED_LATEST_TAG"
-    fi
 fi
 
 # =========================================================================

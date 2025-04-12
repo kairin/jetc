@@ -11,18 +11,27 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+
+# Import generated checks if available
+if [ -f "$(dirname "$0")/generated_app_checks.sh" ]; then
+  source "$(dirname "$0")/generated_app_checks.sh"
+fi
 
 # =========================================================================
 # Function: Check if a command exists and print its version
 # =========================================================================
 check_cmd() {
-  if command -v $1 &> /dev/null; then
-    version=$($1 --version 2>&1 | head -n 1 || echo "version info unavailable")
-    echo -e "${GREEN}✅ $1:${NC} $version"
+  local cmd=$1
+  local desc=${2:-$cmd}
+  
+  if command -v $cmd &> /dev/null; then
+    version=$($cmd --version 2>&1 | head -n 1 || echo "version info unavailable")
+    echo -e "${GREEN}✅ $desc:${NC} $version"
     return 0
   else
-    echo -e "${RED}❌ $1:${NC} Not installed"
+    echo -e "${RED}❌ $desc:${NC} Not installed"
     return 1
   fi
 }
@@ -46,16 +55,32 @@ check_python_pkg() {
 # =========================================================================
 check_system_tools() {
   echo -e "\n${BLUE}🔧 System Tools:${NC}"
-  check_cmd python3
-  check_cmd pip
-  check_cmd nvcc
-  check_cmd gcc
-  check_cmd g++
-  check_cmd make
-  check_cmd cmake
-  check_cmd git
-  check_cmd wget
-  check_cmd curl
+  
+  # Basic system commands
+  check_cmd bash "Bash shell"
+  check_cmd ls "File listing"
+  check_cmd cat "File viewing"
+  check_cmd grep "Text search"
+  check_cmd find "File search" 
+  check_cmd awk "Text processing"
+  check_cmd sed "Stream editor"
+  check_cmd ps "Process status"
+  check_cmd top "System monitor"
+  check_cmd ssh "SSH client"
+  
+  # Common development tools
+  check_cmd python3 "Python 3"
+  check_cmd pip3 "Python package manager"
+  check_cmd nvcc "NVIDIA CUDA Compiler"
+  check_cmd gcc "C Compiler"
+  check_cmd g++ "C++ Compiler"
+  check_cmd make "Make utility"
+  check_cmd cmake "CMake build system"
+  check_cmd git "Git version control"
+  check_cmd wget "Download utility"
+  check_cmd curl "URL transfer tool"
+  
+  return 0
 }
 
 # =========================================================================
@@ -150,6 +175,10 @@ main() {
   case "$mode" in
     "all")
       check_system_tools
+      # Call the dynamically generated checks if available
+      if type check_installed_applications >/dev/null 2>&1; then
+        check_installed_applications
+      fi
       check_ml_frameworks
       check_libraries
       check_cuda_info
@@ -158,6 +187,10 @@ main() {
       ;;
     "quick")
       check_system_tools
+      # Call the dynamically generated checks if available
+      if type check_installed_applications >/dev/null 2>&1; then
+        check_installed_applications
+      fi
       check_ml_frameworks
       check_libraries
       check_cuda_info
