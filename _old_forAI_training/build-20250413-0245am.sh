@@ -85,61 +85,6 @@ verify_image_exists() {
 }
 
 # =========================================================================
-# Function: Build and run the list-apps container
-# Arguments: $1 = base image tag to use, $2 = verification mode (optional)
-# =========================================================================
-build_and_run_list_apps() {
-  local base_tag=$1
-  local verify_mode="${2:-all}"
-  local list_apps_tag="${DOCKER_USERNAME}/001:list-apps-${CURRENT_DATE_TIME}"
-  
-  echo "--------------------------------------------------" >&2
-  echo "Building list-apps container based on $base_tag..." >&2
-  
-  # Update the FROM line in the Dockerfile-list-apps to use the correct base image
-  sed -i "s|FROM .*|FROM $base_tag|g" Dockerfile-list-apps
-  
-  # Build the list-apps container
-  docker build -t "$list_apps_tag" -f Dockerfile-list-apps .
-  if [ $? -ne 0 ]; then
-    echo "Error: Failed to build list-apps container." >&2
-    return 1
-  fi
-  
-  echo "Running list-apps container to display installed applications (mode: $verify_mode)..." >&2
-  docker run --rm "$list_apps_tag" "$verify_mode"
-  
-  return $?
-}
-
-# =========================================================================
-# Function: Run verification directly in an existing container
-# Arguments: $1 = image tag to check, $2 = verification mode (optional)
-# =========================================================================
-verify_container_apps() {
-  local tag=$1
-  local verify_mode="${2:-quick}"
-  
-  echo "Running verification directly in $tag container (mode: $verify_mode)..." >&2
-  
-  # Copy the verification script into the container and run it
-  # First create a temporary container
-  local container_id=$(docker create "$tag" bash)
-  
-  # Copy the script into the container
-  docker cp list_installed_apps.sh "$container_id:/tmp/verify_apps.sh"
-  
-  # Start the container and run the script
-  docker start -a "$container_id"
-  docker exec "$container_id" bash -c "chmod +x /tmp/verify_apps.sh && /tmp/verify_apps.sh $verify_mode"
-  
-  # Remove the container
-  docker rm -f "$container_id" > /dev/null
-  
-  return $?
-}
-
-# =========================================================================
 # Function: Build, push, and pull a Docker image from a folder
 # Arguments: $1 = folder path, $2 = base image tag (optional)
 # Returns: The fixed tag name on success, non-zero exit status on failure
@@ -388,7 +333,7 @@ fi
 echo "--------------------------------------------------" >&2
 
 # =========================================================================
-# Post-Build Steps - Options for final image
+# Post-Build Steps - Optional Run of Final Image
 # =========================================================================
 echo "(Image pulling and verification now happens during build process)" >&2
 
@@ -402,49 +347,24 @@ if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
 
     if [[ "$tag_exists" -eq 1 ]]; then
         echo "--------------------------------------------------" >&2
-        echo "Final Image: $TIMESTAMPED_LATEST_TAG" >&2
+        echo "Attempting to run the final timestamped image: $TIMESTAMPED_LATEST_TAG" >&2
         echo "--------------------------------------------------" >&2
         
+        # Final verification before running
         if verify_image_exists "$TIMESTAMPED_LATEST_TAG"; then
-            # Offer options for what to do with the image
-            echo "What would you like to do with the final image?" >&2
-            echo "1) Start an interactive shell" >&2
-            echo "2) Run quick verification (common tools and packages)" >&2
-            echo "3) Run full verification (all system packages, may be verbose)" >&2
-            echo "4) Build and run dedicated list-apps container" >&2
-            echo "5) Skip (do nothing)" >&2
-            read -p "Enter your choice (1-5): " user_choice
-            
-            case $user_choice in
-                1)
-                    echo "Starting interactive shell..." >&2
-                    docker run -it --rm "$TIMESTAMPED_LATEST_TAG" bash
-                    ;;
-                2)
-                    verify_container_apps "$TIMESTAMPED_LATEST_TAG" "quick"
-                    ;;
-                3)
-                    verify_container_apps "$TIMESTAMPED_LATEST_TAG" "all"
-                    ;;
-                4)
-                    build_and_run_list_apps "$TIMESTAMPED_LATEST_TAG" "all"
-                    ;;
-                5)
-                    echo "Skipping container run." >&2
-                    ;;
-                *)
-                    echo "Invalid choice. Skipping container run." >&2
-                    ;;
-            esac
+            docker run -it --rm "$TIMESTAMPED_LATEST_TAG" bash
+            if [ $? -ne 0 ]; then
+              echo "Error: Failed to run the image $TIMESTAMPED_LATEST_TAG." >&2
+            fi
         else
-            echo "Error: Final image $TIMESTAMPED_LATEST_TAG not found locally, cannot proceed." >&2
+            echo "Error: Final image $TIMESTAMPED_LATEST_TAG not found locally, cannot run." >&2
             BUILD_FAILED=1
         fi
     else
-        echo "Skipping options because the final tag was not successfully processed." >&2
+        echo "Skipping run step because the final timestamped tag ($TIMESTAMPED_LATEST_TAG) was not successfully processed and verified." >&2
     fi
 else
-    echo "No final image tag recorded or build failed, skipping further operations." >&2
+    echo "No final timestamped image tag recorded or build failed, skipping run step." >&2
 fi
 
 # =========================================================================
