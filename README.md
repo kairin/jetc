@@ -1,7 +1,5 @@
 # jetc
 
-Here's how you can create a **`README.md`** that includes the information about the repository's purpose, its source, and the reason for not forking the original repository:
-
 ---
 
 ### **`README.md`**
