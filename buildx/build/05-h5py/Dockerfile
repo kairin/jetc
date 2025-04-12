@@ -4,7 +4,7 @@
 # depends: [python]
 # test: [test.sh]
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:04-python
 FROM ${BASE_IMAGE}
 
 RUN set -ex && \

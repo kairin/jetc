@@ -3,7 +3,7 @@
 # group: build
 # depends: [build-essential, python]
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:05-h5py
 FROM ${BASE_IMAGE}
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y

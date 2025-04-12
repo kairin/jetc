@@ -29,14 +29,12 @@ fi
 
 PLATFORM="linux/arm64"
 
-# Array to store the tags of successfully built/tagged images
+# Array to store the tags of successfully built images
 BUILT_TAGS=()
-# Variable to store the tag of the most recently successfully built image (for chaining numbered builds)
-LATEST_SUCCESSFUL_NUMBERED_TAG=""
-# Variable to store the fixed tag of the very last successfully built folder image
-FINAL_FOLDER_TAG=""
-# Variable to store the final timestamped tag name
-TIMESTAMPED_LATEST_TAG=""
+# Variable to store the tag of the most recently successfully built image (for chaining)
+LATEST_SUCCESSFUL_TAG=""
+# Variable to store the tag of the very last successfully built image (for run command)
+FINAL_BUILT_TAG=""
 # Flag to track if any build failed
 BUILD_FAILED=0
 
@@ -57,18 +55,14 @@ while [[ "$use_cache" != "y" && "$use_cache" != "n" ]]; do
   read -p "Do you want to build with cache? (y/n): " use_cache
 done
 
-# Function to build a Docker image from a folder
-# Arguments: $1 = folder path, $2 = base image tag (optional)
-# Returns: The fixed tag name on success (echo), non-zero status on failure
-build_folder_image() {
+# Function to build a Docker image
+# Arguments: $1 = folder path, $2 = base image tag (optional, for --build-arg)
+build_image() {
   local folder=$1
   local base_tag_arg=$2 # The tag to pass as BASE_IMAGE build-arg
   local image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]') # Ensure image_name is lowercase
-
-  # --- Fixed Tag Generation ---
-  local fixed_tag=$(echo "${DOCKER_USERNAME}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
-  echo "Generating fixed tag: $fixed_tag" >&2
-  # --- End Tag Generation ---
+  # Use a consistent tag format based only on the folder name and timestamp
+  local tag=$(echo "${DOCKER_USERNAME}/001:${image_name}-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
 
   # Check if Dockerfile exists
   if [ ! -f "$folder/Dockerfile" ]; then
@@ -90,11 +84,11 @@ build_folder_image() {
   echo "Building image from folder: $folder" >&2
   echo "Image Name (derived): $image_name" >&2
   echo "Platform: $PLATFORM" >&2
-  echo "Tag (Fixed): $fixed_tag" >&2
+  echo "Tag: $tag" >&2
   echo "--------------------------------------------------" >&2
 
   # Build the image
-  local cmd_args=("--platform" "$PLATFORM" "-t" "$fixed_tag" "${build_args[@]}" --push "$folder")
+  local cmd_args=("--platform" "$PLATFORM" "-t" "$tag" "${build_args[@]}" --push "$folder")
   if [ "$use_cache" != "y" ]; then
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
@@ -110,22 +104,23 @@ build_folder_image() {
     return 1 # Indicate failure
   fi
 
-  # Add the fixed tag to our array ONLY if successful
-  BUILT_TAGS+=("$fixed_tag")
+  # Add the tag to our array ONLY if successful
+  BUILT_TAGS+=("$tag")
 
-  # Output the fixed tag to stdout
-  echo "$fixed_tag"
+  # Output the tag to stdout (useful for chaining or getting the last tag)
+  echo "$tag"
   return 0 # Indicate success
 }
 
-# --- Determine Build Order ---
-echo "Determining build order..." >&2
-BUILD_DIR="build"
-mapfile -t numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
-mapfile -t other_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d ! -name '[0-9]*-*' | sort)
-
 # --- Build Process ---
 echo "Starting build process..." >&2
+BUILD_DIR="build"
+
+# Find and sort directories
+# Use find + sort for reliable listing and ordering
+# Use process substitution <(...) to feed the loops
+mapfile -t numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+mapfile -t other_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d ! -name '[0-9]*-*' | sort)
 
 # 1. Build Numbered Directories in Order
 echo "--- Building Numbered Directories ---" >&2
@@ -134,17 +129,20 @@ if [ ${#numbered_dirs[@]} -eq 0 ]; then
 else
     for dir in "${numbered_dirs[@]}"; do
       echo "Processing numbered directory: $dir" >&2
-      # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the *next* build
-      tag=$(build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG")
+      # Pass the LATEST_SUCCESSFUL_TAG as the base for the *next* build
+      tag=$(build_image "$dir" "$LATEST_SUCCESSFUL_TAG")
       if [ $? -eq 0 ]; then
-          LATEST_SUCCESSFUL_NUMBERED_TAG="$tag" # Update for the next numbered iteration
-          FINAL_FOLDER_TAG="$tag"             # Update the overall last successful folder tag
-          echo "Successfully built numbered image: $LATEST_SUCCESSFUL_NUMBERED_TAG" >&2
+          LATEST_SUCCESSFUL_TAG="$tag" # Update for the next iteration
+          FINAL_BUILT_TAG="$tag"      # Update the overall last successful tag
+          echo "Successfully built numbered image: $LATEST_SUCCESSFUL_TAG" >&2
       else
           echo "Build failed for $dir. Subsequent dependent builds might fail." >&2
+          # Continue processing other directories
       fi
     done
 fi
+
+# LATEST_SUCCESSFUL_TAG now holds the tag of the last successfully built numbered image (or is empty)
 
 # 2. Build Other Directories
 echo "--- Building Other Directories ---" >&2
@@ -152,55 +150,28 @@ if [ ${#other_dirs[@]} -eq 0 ]; then
     echo "No non-numbered directories found in $BUILD_DIR." >&2
 else
     # Use the tag from the LAST successfully built numbered image as the base for ALL others
-    BASE_FOR_OTHERS="$LATEST_SUCCESSFUL_NUMBERED_TAG"
+    BASE_FOR_OTHERS="$LATEST_SUCCESSFUL_TAG"
     echo "Using base image for others: $BASE_FOR_OTHERS" >&2
 
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir" >&2
-      tag=$(build_folder_image "$dir" "$BASE_FOR_OTHERS")
+      tag=$(build_image "$dir" "$BASE_FOR_OTHERS")
       if [ $? -eq 0 ]; then
-          FINAL_FOLDER_TAG="$tag" # Update the overall last successful folder tag
+          # Don't update LATEST_SUCCESSFUL_TAG here unless you want these to chain off each other
+          FINAL_BUILT_TAG="$tag" # Update the overall last successful tag
           echo "Successfully built other image: $tag" >&2
       else
           echo "Build failed for $dir." >&2
+           # Continue processing other directories
       fi
     done
 fi
 
 echo "--------------------------------------------------" >&2
-echo "Folder build process complete!" >&2
-
-# 3. Create Final Timestamped Tag
-echo "--- Creating Final Timestamped Tag ---" >&2
-if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
-    TIMESTAMPED_LATEST_TAG=$(echo "${DOCKER_USERNAME}/001:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
-    echo "Tagging $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG" >&2
-    if docker tag "$FINAL_FOLDER_TAG" "$TIMESTAMPED_LATEST_TAG"; then
-        echo "Pushing $TIMESTAMPED_LATEST_TAG" >&2
-        if docker push "$TIMESTAMPED_LATEST_TAG"; then
-            BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG") # Add to list for pulling
-            echo "Successfully created and pushed final timestamped tag." >&2
-        else
-            echo "Error: Failed to push final timestamped tag $TIMESTAMPED_LATEST_TAG." >&2
-            BUILD_FAILED=1 # Mark failure
-        fi
-    else
-        echo "Error: Failed to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG." >&2
-        BUILD_FAILED=1 # Mark failure
-    fi
-else
-    if [ "$BUILD_FAILED" -ne 0 ]; then
-        echo "Skipping final timestamped tag creation due to previous build errors." >&2
-    else
-        echo "Skipping final timestamped tag creation as no base image was successfully built." >&2
-    fi
-fi
-
-echo "--------------------------------------------------" >&2
-echo "Build and Tagging process complete!" >&2
-echo "Total images successfully built/tagged: ${#BUILT_TAGS[@]}" >&2
+echo "Build process complete!" >&2
+echo "Total images successfully built: ${#BUILT_TAGS[@]}" >&2
 if [ "$BUILD_FAILED" -ne 0 ]; then
-    echo "Warning: One or more steps failed. See logs above." >&2
+    echo "Warning: One or more builds failed. See logs above." >&2
 fi
 echo "--------------------------------------------------" >&2
 
@@ -209,7 +180,7 @@ echo "--------------------------------------------------" >&2
 
 # Pull all the images that were successfully built and pushed
 if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
-  echo "Pulling all successfully built/tagged images..." >&2
+  echo "Pulling all successfully built images..." >&2
   PULL_FAILED=0
   for tag in "${BUILT_TAGS[@]}"; do
     echo "Pulling image: $tag" >&2
@@ -220,47 +191,39 @@ if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
     fi
   done
   if [ "$PULL_FAILED" -eq 0 ]; then
-      echo "All successfully built/tagged images pulled." >&2
+      echo "All successfully built images pulled." >&2
   else
-      echo "Warning: Failed to pull one or more images." >&2
-      # Optional: Set BUILD_FAILED=1 here if pull failure is critical
+      echo "Warning: Failed to pull one or more built images." >&2
   fi
 else
-  echo "No images were successfully built/tagged, skipping pull step." >&2
+  echo "No images were successfully built, skipping pull step." >&2
 fi
 
-# Run the very last successfully built & timestamped image (optional)
-if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
-    # Check if the timestamped tag is in the BUILT_TAGS array (it should be if tagging/pushing succeeded)
-    tag_exists=0
-    for t in "${BUILT_TAGS[@]}"; do [[ "$t" == "$TIMESTAMPED_LATEST_TAG" ]] && { tag_exists=1; break; }; done
-
-    if [[ "$tag_exists" -eq 1 ]]; then
-        echo "--------------------------------------------------" >&2
-        echo "Attempting to run the final timestamped image: $TIMESTAMPED_LATEST_TAG" >&2
-        echo "--------------------------------------------------" >&2
-        docker run -it --rm "$TIMESTAMPED_LATEST_TAG" bash
-        if [ $? -ne 0 ]; then
-          echo "Error: Failed to run the image $TIMESTAMPED_LATEST_TAG." >&2
-          # Decide if this should cause the script to exit with failure
-          # BUILD_FAILED=1
-        fi
-    else
-        echo "Skipping run step because the final timestamped tag ($TIMESTAMPED_LATEST_TAG) was not successfully pushed/recorded." >&2
+# Run the very last successfully built image (optional)
+if [ -n "$FINAL_BUILT_TAG" ]; then
+    echo "--------------------------------------------------" >&2
+    echo "Attempting to run the final image successfully built: $FINAL_BUILT_TAG" >&2
+    echo "--------------------------------------------------" >&2
+    docker run -it --rm "$FINAL_BUILT_TAG" bash
+    # Check run status if needed
+    if [ $? -ne 0 ]; then
+      echo "Error: Failed to run the image $FINAL_BUILT_TAG." >&2
+      # Decide if this should cause the script to exit with failure
+      # exit 1
     fi
 else
-    echo "No final timestamped image tag recorded or build failed, skipping run step." >&2
+    echo "No final image tag recorded as successfully built, skipping run step." >&2
 fi
 
 
 # Announce completion and final status
 echo "--------------------------------------------------" >&2
 if [ "$BUILD_FAILED" -ne 0 ]; then
-    echo "Script finished with one or more errors." >&2
+    echo "Script finished with one or more build errors." >&2
     echo "--------------------------------------------------" >&2
     exit 1 # Exit with failure code if any build failed
 else
-    echo "Build, tag, push, pull, and (optionally) run processes completed successfully!" >&2
+    echo "Build, push, pull, and (optionally) run processes completed successfully!" >&2
     echo "--------------------------------------------------" >&2
     exit 0 # Exit with success code
 fi

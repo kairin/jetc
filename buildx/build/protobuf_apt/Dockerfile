@@ -5,7 +5,7 @@
 # test: [test.py, test.sh]
 # notes: install protobuf from apt repo
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:06-rust
 FROM ${BASE_IMAGE}
 
 # confirm first that the protobuf:cpp package isn't already installed

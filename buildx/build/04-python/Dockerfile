@@ -4,7 +4,7 @@
 # depends: [build-essential, pip_cache]
 # notes: installs core `python3` packages and `pip`
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:03-ninja
 FROM ${BASE_IMAGE}
 
 ARG PYTHON_VERSION_ARG
