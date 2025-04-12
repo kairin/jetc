@@ -2,9 +2,9 @@
 
 # Load environment variables from the .env file
 if [ -f .env ]; then
-  set -a
+  set -a # Automatically export all variables
   source .env
-  set +a
+  set +a # Stop automatically exporting variables
 else
   echo ".env file not found!" >&2
   exit 1
@@ -121,7 +121,20 @@ build_folder_image() {
       return 1 # Indicate failure (even though build+push succeeded, we need it locally)
   fi
 
-  # Add the fixed tag to our array ONLY if successful build, push, and pull
+  # === Add Verification Step After Pull ===
+  echo "Verifying image $fixed_tag exists locally after pull..." >&2
+  if ! docker image inspect "$fixed_tag" &> /dev/null; then
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+      echo "Error: Image $fixed_tag NOT found locally immediately after 'docker pull' succeeded." >&2
+      echo "This indicates a potential issue with the Docker daemon or registry synchronization." >&2
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+      BUILD_FAILED=1 # Set the global failure flag
+      return 1 # Indicate failure as the image is needed locally for subsequent steps
+  fi
+  echo "Image $fixed_tag verified locally." >&2
+  # === End Verification Step ===
+
+  # Add the fixed tag to our array ONLY if successful build, push, pull, and verification
   BUILT_TAGS+=("$fixed_tag")
 
   # Output the fixed tag to stdout
@@ -193,24 +206,47 @@ echo "Folder build process complete!" >&2
 echo "--- Creating Final Timestamped Tag ---" >&2
 if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
     TIMESTAMPED_LATEST_TAG=$(echo "${DOCKER_USERNAME}/001:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
-    echo "Tagging $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG" >&2
-    if docker tag "$FINAL_FOLDER_TAG" "$TIMESTAMPED_LATEST_TAG"; then
-        echo "Pushing $TIMESTAMPED_LATEST_TAG" >&2
-        if docker push "$TIMESTAMPED_LATEST_TAG"; then
-            echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG" >&2
-            if docker pull "$TIMESTAMPED_LATEST_TAG"; then
-                BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG") # Add to list only after successful pull
-                echo "Successfully created, pushed, and pulled final timestamped tag." >&2
+    echo "Attempting to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG" >&2
+
+    # Add verification step before tagging
+    echo "Verifying image $FINAL_FOLDER_TAG exists locally before tagging..." >&2
+    if docker image inspect "$FINAL_FOLDER_TAG" &> /dev/null; then
+        echo "Image $FINAL_FOLDER_TAG found locally. Proceeding with tag." >&2
+        if docker tag "$FINAL_FOLDER_TAG" "$TIMESTAMPED_LATEST_TAG"; then
+            echo "Pushing $TIMESTAMPED_LATEST_TAG" >&2
+            if docker push "$TIMESTAMPED_LATEST_TAG"; then
+                echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG" >&2
+                if docker pull "$TIMESTAMPED_LATEST_TAG"; then
+                    # === Add Verification Step After Final Pull ===
+                    echo "Verifying final image $TIMESTAMPED_LATEST_TAG exists locally after pull..." >&2
+                    if docker image inspect "$TIMESTAMPED_LATEST_TAG" &> /dev/null; then
+                        echo "Final image $TIMESTAMPED_LATEST_TAG verified locally." >&2
+                        BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG") # Add to list only after successful pull and verification
+                        echo "Successfully created, pushed, and pulled final timestamped tag." >&2
+                    else
+                        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+                        echo "Error: Final image $TIMESTAMPED_LATEST_TAG NOT found locally immediately after 'docker pull' succeeded." >&2
+                        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+                        BUILD_FAILED=1 # Mark failure
+                    fi
+                    # === End Verification Step ===
+                else
+                    echo "Error: Failed to pull final timestamped tag $TIMESTAMPED_LATEST_TAG after push." >&2
+                    BUILD_FAILED=1 # Mark failure
+                fi
             else
-                echo "Error: Failed to pull final timestamped tag $TIMESTAMPED_LATEST_TAG after push." >&2
+                echo "Error: Failed to push final timestamped tag $TIMESTAMPED_LATEST_TAG." >&2
                 BUILD_FAILED=1 # Mark failure
             fi
         else
-            echo "Error: Failed to push final timestamped tag $TIMESTAMPED_LATEST_TAG." >&2
+            echo "Error: Failed to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG. (Tag command failed)" >&2
             BUILD_FAILED=1 # Mark failure
         fi
     else
-        echo "Error: Failed to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG." >&2
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+        echo "Error: Image $FINAL_FOLDER_TAG not found locally right before tagging, even though pull reported success earlier." >&2
+        echo "This might indicate an issue with the Docker daemon state or the pull operation." >&2
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
         BUILD_FAILED=1 # Mark failure
     fi
 else
@@ -223,7 +259,7 @@ fi
 
 echo "--------------------------------------------------" >&2
 echo "Build, Push, Pull, and Tagging process complete!" >&2
-echo "Total images successfully built/pushed/pulled: ${#BUILT_TAGS[@]}" >&2
+echo "Total images successfully built/pushed/pulled/verified: ${#BUILT_TAGS[@]}" >&2 # Updated message slightly
 if [ "$BUILD_FAILED" -ne 0 ]; then
     echo "Warning: One or more steps failed. See logs above." >&2
 fi
@@ -232,33 +268,11 @@ echo "--------------------------------------------------" >&2
 
 # --- Post-Build Steps ---
 
-# Pulling is now done immediately after each successful build/push.
-# The section below is no longer needed.
-# if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
-#   echo "Pulling all successfully built/tagged images..." >&2
-#   PULL_FAILED=0
-#   for tag in "${BUILT_TAGS[@]}"; do
-#     echo "Pulling image: $tag" >&2
-#     docker pull "$tag"
-#     if [ $? -ne 0 ]; then
-#       echo "Error: Failed to pull the image $tag." >&2
-#       PULL_FAILED=1
-#     fi
-#   done
-#   if [ "$PULL_FAILED" -eq 0 ]; then
-#       echo "All successfully built/tagged images pulled." >&2
-#   else
-#       echo "Warning: Failed to pull one or more images." >&2
-#       # Optional: Set BUILD_FAILED=1 here if pull failure is critical
-#   fi
-# else
-#   echo "No images were successfully built/tagged, skipping pull step." >&2
-# fi
-echo "(Image pulling now happens immediately after each successful build/push)" >&2
+echo "(Image pulling and verification now happens immediately after each successful build/push)" >&2
 
 # Run the very last successfully built & timestamped image (optional)
 if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
-    # Check if the timestamped tag is in the BUILT_TAGS array (it should be if tagging/pushing/pulling succeeded)
+    # Check if the timestamped tag is in the BUILT_TAGS array (it should be if tagging/pushing/pulling/verification succeeded)
     tag_exists=0
     for t in "${BUILT_TAGS[@]}"; do [[ "$t" == "$TIMESTAMPED_LATEST_TAG" ]] && { tag_exists=1; break; }; done
 
@@ -266,7 +280,7 @@ if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
         echo "--------------------------------------------------" >&2
         echo "Attempting to run the final timestamped image: $TIMESTAMPED_LATEST_TAG" >&2
         echo "--------------------------------------------------" >&2
-        # Ensure the image exists locally before running (redundant check if pull worked, but safe)
+        # Ensure the image exists locally before running (redundant check if pull/verification worked, but safe)
         if docker image inspect "$TIMESTAMPED_LATEST_TAG" &> /dev/null; then
             docker run -it --rm "$TIMESTAMPED_LATEST_TAG" bash
             if [ $? -ne 0 ]; then
@@ -279,10 +293,37 @@ if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
             BUILD_FAILED=1
         fi
     else
-        echo "Skipping run step because the final timestamped tag ($TIMESTAMPED_LATEST_TAG) was not successfully pushed/pulled/recorded." >&2
+        echo "Skipping run step because the final timestamped tag ($TIMESTAMPED_LATEST_TAG) was not successfully pushed/pulled/recorded/verified." >&2
     fi
 else
-    echo "No final timestamped image tag recorded or build/push/pull failed, skipping run step." >&2
+    echo "No final timestamped image tag recorded or build/push/pull/verification failed, skipping run step." >&2
+fi
+
+# --- Final Image Verification ---
+echo "--------------------------------------------------" >&2
+echo "--- Verifying all expected images exist locally ---" >&2
+VERIFICATION_FAILED=0
+if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
+    echo "Checking ${#BUILT_TAGS[@]} image(s):" >&2
+    for tag in "${BUILT_TAGS[@]}"; do
+        echo -n "Verifying $tag... " >&2
+        if docker image inspect "$tag" &> /dev/null; then
+            echo "OK" >&2
+        else
+            echo "MISSING!" >&2
+            echo "Error: Image '$tag', which should have been built/pushed/pulled/verified, was not found locally." >&2
+            VERIFICATION_FAILED=1
+        fi
+    done
+
+    if [ "$VERIFICATION_FAILED" -eq 1 ]; then
+        echo "Error: One or more expected images were missing locally during final check." >&2
+        BUILD_FAILED=1 # Ensure the script exits with failure if verification fails
+    else
+        echo "All expected images verified successfully locally during final check." >&2
+    fi
+else
+    echo "No images were recorded as successfully built/pushed/pulled/verified, skipping final verification." >&2
 fi
 
 
@@ -293,7 +334,7 @@ if [ "$BUILD_FAILED" -ne 0 ]; then
     echo "--------------------------------------------------" >&2
     exit 1 # Exit with failure code if any build failed
 else
-    echo "Build, push, pull, tag, and (optionally) run processes completed successfully!" >&2
+    echo "Build, push, pull, tag, verification, and (optionally) run processes completed successfully!" >&2
     echo "--------------------------------------------------" >&2
     exit 0 # Exit with success code
 fi
