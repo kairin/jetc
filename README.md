@@ -1,8 +1,8 @@
-# jetc
+# JETC
 
 
 
-### **`README.md`**
+### **README.md**
 
 
 # JETC: Jetson Containers for Targeted Use Cases
@@ -23,7 +23,7 @@ The folder structure and scripts are designed to efficiently build and patch spe
 
 ### **Root Structure**
 
-
+```
 .
 ├── Dockerfile                       # General Dockerfile for building containers
 ├── Dockerfile-20250410              # Alternate Dockerfile for specific builds
@@ -38,7 +38,7 @@ The folder structure and scripts are designed to efficiently build and patch spe
 ├── build.sh                         # Main build script for orchestrating all builds
 └── list_installed_apps.sh           # Script for listing installed applications within a container
 
-
+```
 ---
 
 ### **`build/` Directory**
@@ -62,6 +62,7 @@ build/
 ├── 13-transformers                  # Hugging Face Transformers
 ├── 14-xformers                      # Xformers library
 └── 15-flash-attention               # FlashAttention library
+
 ```
 
 Each directory contains the following:
