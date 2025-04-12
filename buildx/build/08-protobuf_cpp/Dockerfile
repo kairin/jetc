@@ -7,7 +7,7 @@
 # test: [test.py, test.sh]
 # notes: build protobuf using cpp implementation (https://jkjung-avt.github.io/tf-trt-revisited/)
 #---
-ARG BASE_IMAGE=kairin/001:06-rust
+ARG BASE_IMAGE=kairin/001:07-protobuf_apt
 FROM ${BASE_IMAGE}
 
 ARG PROTOBUF_VERSION=3.19.4
