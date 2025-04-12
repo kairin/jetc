@@ -6,7 +6,7 @@
 # requires: '>=35'
 # test: test.py
 #---
-ARG BASE_IMAGE=kairin/001:18-dynamo
+ARG BASE_IMAGE=kairin/001:14-xformers
 FROM ${BASE_IMAGE}
 
 ARG FLASH_ATTENTION_VERSION \

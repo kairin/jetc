@@ -7,7 +7,7 @@
 # test: test.py
 # notes: https://github.com/huggingface/diffusers
 #---
-ARG BASE_IMAGE=kairin/001:10-crossformer
+ARG BASE_IMAGE=kairin/001:10-bitsandbytes
 FROM ${BASE_IMAGE}
 
 ARG DIFFUSERS_VERSION \
