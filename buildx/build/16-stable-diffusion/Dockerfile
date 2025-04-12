@@ -7,7 +7,7 @@
 # docs: docs.md
 # notes: disabled on JetPack 4
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:15-flash-attention
 FROM ${BASE_IMAGE}
 
 RUN set -ex \

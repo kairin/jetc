@@ -5,7 +5,7 @@
 # requires: '>=35.0.0'
 # docs: docs.md
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:17-stable-diffusion-webui
 FROM ${BASE_IMAGE}
 
 WORKDIR /opt

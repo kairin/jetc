@@ -6,7 +6,7 @@
 # docs: docs.md
 # notes: disabled on JetPack 4
 #---
-ARG BASE_IMAGE
+ARG BASE_IMAGE=kairin/001:16-stable-diffusion
 FROM ${BASE_IMAGE}
 
 ARG STABLE_DIFFUSION_WEBUI_REF \
