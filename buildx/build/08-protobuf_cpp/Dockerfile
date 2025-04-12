@@ -5,13 +5,12 @@
 # config: config.py
 # depends: [build-essential, python]
 # test: [test.py, test.sh]
-# notes: build protobuf using cpp implementation (https://jkjung-avt.github.io/tf-trt-revisited/)
+# notes: install protobuf using pip
 #---
 ARG BASE_IMAGE=kairin/001:07-protobuf_apt
 FROM ${BASE_IMAGE}
 
-ARG PROTOBUF_VERSION=3.19.4
-ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip
 
-COPY install.sh /tmp/protobuf/
-RUN /tmp/protobuf/install.sh
+# Install the latest protobuf using pip
+RUN pip install --upgrade protobuf

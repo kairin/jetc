@@ -42,6 +42,9 @@ RUN set -ex \
         time \
         sshpass \
         ssh-client \
+        xfe \
+        aptitude \
+        apt-get \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     \
