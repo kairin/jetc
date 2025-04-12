@@ -485,6 +485,36 @@ else
     echo "No images were recorded as successfully built/pushed/pulled/verified, skipping final verification." >&2
 fi
 
+# Function to list installed apps in the latest image
+list_installed_apps() {
+    local image_tag=$1
+    
+    if [ -z "$image_tag" ]; then
+        echo "Error: No image tag provided to list_installed_apps function" >&2
+        return 1
+    fi
+    
+    echo "--------------------------------------------------" >&2
+    echo "Listing installed apps in: $image_tag" >&2
+    echo "--------------------------------------------------" >&2
+    
+    # Mount the script into the container and run it
+    docker run -it --rm \
+        -v "$(pwd)/list_installed_apps.sh:/tmp/list_installed_apps.sh" \
+        --entrypoint /bin/bash \
+        "$image_tag" \
+        -c "chmod +x /tmp/list_installed_apps.sh && /tmp/list_installed_apps.sh"
+}
+
+# Add this where you want to trigger the function
+if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
+    # Ask if user wants to list installed apps
+    read -p "Do you want to list installed apps in the final image? (y/n): " list_apps
+    if [[ "$list_apps" == "y" ]]; then
+        list_installed_apps "$TIMESTAMPED_LATEST_TAG"
+    fi
+fi
+
 # =========================================================================
 # Script Completion
 # =========================================================================
