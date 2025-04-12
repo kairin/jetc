@@ -16,21 +16,38 @@ The folder structure and scripts are designed to efficiently build and patch spe
 
 ### **Root Structure**
 
+
+```
+# Updated README.md for JETC Project
+
+I recommend enhancing your README.md with details about the new components and verification capabilities. Here's a comprehensive update:
+
+```markdown
+# JETC: Jetson Containers for Targeted Use Cases
+
+This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+
+## **Overview**
+
+This repository is designed to handle the preparation, patching, and building of Docker containers for various libraries and tools commonly used in AI, machine learning, and edge-computing workflows. The project leverages Docker's `buildx` to ensure compatibility with ARM64 (aarch64) devices, specifically NVIDIA Jetson platforms.
+
+The folder structure and scripts are designed to efficiently build and patch specific components, with flexibility to handle dependencies and downstream workflows.
+
+## **Repository Structure**
+
+### **Root Structure**
+
 ```
 .
-├── Dockerfile                       # General Dockerfile for building containers
-├── Dockerfile-20250410              # Alternate Dockerfile for specific builds
-├── Dockerfile-list-apps             # Dockerfile for listing installed applications
+├─1
 ├── README.md                        # This file - repository documentation
-├── build/                           # Folder containing build directories for each component
-├── build-20250410.sh                # Specific build script for 20250410
-├── build-20250412-1118am.sh         # Specific build script for 20250412 (11:18 AM)
-├── build-20250412-1127am.sh         # Specific build script for 20250412 (11:27 AM)
-├── build-20250412-1150am.sh         # Specific build script for 20250412 (11:50 AM)
-├── build-20250412.sh                # General build script for 20250412
-├── build.sh                         # Main build script for orchestrating all builds
+├─2
+├── buildx/build/                    # Folder containing build directories for each component
+├─3                    
+├── buildx/build.sh                  # Main build script for orchestrating all builds
+├── generate_app_checks.sh           # Helper script for generating application verification
+├── jetcrun.sh                       # Utility script for running Jetson containers
 └── list_installed_apps.sh           # Script for listing installed applications within a container
-
 ```
 ---
 
@@ -54,8 +71,10 @@ build/
 ├── 12-huggingface_hub               # Hugging Face Hub
 ├── 13-transformers                  # Hugging Face Transformers
 ├── 14-xformers                      # Xformers library
-└── 15-flash-attention               # FlashAttention library
-
+├── 15-flash-attention               # FlashAttention library
+├── 16-stable-diffusion              # Stable Diffusion models and backend
+├── 17-stable-diffusion-webui        # Stable Diffusion Web UI (AUTOMATIC1111)
+└── 18-comfyui                       # ComfyUI workflow-based UI for Stable Diffusion
 ```
 
 Each directory contains the following:
@@ -90,7 +109,93 @@ This repository uses the `buildx` system for Docker to manage multi-platform bui
 
 6. **Post-Build Actions**:
    - Pulls all built images for validation.
-   - Optionally runs the final image for interactive testing.
+   - Offers several options for verifying and interacting with the final image.
+
+---
+
+## **Container Verification System**
+
+A key feature of this repository is the comprehensive verification system for built containers. After building, the system provides several options to verify the container's functionality:
+
+### **Verification Options**
+
+1. **Interactive Shell**: 
+   - Launch a bash shell in the container for manual inspection.
+
+2. **Quick Verification**:
+   - Run a quick check of common tools and packages.
+   - Verifies system tools and ML/AI frameworks.
+
+3. **Full Verification**:
+   - Run a comprehensive check of all installed packages.
+   - Includes system packages, Python packages, and framework details.
+
+4. **Dedicated App Listing**:
+   - Builds and runs a specialized container that lists all installed applications.
+
+### **The `list_installed_apps.sh` Script**
+
+This modular script provides detailed information about installed components:
+
+```bash
+./list_installed_apps.sh [mode]
+```
+
+Available modes:
+- `all`: Run all verification checks (default)
+- `quick`: Basic system and ML framework checks
+- `tools`: Check only system tools
+- `ml`: Check only ML/AI frameworks
+- `libs`: Check only Python libraries
+- `cuda`: Check CUDA/GPU information
+- `python`: List Python packages
+- `system`: List system packages
+
+The script uses color-coded output to clearly indicate installed (✅) vs. missing (❌) components.
+
+---
+
+## **Generative AI Components**
+
+This repository includes components for running popular generative AI tools on Jetson:
+
+### **Stable Diffusion**
+
+- **16-stable-diffusion**: Core models and backend libraries
+- **17-stable-diffusion-webui**: AUTOMATIC1111's WebUI implementation
+  - Provides a web interface for image generation
+  - Supports various models, sampling methods, and extensions
+
+### **ComfyUI**
+
+- **18-comfyui**: Node-based UI for Stable Diffusion
+  - Visual workflow editor for advanced image generation pipelines
+  - Modular design allows for complex customization
+
+---
+
+## **Running AI Web Interfaces**
+
+To run the Stable Diffusion WebUI or ComfyUI after building:
+
+1. **Start the container with port forwarding**:
+   ```bash
+   docker run -it --rm -p 7860:7860 -p 8188:8188 your-dockerhub-username/001:latest-timestamp bash
+   ```
+
+2. **For Stable Diffusion WebUI**:
+   ```bash
+   cd /opt/stable-diffusion-webui
+   python launch.py --listen --port 7860
+   ```
+   Access the WebUI at `http://your-jetson-ip:7860`
+
+3. **For ComfyUI**:
+   ```bash
+   cd /opt/ComfyUI
+   python main.py --listen 0.0.0.0 --port 8188
+   ```
+   Access ComfyUI at `http://your-jetson-ip:8188`
 
 ---
 
@@ -104,6 +209,7 @@ This repository is based on the excellent work provided by [dusty-nv/jetson-cont
 
 This repository is designed for developers and researchers working on:
 - AI and machine learning projects on NVIDIA Jetson platforms.
+- Generative AI applications on edge devices.
 - Optimized Docker container builds for ARM64 (aarch64) devices.
 - Customized workflows requiring patched or pre-built libraries.
 
@@ -129,17 +235,49 @@ This repository is designed for developers and researchers working on:
      ./build.sh
      ```
 
-4. **Inspect Built Images**:
-   - List all built images:
+4. **Selective Building** (optional):
+   - To build only specific components, edit the build script or use:
      ```bash
-     docker images
+     BUILD_DIRS="01-build-essential 02-bazel" ./build.sh
      ```
 
-5. **Run the Final Image**:
-   - Optionally, run the final built image:
+5. **Post-Build Options**:
+   - The script will offer several options after successful build:
+     - Start an interactive shell
+     - Run quick verification
+     - Run full verification
+     - Build and run list-apps container
+     - Skip (do nothing)
+
+6. **Using Built Images for Development**:
+   - The final image can be used as a development environment:
      ```bash
-     docker run -it --rm your-dockerhub-username/001:latest bash
+     docker run -it --rm -v $(pwd):/workspace your-dockerhub-username/001:latest-timestamp bash
      ```
+
+---
+
+## **System Requirements**
+
+- NVIDIA Jetson device: I am particularly targeting the AGX ORIN with 64GB of shared memory.
+
+---
+
+## **Troubleshooting**
+
+### **Common Issues**
+
+1. **Build failures in ML components**:
+   - Ensure you have sufficient swap space (8GB+)
+   - Try building with cache: `use_cache=y`
+
+2. **"No space left on device" errors**:
+   - Clear Docker cache: `docker system prune -af`
+   - Increase available storage
+
+3. **Web UI accessibility issues**:
+   - Verify port forwarding is correct
+   - Ensure you're using `--listen` flags when starting services
 
 ---
 
@@ -153,28 +291,16 @@ For contributions to the original repository, please visit [dusty-nv/jetson-cont
 
 ## **License**
 
-This repository is released under the MIT License. See the [LICENSE](LICENSE) file for details.
+This repository is released under the MIT License. See the LICENSE file for details.
+
 ```
+This update:
 
----
-
-### Key Points in the `README.md`
-
-1. **Acknowledgment of Source**:
-   - Clearly states that the repository is based on [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
-   - Explains why the repository is not a fork (to serve a different target audience).
-
-2. **Detailed Structure**:
-   - Explains the purpose of each major folder and file.
-   - Provides a clear overview of the `build/` directory and its subdirectories.
-
-3. **Build Workflow**:
-   - Describes how the `buildx` flow works step-by-step.
-
-4. **Target Audience**:
-   - Defines the intended users of the repository.
-
-5. **How to Use**:
-   - Provides a quick start guide for cloning, setting up, and building the images.
-
----
+1. Adds the new components (16-18) to the build directory listing
+2. Creates a new "Container Verification System" section explaining our verification tools
+3. Adds a "Generative AI Components" section highlighting SD and ComfyUI
+4. Includes instructions for running the web interfaces
+5. Expands the "How to Use" section with selective building options
+6. Adds "System Requirements" and "Troubleshooting" sections
+7. Updates the "Target Audience" to include generative AI applications
+```
