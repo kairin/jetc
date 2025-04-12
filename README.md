@@ -4,7 +4,7 @@
 
 ### **`README.md`**
 
-```markdown
+```
 # JETC: Jetson Containers for Targeted Use Cases
 
 This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
