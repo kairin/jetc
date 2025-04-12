@@ -1,15 +1,15 @@
 # jetc
 
----
+
 
 ### **`README.md`**
 
-```
+
 # JETC: Jetson Containers for Targeted Use Cases
 
 This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
 
----
+
 
 ## **Overview**
 
@@ -17,13 +17,13 @@ This repository is designed to handle the preparation, patching, and building of
 
 The folder structure and scripts are designed to efficiently build and patch specific components, with flexibility to handle dependencies and downstream workflows.
 
----
+
 
 ## **Repository Structure**
 
 ### **Root Structure**
 
-```
+
 .
 ├── Dockerfile                       # General Dockerfile for building containers
 ├── Dockerfile-20250410              # Alternate Dockerfile for specific builds
@@ -37,7 +37,7 @@ The folder structure and scripts are designed to efficiently build and patch spe
 ├── build-20250412.sh                # General build script for 20250412
 ├── build.sh                         # Main build script for orchestrating all builds
 └── list_installed_apps.sh           # Script for listing installed applications within a container
-```
+
 
 ---
 
