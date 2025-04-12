@@ -185,5 +185,3 @@ This repository is released under the MIT License. See the [LICENSE](LICENSE) fi
    - Provides a quick start guide for cloning, setting up, and building the images.
 
 ---
-
-Copy this content into your `README.md` file, and it will provide a clear and comprehensive overview of your repository for potential users and contributors. Let me know if you'd like any additional edits!
