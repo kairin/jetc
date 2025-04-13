@@ -15,12 +15,11 @@ The folder structure and scripts are designed to efficiently build and patch spe
 ```
 .
 ├── README.md                        # This file - repository documentation
-├── buildx/
-│   ├── build/                       # Folder containing build directories for each component
-│   ├── build.sh                     # Main build script for orchestrating all builds
-│   └── ...                          # Other buildx related files/scripts
+├── buildx/build/                    # Folder containing build directories for each component
+├── build.sh                         # Main build script for orchestrating all builds
+│                                    # Other buildx related files/scripts
 ├── generate_app_checks.sh           # Helper script for generating application verification
-├── jetcrun.sh                       # Utility script for running Jetson containers
+├── jetcrun.sh                       # Utility script for running Jetson containers (basically running `jetson-containers run`)
 └── list_installed_apps.sh           # Script for listing installed applications within a container
 ```
 
