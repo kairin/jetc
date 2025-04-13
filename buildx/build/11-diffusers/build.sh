@@ -1,19 +1,19 @@
-#!/usr/bin/env bash
-set -ex
+#!/bin/bash
+set -e
 
-echo "Building diffusers ${DIFFUSERS_VERSION}"
+echo "Building diffusers ${DIFFUSERS_VERSION:-latest}"
 
-git clone --branch=v${DIFFUSERS_VERSION} --depth=1 --recursive https://github.com/huggingface/diffusers /opt/diffusers || \
-git clone --recursive https://github.com/huggingface/diffusers /opt/diffusers
+# Clean existing directory
+rm -rf /opt/diffusers
 
+# Clone with version tag if specified
+if [ -n "$DIFFUSERS_VERSION" ] && [ "$DIFFUSERS_VERSION" != "latest" ]; then
+    git clone --branch="v${DIFFUSERS_VERSION}" --depth=1 --recursive https://github.com/huggingface/diffusers /opt/diffusers || \
+    git clone --recursive https://github.com/huggingface/diffusers /opt/diffusers
+else
+    git clone --recursive https://github.com/huggingface/diffusers /opt/diffusers
+fi
+
+# Install from source
 cd /opt/diffusers
-
-DIFFUSERS_MORE_DETAILS=1 MAX_JOBS=$(nproc) \
-python3 setup.py --verbose bdist_wheel --dist-dir /opt
-
-ls /opt
-cd /
-
-pip3 install /opt/diffusers*.whl
-
-twine upload --verbose /opt/diffusers*.whl || echo "failed to upload wheel to ${TWINE_REPOSITORY_URL}"
+pip3 install -e .

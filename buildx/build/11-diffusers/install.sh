@@ -1,9 +1,15 @@
-#!/usr/bin/env bash
-set -ex
+#!/bin/bash
+set -e
 
 if [ "$FORCE_BUILD" == "on" ]; then
-	echo "Forcing build of diffusers ${DIFFUSERS}"
-	exit 1
+    exit 1
 fi
 
-pip3 install diffusers==${DIFFUSERS_VERSION}
+# Check if version is provided
+if [ -z "$DIFFUSERS_VERSION" ]; then
+    echo "DIFFUSERS_VERSION not set, defaulting to latest"
+    pip3 install diffusers
+else
+    echo "Installing diffusers version $DIFFUSERS_VERSION"
+    pip3 install "diffusers==$DIFFUSERS_VERSION"
+fi
