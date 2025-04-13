@@ -261,6 +261,18 @@ This repository is designed for developers and researchers working on:
 
 - NVIDIA Jetson device: I am particularly targeting the AGX ORIN with 64GB of shared memory.
 
+
+## Additional Improvements
+
+```markdown
+### **Build Requirements**
+
+- Docker with buildx plugin installed
+- Docker Hub account (for pushing images)
+- At least 50GB free disk space
+- Reliable internet connection
+- Environment file (.env) with DOCKER_USERNAME defined
+```
 ---
 
 ## **Troubleshooting**
@@ -278,6 +290,17 @@ This repository is designed for developers and researchers working on:
 3. **Web UI accessibility issues**:
    - Verify port forwarding is correct
    - Ensure you're using `--listen` flags when starting services
+
+### **Common Build Issues**
+
+- **Build script fails with "platform error"**: 
+  Ensure you're running on an ARM64 architecture device (Jetson)
+  
+- **Image verification fails after build**:
+  Check your internet connection and Docker Hub permissions
+  
+- **Build hangs or fails on specific components**:
+  Try building with more swap space or specify individual directories to build
 
 ---
 
