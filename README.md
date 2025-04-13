@@ -111,6 +111,145 @@ This repository uses the `buildx` system for Docker to manage multi-platform bui
    - Pulls all built images for validation.
    - Offers several options for verifying and interacting with the final image.
 
+## **Build Process in Detail**
+
+The `buildx/build.sh` script automates the complete build pipeline for Jetson container images. Here's what happens when you run it:
+
+### 1. Initialization
+
+```bash
+$ ./buildx/build.sh
+```
+
+# Adding Build Process Details to README.md
+
+I recommend adding a new section to your README.md that explains the step-by-step build process in detail. This would be valuable for users to understand what's happening behind the scenes when they run the build script.
+
+## Where to Add the Content
+
+Add this section after your existing "How the Build System Works" section, as it provides a more detailed explanation of the build process.
+
+```markdown
+## **Build Process in Detail**
+
+The `buildx/build.sh` script automates the complete build pipeline for Jetson container images. Here's what happens when you run it:
+
+### 1. Initialization
+
+```bash
+$ ./buildx/build.sh
+```
+
+- Loads configuration from `.env` file
+- Verifies Docker username is configured
+- Validates you're running on a Jetson device (ARM64 architecture)
+- Sets up Docker buildx for multi-architecture builds
+- Asks if you want to build with cache for faster builds
+
+### 2. Building Container Images
+
+The script processes directories in the `build/` folder in this order:
+
+1. **Numbered directories first** (01-base, 02-python, etc.)
+   - Processed sequentially as each image depends on the previous one
+   - Example: `kairin/001:02-python` is built on top of `kairin/001:01-base`
+
+2. **Non-numbered directories** (if any)
+   - Built using the last successful numbered image as base
+
+For each directory, the script:
+- Creates a Docker image tag (e.g., `kairin/001:01-base`)
+- Builds the image using Docker buildx
+- Pushes the image to Docker Hub
+- Pulls the image back to verify it's accessible
+- Verifies the image exists locally
+
+### 3. Creating Final Tagged Image
+
+After all images are built successfully:
+- Creates a timestamped "latest" tag (e.g., `kairin/001:latest-20250413-120000-1`)
+- Pushes and pulls this final tag for verification
+
+### 4. Verification and Options
+
+The script offers several options for the final image:
+1. Start an interactive shell
+2. Run quick verification (common tools and packages)
+3. Run full verification (all system packages)
+4. List installed apps in the container
+5. Skip (do nothing)
+
+### 5. Final Verification
+
+- Performs a final check that all successfully built images exist locally
+- Reports overall success or failure
+
+### Example Build Process Output
+
+```
+Determining build order...
+Starting build process...
+--- Building Numbered Directories ---
+Processing numbered directory: build/01-base
+Generating fixed tag: kairin/001:01-base
+Building and pushing image from folder: build/01-base
+...
+Successfully built, pushed, and pulled numbered image: kairin/001:01-base
+
+Processing numbered directory: build/02-python
+Generating fixed tag: kairin/001:02-python
+Using base image build arg: kairin/001:01-base
+...
+Successfully built, pushed, and pulled numbered image: kairin/001:02-python
+
+... [continues for all directories] ...
+
+--- Creating Final Timestamped Tag ---
+Attempting to tag kairin/001:18-comfyui as kairin/001:latest-20250413-120000-1
+Successfully created, pushed, and pulled final timestamped tag.
+
+Final Image: kairin/001:latest-20250413-120000-1
+What would you like to do with the final image?
+1) Start an interactive shell
+2) Run quick verification (common tools and packages)
+3) Run full verification (all system packages, may be verbose)
+4) List installed apps in the container
+5) Skip (do nothing)
+Enter your choice (1-5): 
+```
+```
+
+## Additional Improvements
+
+1. **Add a "Build Requirements" subsection** under the existing "System Requirements" section:
+
+```markdown
+### **Build Requirements**
+
+- Docker with buildx plugin installed
+- Docker Hub account (for pushing images)
+- At least 50GB free disk space
+- Reliable internet connection
+- Environment file (.env) with DOCKER_USERNAME defined
+```
+
+2. **Add a "Common Build Issues" subsection** to your "Troubleshooting" section:
+
+```markdown
+### **Common Build Issues**
+
+- **Build script fails with "platform error"**: 
+  Ensure you're running on an ARM64 architecture device (Jetson)
+  
+- **Image verification fails after build**:
+  Check your internet connection and Docker Hub permissions
+  
+- **Build hangs or fails on specific components**:
+  Try building with more swap space or specify individual directories to build
+```
+
+These additions will provide users with a clear understanding of the build process, requirements, and potential issues they might encounter, making your project more accessible to new users.
+
 ---
 
 ## **Container Verification System**
