@@ -41,6 +41,13 @@ if [ "$ARCH" != "aarch64" ]; then
 fi
 PLATFORM="linux/arm64"
 
+
+# Check if 'pv' and 'dialog' are installed, and install them if not
+if ! command -v pv &> /dev/null || ! command -v dialog &> /dev/null; then
+  echo "Installing required packages: pv and dialog..."
+  sudo apt-get update && sudo apt-get install -y pv dialog
+fi
+
 # =========================================================================
 # Global Variables
 # =========================================================================
@@ -109,6 +116,43 @@ verify_image_exists() {
   fi
 }
 
+
+# Add this function to your build.sh file, before the fix_layer_limit function
+
+# =========================================================================
+# Function: Display a progress bar
+# Arguments: $1 = current value, $2 = max value, $3 = operation description
+# =========================================================================
+show_progress() {
+  local current=$1
+  local max=$2
+  local description=$3
+  local percentage=$((current * 100 / max))
+  local completed=$((percentage / 2))
+  local remaining=$((50 - completed))
+  
+  # Create the progress bar
+  local bar="["
+  for ((i=0; i<completed; i++)); do
+    bar+="="
+  done
+  
+  if [ $completed -lt 50 ]; then
+    bar+=">"
+    for ((i=0; i<remaining-1; i++)); do
+      bar+=" "
+    done
+  else
+    bar+="="
+  fi
+  
+  bar+="] ${percentage}%"
+  
+  # Print the progress bar and operation description
+  printf "\r%-80s" "${description}: ${bar}"
+}
+
+
 # =========================================================================
 # Function: Fix layer limit issues by flattening an image
 # Arguments: $1 = image tag to flatten
@@ -117,14 +161,54 @@ verify_image_exists() {
 fix_layer_limit() {
   local tag="$1"
   
-  echo "Attempting to fix layer limit issue for image: $tag" >&2
+  echo -e "\nAttempting to fix layer limit issue for image: $tag" >&2
   
-  # Simply call our auto_flatten_images.sh script to handle the flattening
   # Extract the image name part after the colon for use as the next stage name
   local image_name="${tag##*:}"
   
-  if ./auto_flatten_images.sh "$tag" "$image_name" >/dev/null; then
-    echo "Successfully flattened image $tag" >&2
+  # Monitor the flattening process using pv if available
+  if command -v pv >/dev/null 2>&1; then
+    # Use pv to show a progress bar
+    echo "Starting image flattening process with progress bar..." >&2
+    ./auto_flatten_images.sh "$tag" "$image_name" 2>&1 | pv -pt -i 0.5 > /dev/null
+    flatten_status=${PIPESTATUS[0]}
+  else
+    # Fallback to our custom progress indicator
+    echo "Starting image flattening process..." >&2
+    
+    # Create a background process to show progress while flattening happens
+    (
+      i=0
+      max=100
+      while [ $i -lt $max ] && ! [ -f /tmp/flattening_complete ]; do
+        show_progress $i $max "Flattening image"
+        i=$((i + 1))
+        if [ $i -eq $max ]; then i=0; fi
+        sleep 1
+      done
+      # Ensure we show 100% at the end
+      show_progress 100 100 "Flattening image"
+      echo # Add newline after progress bar
+    ) &
+    progress_pid=$!
+    
+    # Run the actual flattening
+    ./auto_flatten_images.sh "$tag" "$image_name" >/dev/null
+    flatten_status=$?
+    
+    # Signal completion to the progress display
+    touch /tmp/flattening_complete
+    sleep 1.5  # Give the progress bar time to complete
+    rm -f /tmp/flattening_complete
+    
+    # Clean up the progress display
+    kill $progress_pid 2>/dev/null || true
+    wait $progress_pid 2>/dev/null || true
+    echo # Add newline after progress bar
+  fi
+  
+  if [ $flatten_status -eq 0 ]; then
+    echo "✅ Successfully flattened image $tag" >&2
     
     # Pull the flattened image to verify it worked
     echo "Pulling flattened image: $tag" >&2
@@ -136,10 +220,12 @@ fix_layer_limit() {
       return 1
     fi
   else
-    echo "Failed to flatten image $tag" >&2
+    echo "❌ Failed to flatten image $tag" >&2
     return 1
   fi
 }
+
+
 
 # =========================================================================
 # Function: Create preventatively flattened version of an image for next step
@@ -150,16 +236,54 @@ flatten_for_next_step() {
   local source_tag="$1"
   local next_step_name="$2"
   
-  echo "Creating flattened version for next build step..." >&2
+  echo -e "\nCreating flattened version for next build step..." >&2
   
-  # Call our auto_flatten_images.sh script with necessary parameters
-  local flattened_tag=$(./auto_flatten_images.sh "$source_tag" "$next_step_name" 2>/dev/null)
+  # Monitor the flattening process using pv if available
+  if command -v pv >/dev/null 2>&1; then
+    # Use pv to show a progress bar
+    echo "Starting preventative flattening with progress bar..." >&2
+    local flattened_tag=$(./auto_flatten_images.sh "$source_tag" "$next_step_name" 2>&1 | pv -pt -i 0.5)
+    flatten_status=${PIPESTATUS[0]}
+  else
+    # Fallback to our custom progress indicator
+    echo "Starting preventative flattening..." >&2
+    
+    # Create a background process to show progress while flattening happens
+    (
+      i=0
+      max=100
+      while [ $i -lt $max ] && ! [ -f /tmp/flattening_complete ]; do
+        show_progress $i $max "Preventative flattening"
+        i=$((i + 1))
+        if [ $i -eq $max ]; then i=0; fi
+        sleep 1
+      done
+      # Ensure we show 100% at the end
+      show_progress 100 100 "Preventative flattening"
+      echo # Add newline after progress bar
+    ) &
+    progress_pid=$!
+    
+    # Run the actual flattening
+    local flattened_tag=$(./auto_flatten_images.sh "$source_tag" "$next_step_name" 2>/dev/null)
+    flatten_status=$?
+    
+    # Signal completion to the progress display
+    touch /tmp/flattening_complete
+    sleep 1.5  # Give the progress bar time to complete
+    rm -f /tmp/flattening_complete
+    
+    # Clean up the progress display
+    kill $progress_pid 2>/dev/null || true
+    wait $progress_pid 2>/dev/null || true
+    echo # Add newline after progress bar
+  fi
   
-  if [ $? -eq 0 ] && [ -n "$flattened_tag" ]; then
-    echo "Successfully created flattened version: $flattened_tag for next step" >&2
+  if [ $flatten_status -eq 0 ] && [ -n "$flattened_tag" ]; then
+    echo "✅ Successfully created flattened version: $flattened_tag for next step" >&2
     return 0
   else
-    echo "Warning: Failed to create flattened version for next step." >&2
+    echo "⚠️ Warning: Failed to create flattened version for next step." >&2
     return 1
   fi
 }
