@@ -19,7 +19,7 @@ The folder structure and scripts are designed to efficiently build and patch spe
 ├── build.sh                         # Main build script for orchestrating all builds
 │                                    # Other buildx related files/scripts
 ├── generate_app_checks.sh           # Helper script for generating application verification
-├── jetcrun.sh                       # Utility script for running Jetson containers (basically running `jetson-containers run`)
+├── jetcrun.sh                       # Utility script for running Jetson containers
 └── list_installed_apps.sh           # Script for listing installed applications within a container
 ```
 
@@ -51,6 +51,7 @@ Each directory contains the following:
 - A Dockerfile for building the specific component
 - A patches/ folder for any patches required during the build process
 - Other optional files (README.md, test.py, etc.) for documentation and testing
+- jetcrun.sh is basically a script to run `jetson-containers run`
 
 ## How the Build System Works
 
