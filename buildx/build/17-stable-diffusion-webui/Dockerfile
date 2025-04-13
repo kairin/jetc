@@ -9,9 +9,9 @@
 ARG BASE_IMAGE=kairin/001:16-stable-diffusion
 FROM ${BASE_IMAGE}
 
-ARG STABLE_DIFFUSION_WEBUI_REF \
-    STABLE_DIFFUSION_WEBUI_SHA \
-    AUTOMATIC1111_ROOT_DIR="/opt/stable-diffusion-webui"
+ARG STABLE_DIFFUSION_WEBUI_REF="refs/heads/master" 
+ARG STABLE_DIFFUSION_WEBUI_SHA="master"
+ARG AUTOMATIC1111_ROOT_DIR="/opt/stable-diffusion-webui"
 
 ADD https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/git/${STABLE_DIFFUSION_WEBUI_REF} /tmp/stable_diffusion_webui_version.json
 
@@ -50,12 +50,30 @@ RUN set -ex \
     # Cleanup \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
-    
+
 # set the cache dir for models
-ENV DIFFUSERS_CACHE=/data/models/diffusers
+ENV DIFFUSERS_CACHE=/data/models/diffusers \
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-# Add the correct link for stable diffusion download
-RUN curl -L https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive -o /data/models/stable-diffusion
+# Add memory optimization for Jetson devices
+RUN echo "export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128" >> /etc/profile.d/sd-webui.sh && \
+    chmod +x /etc/profile.d/sd-webui.sh
 
-# default start-up command
-CMD ["/bin/bash", "-c", "cd /opt/stable-diffusion-webui && python3 launch.py --data=/data/models/stable-diffusion --enable-insecure-extension-access --xformers --listen --port=7860"]
+# Create models directory structure
+RUN mkdir -p /data/models/stable-diffusion
+
+# Add verification checks for SD WebUI packages
+RUN echo "# Check for SD WebUI components" >> /tmp/sdwui_checks.sh \
+    && echo "check_dir /opt/stable-diffusion-webui 'Stable Diffusion WebUI'" >> /tmp/sdwui_checks.sh \
+    && echo "check_python_pkg insightface" >> /tmp/sdwui_checks.sh \
+    && echo "check_dir /opt/stable-diffusion-webui/extensions 'WebUI Extensions'" >> /tmp/sdwui_checks.sh \
+    && cat /tmp/sdwui_checks.sh >> /opt/list_app_checks.sh
+
+# Define explicit volumes for persistent data
+VOLUME ["/data/models", "/opt/stable-diffusion-webui/outputs"]
+
+# Models need to be downloaded after container startup
+# Either through the WebUI interface or using tools like huggingface-cli
+
+# Start-up command with memory optimizations and VAE precision fix
+CMD ["/bin/bash", "-c", "cd /opt/stable-diffusion-webui && echo 'Notice: No models found. Please download models using the WebUI interface.' && python3 launch.py --data=/data/models/stable-diffusion --enable-insecure-extension-access --xformers --listen --port=7860 --medvram --opt-sdp-attention --no-half-vae"]

@@ -42,3 +42,9 @@ RUN set -ex \
 # add module to PYTHONPATH since it's not installable
 ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion \
     DIFFUSERS_CACHE=/data/models/diffusers
+
+# Add verification checks for SD packages
+RUN echo "# Check for Stable Diffusion packages" >> /tmp/sd_checks.sh \
+    && echo "check_python_pkg diffusers" >> /tmp/sd_checks.sh \
+    && echo "check_python_pkg invisible_watermark" >> /tmp/sd_checks.sh \
+    && cat /tmp/sd_checks.sh >> /opt/list_app_checks.sh

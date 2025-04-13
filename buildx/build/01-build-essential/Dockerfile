@@ -12,6 +12,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=en_US.UTF-8
     #TERM=dumb
 
+RUN touch /opt/list_app_checks.sh
+
 RUN set -ex \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -45,3 +47,11 @@ RUN set -ex \
     && g++ --version
 
 COPY tarpack vercmp /usr/local/bin/
+
+# Add verification checks for build-essential packages
+RUN echo "# Check for build tools" >> /tmp/build_checks.sh \
+    && echo "check_cmd gcc 'gcc --version'" >> /tmp/build_checks.sh \
+    && echo "check_cmd g++ 'g++ --version'" >> /tmp/build_checks.sh \
+    && echo "check_cmd make 'make --version'" >> /tmp/build_checks.sh \
+    && echo "check_cmd git 'git --version'" >> /tmp/build_checks.sh \
+    && cat /tmp/build_checks.sh >> /opt/list_app_checks.sh

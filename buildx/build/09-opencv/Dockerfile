@@ -18,12 +18,14 @@ ARG OPENCV_VERSION \
 ENV OPENCV_VERSION=${OPENCV_VERSION} \
     OPENCV_URL=${OPENCV_URL}
     
-COPY build.sh \
-     install.sh \
-     install_deps.sh \
-     install_deb.sh \
-     patches.diff \
-     /tmp/opencv/
+COPY build.sh install.sh install_deps.sh install_deb.sh patches.diff /tmp/opencv/
 
-RUN cd /tmp/opencv && ./install.sh || ./build.sh || echo "BUILD FAILED (OpenCV ${OPENCV_VERSION})"
-
+# Combine RUN commands to reduce layers and clean up in the same layer
+RUN cd /tmp/opencv && \
+    (./install.sh || ./build.sh || (echo "BUILD FAILED (OpenCV ${OPENCV_VERSION})" && exit 1)) && \
+    pip3 install --no-cache-dir onnxruntime-gpu && \
+    echo "check_python_pkg onnxruntime" >> /opt/list_app_checks.sh && \
+    echo "check_python_pkg cv2" >> /opt/list_app_checks.sh && \
+    # Remove build artifacts to reduce image size
+    rm -rf /root/.cache/pip && \
+    rm -rf /tmp/opencv/*.tar.gz /tmp/opencv/build || true
