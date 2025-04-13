@@ -46,23 +46,24 @@ RUN set -ex \
         -e 's|@rank_zero_only||g' \
         /opt/stable-diffusion/optimizedSD/ddpm.py \
     \
-    # Create models directory \
+    # Create directories \
     && mkdir -p /data/models/diffusers \
+    && mkdir -p /data/images/stable-diffusion \
     \
     # Add verification checks \
     && echo "# Check for Stable Diffusion packages" >> /tmp/sd_checks.sh \
     && echo "check_python_pkg diffusers" >> /tmp/sd_checks.sh \
-    && echo "check_python_pkg invisible_watermark" >> /tmp/sd_checks.sh \
     && echo "check_dir /opt/stable-diffusion 'Stable Diffusion'" >> /tmp/sd_checks.sh \
     && cat /tmp/sd_checks.sh >> /opt/list_app_checks.sh \
     \
     # Cleanup \
     && rm -rf /root/.cache/pip \
-    && find /opt/stable-diffusion -name ".git" -type d -exec rm -rf {} +
+    && find /opt/stable-diffusion -name ".git" -type d -exec rm -rf {} + \
+    && rm -f /tmp/sd_checks.sh
 
 # add module to PYTHONPATH since it's not installable
 ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion \
     DIFFUSERS_CACHE=/data/models/diffusers
 
-# Define volume for persistent data
-VOLUME ["/data/models/diffusers"]
+# Define volumes for persistent data
+VOLUME ["/data/models/diffusers", "/data/images/stable-diffusion"]
