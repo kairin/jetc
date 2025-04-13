@@ -1,3 +1,4 @@
+cat > build.sh << 'EOF'
 #!/bin/bash
 set -e  # Exit immediately if a command exits with a non-zero status
 
@@ -11,6 +12,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 # 3. Pulling images to verify they're accessible
 # 4. Creating a final timestamped tag for the last successful build
 # 5. Verifying all images are available locally
+# 6. Flattening images between build steps to prevent layer depth issues
 # =========================================================================
 
 # Load environment variables from .env file
@@ -51,6 +53,7 @@ LATEST_SUCCESSFUL_NUMBERED_TAG=""  # Most recent successfully built numbered ima
 FINAL_FOLDER_TAG=""  # The tag of the last successfully built folder image
 TIMESTAMPED_LATEST_TAG=""  # Final timestamped tag name
 BUILD_FAILED=0       # Flag to track if any build failed
+ENABLE_FLATTENING=true  # Enable image flattening to prevent layer depth issues
 
 # =========================================================================
 # Docker buildx setup
@@ -70,6 +73,20 @@ while [[ "$use_cache" != "y" && "$use_cache" != "n" ]]; do
   read -p "Do you want to build with cache? (y/n): " use_cache
 done
 
+# Ask user about layer flattening 
+read -p "Do you want to enable image flattening between steps to prevent layer limit issues? (y/n): " use_flattening
+while [[ "$use_flattening" != "y" && "$use_flattening" != "n" ]]; do
+  echo "Invalid input. Please enter 'y' for yes or 'n' for no." >&2
+  read -p "Do you want to enable image flattening between steps? (y/n): " use_flattening
+done
+
+if [[ "$use_flattening" == "n" ]]; then
+  ENABLE_FLATTENING=false
+  echo "Image flattening is disabled." >&2
+else
+  echo "Image flattening is enabled - this will help prevent 'max depth exceeded' errors." >&2
+fi
+
 # =========================================================================
 # Function: Verify image exists locally
 # Arguments: $1 = image tag to verify
@@ -81,6 +98,116 @@ verify_image_exists() {
     return 0  # Image exists
   else
     return 1  # Image does not exist
+  fi
+}
+
+# =========================================================================
+# Function: Flatten a Docker image to reduce layer count
+# Arguments: $1 = source image tag, $2 = target image tag
+# Returns: 0 on success, 1 on failure
+# =========================================================================
+flatten_image() {
+  local source_tag="$1"
+  local target_tag="$2"
+  
+  echo "--------------------------------------------------" >&2
+  echo "Flattening image to prevent layer limit issues:" >&2
+  echo "Source: $source_tag" >&2
+  echo "Target: $target_tag" >&2
+  echo "--------------------------------------------------" >&2
+  
+  # Method 1: Using docker export/import (completely flattens to one layer)
+  echo "Creating temporary container..." >&2
+  container_id=$(docker create "$source_tag" /bin/true)
+  if [ $? -eq 0 ]; then
+    echo "Created container: $container_id" >&2
+    
+    # Export and import to flatten completely
+    echo "Exporting container filesystem and importing as flattened image..." >&2
+    docker export "$container_id" | docker import - "$target_tag"
+    import_status=$?
+    
+    # Clean up container regardless of success
+    docker rm "$container_id" >/dev/null
+    
+    if [ $import_status -eq 0 ]; then
+      echo "Successfully created flattened image: $target_tag" >&2
+      
+      # Preserve ENTRYPOINT and CMD from original image
+      echo "Preserving ENTRYPOINT and CMD from original image..." >&2
+      
+      # Get original ENTRYPOINT and CMD
+      entrypoint_json=$(docker inspect --format='{{json .Config.Entrypoint}}' "$source_tag" 2>/dev/null || echo '[]')
+      cmd_json=$(docker inspect --format='{{json .Config.Cmd}}' "$source_tag" 2>/dev/null || echo '[]')
+      
+      # Create Dockerfile with the preserved ENTRYPOINT and CMD
+      temp_dir=$(mktemp -d)
+      cat > "$temp_dir/Dockerfile" << DOCKERFILE
+FROM $target_tag
+ENTRYPOINT ${entrypoint_json:-["/bin/sh", "-c"]}
+CMD ${cmd_json:-["/bin/bash"]}
+DOCKERFILE
+      
+      # Build final image with ENTRYPOINT and CMD preserved
+      final_tag_with_cmd="${target_tag}-with-cmd"
+      docker build -t "$final_tag_with_cmd" "$temp_dir"
+      final_build_status=$?
+      
+      # Clean up
+      rm -rf "$temp_dir"
+      
+      if [ $final_build_status -eq 0 ]; then
+        # Tag the finalized image as the target tag
+        docker tag "$final_tag_with_cmd" "$target_tag"
+        docker rmi "$final_tag_with_cmd" >/dev/null 2>&1 || true
+        echo "Successfully preserved ENTRYPOINT and CMD in flattened image" >&2
+        
+        # Push the flattened image
+        echo "Pushing flattened image: $target_tag" >&2
+        docker push "$target_tag"
+        push_status=$?
+        
+        if [ $push_status -eq 0 ]; then
+          echo "✅ Successfully flattened, tagged and pushed image: $target_tag" >&2
+          return 0
+        else
+          echo "❌ Failed to push flattened image: $target_tag" >&2
+          return 1
+        fi
+      else
+        echo "❌ Failed to preserve ENTRYPOINT and CMD" >&2
+      fi
+    else
+      echo "❌ Failed to create flattened image using export/import" >&2
+    fi
+  else
+    echo "❌ Failed to create temporary container" >&2
+  fi
+  
+  # If we reach here, method 1 failed. Try method 2.
+  echo "Trying alternative flattening method..." >&2
+  
+  # Method 2: Using a minimal Dockerfile with COPY --from
+  temp_dir=$(mktemp -d)
+  cat > "$temp_dir/Dockerfile" << DOCKERFILE
+FROM scratch
+COPY --from=$source_tag / /
+ENTRYPOINT ["/bin/bash"]
+DOCKERFILE
+
+  echo "Building flattened image via multi-stage approach..." >&2
+  docker buildx build --platform linux/arm64 -t "$target_tag" "$temp_dir" --push
+  method2_status=$?
+  
+  # Clean up
+  rm -rf "$temp_dir"
+  
+  if [ $method2_status -eq 0 ]; then
+    echo "✅ Successfully flattened and pushed image using method 2: $target_tag" >&2
+    return 0
+  else
+    echo "❌ Failed to flatten image using method 2" >&2
+    return 1
   fi
 }
 
@@ -196,13 +323,56 @@ build_folder_image() {
 
   # Pull the image immediately after successful push to verify it's accessible
   echo "Pulling built image: $fixed_tag" >&2
-  docker pull "$fixed_tag" >&2  # Redirect stdout to stderr to avoid contaminating the return value
-  if [ $? -ne 0 ]; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
-      echo "Error: Failed to pull the built image $fixed_tag after push." >&2
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+  local pull_output
+  pull_output=$(docker pull "$fixed_tag" 2>&1)
+  local pull_status=$?
+  
+  # Check for layer limit errors in the pull output
+  if [ $pull_status -ne 0 ]; then
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+    echo "Error: Failed to pull the built image $fixed_tag after push." >&2
+    
+    # Check for specific layer depth error
+    if [[ "$pull_output" == *"max depth exceeded"* ]]; then
+      echo "DETECTED: Layer limit error ('max depth exceeded')" >&2
+      echo "This is a Docker limitation on maximum layer depth." >&2
+      
+      if [ "$ENABLE_FLATTENING" = true ]; then
+        echo "Attempting to create flattened version of the image..." >&2
+        
+        # Try to get the image from the registry without pulling it locally
+        if flatten_image "$fixed_tag" "$fixed_tag"; then
+          echo "Successfully flattened and re-uploaded the image to fix layer depth issue." >&2
+          
+          # Try pulling again after flattening
+          echo "Pulling flattened image: $fixed_tag" >&2
+          docker pull "$fixed_tag" >&2
+          if [ $? -eq 0 ]; then
+            echo "Successfully pulled flattened image!" >&2
+          else
+            echo "Still failed to pull image after flattening. Further debugging required." >&2
+            BUILD_FAILED=1
+            return 1
+          fi
+        else
+          echo "Failed to flatten the image to address layer depth issue." >&2
+          BUILD_FAILED=1
+          return 1
+        fi
+      else
+        echo "Image flattening is disabled. Enable it to automatically fix this issue." >&2
+        echo "Full error output:" >&2
+        echo "$pull_output" >&2
+        BUILD_FAILED=1
+        return 1
+      fi
+    else
+      # Other pull errors
+      echo "Full error output:" >&2
+      echo "$pull_output" >&2
       BUILD_FAILED=1
       return 1
+    fi
   fi
 
   # Verify image exists locally after pull
@@ -216,6 +386,27 @@ build_folder_image() {
       return 1
   fi
   echo "Image $fixed_tag verified locally." >&2
+
+  # If flattening is enabled and this image will be used as a base for another image,
+  # create a flattened version to prevent layer limit issues in the next step
+  if [ "$ENABLE_FLATTENING" = true ]; then
+    # We'll flatten the image and update the tag for use in subsequent builds
+    echo "Creating preventative flattened version to avoid layer limits in subsequent builds..." >&2
+    
+    local flattened_tag="$fixed_tag-flattened"
+    if flatten_image "$fixed_tag" "$flattened_tag"; then
+      echo "Successfully created flattened version: $flattened_tag" >&2
+      
+      # Replace the original tag with the flattened one
+      docker tag "$flattened_tag" "$fixed_tag"
+      docker push "$fixed_tag"
+      
+      echo "Updated original tag with flattened version for use in subsequent builds." >&2
+    else
+      echo "Warning: Failed to create preventative flattened version." >&2
+      echo "Continuing with the original unflattened image." >&2
+    fi
+  fi
 
   # Record successful build
   BUILT_TAGS+=("$fixed_tag")
@@ -295,9 +486,27 @@ if [ "$BUILD_FAILED" -eq 0 ] && [ ${#ATTEMPTED_TAGS[@]} -gt 0 ]; then
     
     for tag in "${ATTEMPTED_TAGS[@]}"; do
         echo "Pulling $tag..." >&2
-        docker pull "$tag" >&2  # Redirect stdout to stderr
-        if [ $? -ne 0 ]; then
+        pull_output=$(docker pull "$tag" 2>&1)
+        pull_status=$?
+        
+        if [ $pull_status -ne 0 ]; then
             echo "Error: Failed to pull image $tag during pre-tagging verification." >&2
+            
+            # Check for layer limit error
+            if [[ "$pull_output" == *"max depth exceeded"* ]] && [ "$ENABLE_FLATTENING" = true ]; then
+                echo "DETECTED: Layer limit error when pulling $tag" >&2
+                
+                if flatten_image "$tag" "$tag"; then
+                    echo "Successfully flattened the image. Trying pull again..." >&2
+                    
+                    docker pull "$tag" >&2
+                    if [ $? -eq 0 ]; then
+                        echo "Successfully pulled flattened image after fixing layer limit issue." >&2
+                        continue  # Skip marking as failed
+                    fi
+                fi
+            fi
+            
             PULL_ALL_FAILED=1
         fi
     done
@@ -335,8 +544,10 @@ if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
             echo "Pushing $TIMESTAMPED_LATEST_TAG" >&2
             if docker push "$TIMESTAMPED_LATEST_TAG"; then
                 echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG" >&2
-                docker pull "$TIMESTAMPED_LATEST_TAG" >&2  # Redirect stdout
-                if [ $? -eq 0 ]; then
+                pull_output=$(docker pull "$TIMESTAMPED_LATEST_TAG" 2>&1)
+                pull_status=$?
+                
+                if [ $pull_status -eq 0 ]; then
                     # Verify final image exists locally
                     echo "Verifying final image $TIMESTAMPED_LATEST_TAG exists locally after pull..." >&2
                     if verify_image_exists "$TIMESTAMPED_LATEST_TAG"; then
@@ -351,7 +562,28 @@ if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
                     fi
                 else
                     echo "Error: Failed to pull final timestamped tag $TIMESTAMPED_LATEST_TAG after push." >&2
-                    BUILD_FAILED=1
+                    
+                    # Check for layer limit error
+                    if [[ "$pull_output" == *"max depth exceeded"* ]] && [ "$ENABLE_FLATTENING" = true ]; then
+                        echo "DETECTED: Layer limit error when pulling final timestamped tag" >&2
+                        
+                        if flatten_image "$TIMESTAMPED_LATEST_TAG" "$TIMESTAMPED_LATEST_TAG"; then
+                            echo "Successfully flattened the final image. Trying pull again..." >&2
+                            
+                            docker pull "$TIMESTAMPED_LATEST_TAG" >&2
+                            if [ $? -eq 0 ] && verify_image_exists "$TIMESTAMPED_LATEST_TAG"; then
+                                echo "Successfully pulled flattened final image." >&2
+                                BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG")
+                                echo "Successfully created, pushed, and pulled final timestamped tag (after flattening)." >&2
+                            else
+                                BUILD_FAILED=1
+                            fi
+                        else
+                            BUILD_FAILED=1
+                        fi
+                    else
+                        BUILD_FAILED=1
+                    fi
                 fi
             else
                 echo "Error: Failed to push final timestamped tag $TIMESTAMPED_LATEST_TAG." >&2
@@ -494,3 +726,4 @@ else
     echo "--------------------------------------------------" >&2
     exit 0  # Exit with success code
 fi
+EOF
