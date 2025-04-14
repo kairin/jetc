@@ -281,4 +281,16 @@ build_folder_image() {
       local next_folder="${numbered_dirs[$next_index]}"
       local next_name=$(basename "$next_folder" | tr '[:upper:]' '[:lower:]')
       
-      echo "Proactively flattening image for next build step: $next_name" >&2      flatten_for_next_step "$fixed_tag" "$next_name"      # Note: we don't fail the build if preventative flattening fails    fi  fi  # Record successful build  BUILT_TAGS+=("$fixed_tag")  # Return the tag name (will be captured by the caller)  echo "$fixed_tag"  return 0}
+      echo "Proactively flattening image for next build step: $next_name" >&2
+      flatten_for_next_step "$fixed_tag" "$next_name"
+      # Note: we don't fail the build if preventative flattening fails
+    fi
+  fi
+
+  # Record successful build
+  BUILT_TAGS+=("$fixed_tag")
+
+  # Return the tag name (will be captured by the caller)
+  echo "$fixed_tag"
+  return 0
+}
