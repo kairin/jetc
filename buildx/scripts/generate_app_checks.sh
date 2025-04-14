@@ -1,5 +1,6 @@
 #!/bin/bash
 # filepath: buildx/generate_app_checks.sh
+# - KS
 
 set -e
 

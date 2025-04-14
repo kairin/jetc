@@ -2,7 +2,7 @@
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # =========================================================================
-# Docker Image Flattening Script
+# Docker Image Flattening Script -KS
 # 
 # This script automatically flattens Docker images to avoid layer depth limits
 # It is designed to be integrated into the build process, taking the output
