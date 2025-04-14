@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# =========================================================================
+# IMPORTANT: This build system requires Docker with buildx extension.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
+
 # Check Docker status
 if systemctl is-active --quiet docker; then
     echo "✅ Docker is running"

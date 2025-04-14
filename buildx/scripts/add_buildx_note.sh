@@ -1,4 +1,10 @@
 #!/bin/bash
+
+# =========================================================================
+# IMPORTANT: This build system requires Docker with buildx extension.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
 # Script to add a prominent note about Docker buildx to all scripts and Dockerfiles
 
 # Define the notes

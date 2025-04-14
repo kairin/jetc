@@ -1,3 +1,9 @@
+# =========================================================================
+# IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
+
 # Use the appropriate base image
 FROM kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
 
