@@ -2,9 +2,35 @@
 
 This repository provides a structured and automated system for building Docker containers tailored for Jetson devices, inspired by and based on [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform: Jetson](https://img.shields.io/badge/Platform-Jetson-green.svg)](https://developer.nvidia.com/embedded/jetson)
+[![Docker](https://img.shields.io/badge/Docker-Compatible-blue.svg)](https://www.docker.com/)
+
+## Table of Contents
+- [Overview](#overview)
+- [Repository Structure](#repository-structure)
+- [How the Build System Works](#how-the-build-system-works)
+- [Build Process in Detail](#build-process-in-detail)
+- [Container Verification System](#container-verification-system)
+- [Generative AI Components](#generative-ai-components)
+- [Running AI Web Interfaces](#running-ai-web-interfaces)
+- [Getting Started](#how-to-use)
+- [System Requirements](#system-requirements)
+- [Troubleshooting](#troubleshooting)
+- [Inspiration and Original Work](#inspiration-and-original-work)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Overview
 
 JETC handles the preparation, patching, and building of Docker containers for AI, machine learning, and edge-computing workflows on NVIDIA Jetson platforms. The project leverages Docker's `buildx` for ARM64 (aarch64) compatibility.
+
+Key features:
+- Sequential, dependency-aware build system
+- Automated patching for library compatibility
+- Comprehensive verification tools
+- Ready-to-use AI and ML frameworks
+- Web UIs for generative AI workflows
 
 ## Repository Structure
 
@@ -168,17 +194,21 @@ A key feature of this repository is the comprehensive verification system for bu
 
 #### Interactive Shell
 - Launch a bash shell in the container for manual inspection
+- Example: `docker exec -it container_name bash`
 
 #### Quick Verification
 - Run a quick check of common tools and packages
 - Verifies system tools and ML/AI frameworks
+- Completes in under a minute and provides basic assurance
 
 #### Full Verification
 - Run a comprehensive check of all installed packages
 - Includes system packages, Python packages, and framework details
+- More thorough but can take several minutes to complete
 
 #### Dedicated App Listing
 - Builds and runs a specialized container that lists all installed applications
+- Creates a comprehensive inventory of available tools and libraries
 
 ### The `list_installed_apps.sh` Script
 
@@ -199,6 +229,23 @@ Available modes:
 - `system`: List system packages
 
 The script uses color-coded output to clearly indicate installed (✅) vs. missing (❌) components.
+
+Example output:
+```
+=== System Tools ===
+✅ git (version 2.34.1)
+✅ gcc (version 11.3.0)
+✅ cmake (version 3.22.1)
+✅ python3 (version 3.10.12)
+❌ maven (not found)
+
+=== ML Frameworks ===
+✅ PyTorch (version 2.1.0)
+✅ TensorFlow (version 2.12.0)
+✅ ONNX Runtime (version 1.15.1)
+```
+
+Custom verification can be added by modifying the script to check for additional components.
 
 ## Generative AI Components
 
@@ -246,6 +293,14 @@ Access ComfyUI at http://<your-jetson-ip>:8188
 
 ## How to Use
 
+### Prerequisites
+Before starting, ensure you have:
+- A compatible NVIDIA Jetson device
+- JetPack/L4T installed
+- Docker and Docker Buildx installed
+- A Docker Hub account
+- Sufficient storage space (50GB+ recommended)
+
 ### Clone the Repository
 
 ```bash
@@ -264,17 +319,17 @@ echo "DOCKER_USERNAME=your-dockerhub-username" > .env
 
 ### Run the Build Script
 
-Navigate to the buildx directory:
-
 ```bash
 cd buildx
-```
-
-To build all components:
-
-```bash
 ./build.sh
 ```
+
+The build process will:
+1. Set up Docker buildx for ARM64
+2. Build containers sequentially
+3. Push to Docker Hub (requires login)
+4. Verify build success
+5. Offer post-build options
 
 ### Selective Building (optional)
 
@@ -285,15 +340,6 @@ To build only specific components, you might need to modify the build script or 
 BUILD_DIRS="01-build-essential 02-bazel" ./build.sh
 ```
 
-### Post-Build Options
-
-The script will offer several options after successful build:
-1. Start an interactive shell
-2. Run quick verification
-3. Run full verification
-4. Build and run list-apps container
-5. Skip (do nothing)
-
 ### Using Built Images for Development
 
 The final image can be used as a development environment:
@@ -302,6 +348,8 @@ The final image can be used as a development environment:
 # Replace your-dockerhub-username/jetc:latest-timestamp with your actual final image tag
 docker run -it --rm --gpus all -v $(pwd):/workspace your-dockerhub-username/jetc:latest-timestamp bash
 ```
+
+This mounts your current directory as a volume inside the container, allowing you to work with your project files.
 
 ## System Requirements
 
