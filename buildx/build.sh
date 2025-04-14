@@ -30,8 +30,14 @@ is_docker_logged_in() {
     fi
 }
 
-# Function to login to Azure Container Registry
-acr_login() {
+# Function to login to Azure Container Registry or DockerHub
+docker_registry_login() {
+    # First check if already logged in
+    if is_docker_logged_in; then
+        echo "Already logged into Docker registry" >&2
+        return 0
+    fi
+
     # Check if we have ACR credentials
     if [ -n "$ACR_NAME" ] && [ -n "$ACR_USERNAME" ] && [ -n "$ACR_PASSWORD" ]; then
         echo "Logging in to Azure Container Registry: $ACR_NAME" >&2
@@ -59,16 +65,30 @@ acr_login() {
             echo "Azure CLI not found. Cannot login to ACR." >&2
             return 1
         fi
+    elif [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
+        # Use DockerHub credentials
+        echo "Logging in to DockerHub" >&2
+        echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+        if [ $? -eq 0 ]; then
+            echo "Successfully logged in to DockerHub" >&2
+            return 0
+        else
+            echo "Failed to log in to DockerHub. Please check credentials." >&2
+            return 1
+        fi
+    else
+        echo "No Docker registry credentials found. Proceeding without authentication." >&2
+        echo "Note: You may encounter push failures if authentication is required." >&2
     fi
     
-    return 0  # No ACR configuration found, continue normally
+    return 0
 }
 
 # Load environment variables and validate prerequisites
 load_env_and_validate
 
-# Login to ACR if needed
-acr_login
+# Login to Docker registry if needed
+docker_registry_login
 
 # Initialize build environment
 init_build_environment
