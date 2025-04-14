@@ -374,3 +374,51 @@ For contributions to the original foundational repository, please visit [dusty-n
 ## License
 
 This repository is released under the MIT License. See the LICENSE file for details.
+
+# JETC Docker Build System
+
+## Buildx Script Overview
+
+The `buildx/build.sh` script automates the Docker image building pipeline with robust error handling and verification. This script:
+
+### Key Features
+
+- **Sequential Build Process**: Builds images in numeric order from the `build/` directory, ensuring dependencies are respected
+- **Registry Integration**: Pushes images to Docker registry and verifies by pulling them back
+- **Verification**: Ensures all expected images are available locally before completing
+- **Timestamped Tagging**: Creates a final timestamped tag for the last successful build
+- **Layer Management**: Uses automated image flattening to prevent layer depth issues
+
+### Build Directory Structure
+
+The script processes directories in the following order:
+
+1. **Numbered Directories**: Folders with names matching `[0-9]*-*` are built sequentially in numeric order
+   - Each build uses the previous successful build as its base image
+   - Example: `01-base`, `02-runtime`, `03-dev`
+
+2. **Other Directories**: Non-numbered directories are built after all numbered ones
+   - All use the last successful numbered build as their base image
+   - Useful for variations that don't fit in the sequential pipeline
+
+### Error Handling
+
+- Fails fast with detailed error reporting
+- Skips dependent builds if prerequisites fail
+- Provides verification checks before final tagging
+
+### Components
+
+- **config.sh**: Environment configuration and validation
+- **utils.sh**: Common utility functions
+- **image_builder.sh**: Core image building logic
+- **verification.sh**: Image verification utilities
+
+## Usage
+
+```bash
+# Run the build process
+./buildx/build.sh
+```
+
+For advanced configuration, check the environment variables in `scripts/config.sh`.
