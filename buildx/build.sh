@@ -12,6 +12,10 @@ set -e  # Exit immediately if a command exits with a non-zero status
 # 4. Creating a final timestamped tag for the last successful build
 # 5. Verifying all images are available locally
 # 6. Using auto_flatten_images.sh to prevent layer depth issues
+#
+# IMPORTANT: This build system requires Docker with buildx extension.
+# All future builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
 # =========================================================================
 
 # Source utility scripts
@@ -94,9 +98,13 @@ docker_registry_login
 setup_buildx_builder() {
     echo "Setting up Docker buildx builder..." >&2
     
+    # IMPORTANT NOTE: Docker buildx is REQUIRED for all builds.
+    # Future modifications to this script must continue using buildx.
+    
     # Check if buildx is installed
     if ! docker buildx version > /dev/null 2>&1; then
         echo "Error: Docker buildx is not available. Please install Docker buildx plugin." >&2
+        echo "All builds MUST use Docker buildx - this is a mandatory requirement." >&2
         return 1
     fi
     
@@ -128,11 +136,11 @@ setup_buildx_builder() {
         else
             echo "Warning: nvidia-container-runtime not found. Cannot enable GPU support." >&2
             echo "Creating builder without GPU support..." >&2
-            docker buildx create --name jetson-builder --platform=linux/amd64,linux/arm64 --use
+            docker buildx create --name jetson-builder --driver docker --driver-opt image=moby/buildkit:buildx-stable-1 --platform=linux/amd64,linux/arm64 --use
         fi
     else
         echo "Creating builder without GPU support..." >&2
-        docker buildx create --name jetson-builder --platform=linux/amd64,linux/arm64 --use
+        docker buildx create --name jetson-builder --driver docker --driver-opt image=moby/buildkit:buildx-stable-1 --platform=linux/amd64,linux/arm64 --use
     fi
     
     # Check builder status with a timeout to avoid hanging
@@ -141,7 +149,7 @@ setup_buildx_builder() {
         echo "Error: Failed to bootstrap buildx builder. Creating a new basic one..." >&2
         docker buildx rm jetson-builder 2>/dev/null || true
         # Create a completely basic builder as last resort
-        if ! docker buildx create --name jetson-builder --use; then
+        if ! docker buildx create --name jetson-builder --driver docker --driver-opt image=moby/buildkit:buildx-stable-1 --use; then
             echo "Error: Still unable to create a working buildx builder. Exiting." >&2
             return 1
         fi
