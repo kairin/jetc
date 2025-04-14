@@ -106,39 +106,48 @@ setup_buildx_builder() {
         docker buildx rm jetson-builder
     fi
     
+    # Check for nvidia-container-runtime availability
+    NVIDIA_RUNTIME_AVAILABLE=0
+    if command -v nvidia-container-runtime >/dev/null 2>&1; then
+        NVIDIA_RUNTIME_AVAILABLE=1
+    fi
+    
     # Ask user if they want to use GPU for building
     read -p "Do you want to enable GPU for building? (y/n, default: n): " USE_GPU
     USE_GPU=${USE_GPU:-n}
     
     echo "Creating new buildx builder: jetson-builder" >&2
     if [[ "$USE_GPU" =~ ^[Yy]$ ]]; then
-        echo "Attempting to create builder with GPU support..." >&2
-        # Try creating with GPU support first
-        if docker buildx create --name jetson-builder --driver-opt network=host --use --buildkits-dir=/tmp/buildkit; then
-            # Now try to add the GPU capability
-            if ! docker buildx inspect --bootstrap jetson-builder | grep -q "\[gpu\]"; then
-                echo "Warning: Created builder but GPU capability may not be available." >&2
-                echo "Proceeding with available capabilities." >&2
-            else
-                echo "Successfully created builder with GPU support" >&2
+        if [ $NVIDIA_RUNTIME_AVAILABLE -eq 1 ]; then
+            echo "Attempting to create builder with GPU support..." >&2
+            # Create with GPU support - use correct options
+            if ! docker buildx create --name jetson-builder --driver-opt network=host --platform=linux/amd64,linux/arm64 --use; then
+                echo "Failed to create builder with GPU support. Falling back to default builder." >&2
+                docker buildx create --name jetson-builder --platform=linux/amd64,linux/arm64 --use
             fi
         else
-            echo "Failed to create builder with GPU support. Falling back to default builder." >&2
-            docker buildx create --name jetson-builder --use
+            echo "Warning: nvidia-container-runtime not found. Cannot enable GPU support." >&2
+            echo "Creating builder without GPU support..." >&2
+            docker buildx create --name jetson-builder --platform=linux/amd64,linux/arm64 --use
         fi
     else
         echo "Creating builder without GPU support..." >&2
-        docker buildx create --name jetson-builder --use
+        docker buildx create --name jetson-builder --platform=linux/amd64,linux/arm64 --use
     fi
     
-    # Check builder status
+    # Check builder status with a timeout to avoid hanging
     echo "Verifying builder status..." >&2
-    if ! docker buildx inspect --bootstrap; then
-        echo "Error: Failed to bootstrap buildx builder. Creating a new one without special options..." >&2
-        docker buildx rm jetson-builder
-        docker buildx create --name jetson-builder --use
-        if ! docker buildx inspect --bootstrap; then
+    if ! timeout 30s docker buildx inspect --bootstrap; then
+        echo "Error: Failed to bootstrap buildx builder. Creating a new basic one..." >&2
+        docker buildx rm jetson-builder 2>/dev/null || true
+        # Create a completely basic builder as last resort
+        if ! docker buildx create --name jetson-builder --use; then
             echo "Error: Still unable to create a working buildx builder. Exiting." >&2
+            return 1
+        fi
+        
+        if ! timeout 30s docker buildx inspect --bootstrap; then
+            echo "Error: Cannot bootstrap any buildx builder. Docker buildx may not be properly configured." >&2
             return 1
         fi
     fi
