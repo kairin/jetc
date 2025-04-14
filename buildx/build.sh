@@ -90,7 +90,36 @@ load_env_and_validate
 # Login to Docker registry if needed
 docker_registry_login
 
+# Function to setup Docker buildx builder
+setup_buildx_builder() {
+    echo "Setting up Docker buildx builder..." >&2
+    
+    # Check if buildx is installed
+    if ! docker buildx version > /dev/null 2>&1; then
+        echo "Error: Docker buildx is not available. Please install Docker buildx plugin." >&2
+        return 1
+    fi
+    
+    # Check if our builder already exists
+    if ! docker buildx inspect jetson-builder > /dev/null 2>&1; then
+        echo "Creating new buildx builder: jetson-builder" >&2
+        # Create a new builder without GPU capabilities if not needed
+        docker buildx create --name jetson-builder --use
+    else
+        echo "Using existing buildx builder: jetson-builder" >&2
+        docker buildx use jetson-builder
+    fi
+    
+    # Check builder status
+    echo "Verifying builder status..." >&2
+    docker buildx inspect --bootstrap
+    
+    return 0
+}
+
 # Initialize build environment
+echo "Initializing build environment..." >&2
+setup_buildx_builder || { echo "Failed to setup buildx builder. Exiting."; exit 1; }
 init_build_environment
 
 # =========================================================================
