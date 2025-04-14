@@ -30,8 +30,45 @@ is_docker_logged_in() {
     fi
 }
 
+# Function to login to Azure Container Registry
+acr_login() {
+    # Check if we have ACR credentials
+    if [ -n "$ACR_NAME" ] && [ -n "$ACR_USERNAME" ] && [ -n "$ACR_PASSWORD" ]; then
+        echo "Logging in to Azure Container Registry: $ACR_NAME" >&2
+        echo "$ACR_PASSWORD" | docker login "$ACR_NAME.azurecr.io" --username "$ACR_USERNAME" --password-stdin
+        if [ $? -eq 0 ]; then
+            echo "Successfully logged in to ACR" >&2
+            return 0
+        else
+            echo "Failed to log in to ACR. Please check credentials." >&2
+            return 1
+        fi
+    elif [ -n "$ACR_NAME" ] && [ -z "$ACR_USERNAME" ] && [ -z "$ACR_PASSWORD" ]; then
+        # Try using Azure CLI
+        if command -v az >/dev/null 2>&1; then
+            echo "Logging in to ACR using Azure CLI" >&2
+            az acr login --name "$ACR_NAME"
+            if [ $? -eq 0 ]; then
+                echo "Successfully logged in to ACR using Azure CLI" >&2
+                return 0
+            else
+                echo "Failed to log in to ACR using Azure CLI" >&2
+                return 1
+            fi
+        else
+            echo "Azure CLI not found. Cannot login to ACR." >&2
+            return 1
+        fi
+    fi
+    
+    return 0  # No ACR configuration found, continue normally
+}
+
 # Load environment variables and validate prerequisites
 load_env_and_validate
+
+# Login to ACR if needed
+acr_login
 
 # Initialize build environment
 init_build_environment
