@@ -1,12 +1,10 @@
 # JETC: Jetson Containers for Targeted Use Cases
 
-This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+This repository provides a structured and automated system for building Docker containers tailored for Jetson devices, inspired by and based on [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
 
 ## Overview
 
-This repository is designed to handle the preparation, patching, and building of Docker containers for various libraries and tools commonly used in AI, machine learning, and edge-computing workflows. The project leverages Docker's `buildx` to ensure compatibility with ARM64 (aarch64) devices, specifically NVIDIA Jetson platforms.
-
-The folder structure and scripts are designed to efficiently build and patch specific components, with flexibility to handle dependencies and downstream workflows.
+JETC handles the preparation, patching, and building of Docker containers for AI, machine learning, and edge-computing workflows on NVIDIA Jetson platforms. The project leverages Docker's `buildx` for ARM64 (aarch64) compatibility.
 
 ## Repository Structure
 
