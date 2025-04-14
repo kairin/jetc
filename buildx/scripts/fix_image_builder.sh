@@ -10,11 +10,15 @@ echo "Checking for syntax errors in $FILE..."
 cp "$FILE" "$FILE.bak"
 echo "Created backup at $FILE.bak"
 
-# Check for syntax errors
-bash -n "$FILE" 2>&1
-if [ $? -eq 0 ]; then
+# Check for syntax errors and capture the output
+SYNTAX_CHECK=$(bash -n "$FILE" 2>&1)
+SYNTAX_CHECK_STATUS=$?
+if [ $SYNTAX_CHECK_STATUS -eq 0 ]; then
   echo "No syntax errors found. This is unexpected."
   exit 1
+else
+  echo "Syntax errors found:"
+  echo "$SYNTAX_CHECK"
 fi
 
 # Analyze the file for common syntax issues
@@ -23,7 +27,7 @@ echo "Analyzing file for missing closures..."
 # Count opening and closing structures
 OPEN_IF=$(grep -c "if \[" "$FILE")
 CLOSE_IF=$(grep -c "fi" "$FILE")
-OPEN_FOR=$(grep -c "for " "$FILE" | grep -c "do")
+OPEN_FOR=$(grep -c "for " "$FILE" | grep -v "grep" | grep -c "do")
 CLOSE_FOR=$(grep -c "done" "$FILE")
 OPEN_FUNC=$(grep -c "() {" "$FILE")
 CLOSE_FUNC=$(grep -c "}" "$FILE")
