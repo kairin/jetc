@@ -39,18 +39,29 @@ Key features:
 ```
 .
 ├── README.md                        # This file - repository documentation
-├── buildx/build/                    # Folder containing build directories for each component
-├── build.sh                         # Main build script for orchestrating all builds
-│                                    # Other buildx related files/scripts
-├── generate_app_checks.sh           # Helper script for generating application verification
-├── jetcrun.sh                       # Utility script for running Jetson containers
-└── list_installed_apps.sh           # Script for listing installed applications within a container
+├── buildx/                          # Main directory containing build system
+│   ├── README.md                    # Documentation for buildx system
+│   ├── build/                       # Folder containing build directories for each component
+│   ├── build.sh                     # Main build script for orchestrating all 
+│   └── jetcrun.sh                   # Utility script for running Jetson containers
+builds
+│   └── scripts/                     # Helper scripts for the build system
+│       ├── auto_flatten_images.sh   # Script for flattening image layers
+│       ├── build_utils.sh           # Utilities for the build process
+│       ├── check_dockerstatus.sh    # Script to check Docker status
+│       ├── config.sh                # Configuration for builds
+│       ├── generate_app_checks.sh   # Helper script for generating application verification
+│       ├── image_builder.sh         # Core script for building images
+│       ├── list_installed_apps.sh   # Script for listing installed applications within a container
+│       ├── utils.sh                 # General utility functions
+│       └── verification.sh          # Container verification utilities
+└── .old_forAI_training              # Legacy training materials
 ```
 
 ### Build Directory Structure
 
 ```
-build/
+buildx/build/
 ├── 01-build-essential               # Base build for essential tools
 ├── 02-bazel                         # Bazel build system
 ├── 03-ninja                         # Ninja build tool
