@@ -21,6 +21,15 @@ source "$SCRIPT_DIR/scripts/utils.sh"
 source "$SCRIPT_DIR/scripts/image_builder.sh"
 source "$SCRIPT_DIR/scripts/verification.sh"
 
+# Function to check if Docker is logged in
+is_docker_logged_in() {
+    if docker info | grep -q 'Username:'; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Load environment variables and validate prerequisites
 load_env_and_validate
 

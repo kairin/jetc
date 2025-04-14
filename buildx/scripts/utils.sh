@@ -182,3 +182,18 @@ verify_all_images() {
 
   echo "--------------------------------------------------" >&2
 }
+
+# Function to check if user is logged in to Docker
+is_docker_logged_in() {
+    # Check if Docker credential file exists and has content
+    if [ -f "$HOME/.docker/config.json" ]; then
+        # Check if the config file contains auth credentials
+        if grep -q "auth" "$HOME/.docker/config.json" || grep -q "credStore" "$HOME/.docker/config.json"; then
+            # Verify access by running a command that requires authentication
+            if docker info >/dev/null 2>&1; then
+                return 0  # User is logged in
+            fi
+        fi
+    fi
+    return 1  # User is not logged in
+}
