@@ -100,20 +100,50 @@ setup_buildx_builder() {
         return 1
     fi
     
-    # Check if our builder already exists
-    if ! docker buildx inspect jetson-builder > /dev/null 2>&1; then
-        echo "Creating new buildx builder: jetson-builder" >&2
-        # Create a new builder without GPU capabilities if not needed
-        docker buildx create --name jetson-builder --use
+    # Check if our builder already exists and remove it if so
+    if docker buildx inspect jetson-builder > /dev/null 2>&1; then
+        echo "Removing existing buildx builder: jetson-builder" >&2
+        docker buildx rm jetson-builder
+    fi
+    
+    # Ask user if they want to use GPU for building
+    read -p "Do you want to enable GPU for building? (y/n, default: n): " USE_GPU
+    USE_GPU=${USE_GPU:-n}
+    
+    echo "Creating new buildx builder: jetson-builder" >&2
+    if [[ "$USE_GPU" =~ ^[Yy]$ ]]; then
+        echo "Attempting to create builder with GPU support..." >&2
+        # Try creating with GPU support first
+        if docker buildx create --name jetson-builder --driver-opt network=host --use --buildkits-dir=/tmp/buildkit; then
+            # Now try to add the GPU capability
+            if ! docker buildx inspect --bootstrap jetson-builder | grep -q "\[gpu\]"; then
+                echo "Warning: Created builder but GPU capability may not be available." >&2
+                echo "Proceeding with available capabilities." >&2
+            else
+                echo "Successfully created builder with GPU support" >&2
+            fi
+        else
+            echo "Failed to create builder with GPU support. Falling back to default builder." >&2
+            docker buildx create --name jetson-builder --use
+        fi
     else
-        echo "Using existing buildx builder: jetson-builder" >&2
-        docker buildx use jetson-builder
+        echo "Creating builder without GPU support..." >&2
+        docker buildx create --name jetson-builder --use
     fi
     
     # Check builder status
     echo "Verifying builder status..." >&2
-    docker buildx inspect --bootstrap
+    if ! docker buildx inspect --bootstrap; then
+        echo "Error: Failed to bootstrap buildx builder. Creating a new one without special options..." >&2
+        docker buildx rm jetson-builder
+        docker buildx create --name jetson-builder --use
+        if ! docker buildx inspect --bootstrap; then
+            echo "Error: Still unable to create a working buildx builder. Exiting." >&2
+            return 1
+        fi
+    fi
     
+    echo "Buildx builder ready." >&2
     return 0
 }
 
