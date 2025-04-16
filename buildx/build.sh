@@ -59,10 +59,11 @@ if [[ "$enable_gpu" =~ ^[Yy]$ ]]; then
     fi
 else
     echo "Creating builder without GPU support..."
-    # Use a more standard approach for non-GPU builds
+    # Use the specific version and runtime that was working previously
     docker buildx create --name jetson-builder \
         --driver docker-container \
-        --driver-opt image=moby/buildkit:latest \
+        --driver-opt image=moby/buildkit:buildx-stable-1 \
+        --driver-opt env.DOCKER_DEFAULT_RUNTIME=runc \
         --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 \
         --bootstrap --use || {
         echo "Error creating new builder. Trying fallback method..."
