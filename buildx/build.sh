@@ -59,22 +59,29 @@ if [[ "$enable_gpu" =~ ^[Yy]$ ]]; then
     fi
 else
     echo "Creating builder without GPU support..."
-    # Explicitly disable NVIDIA runtime for non-GPU builds
+    # Use a more standard approach for non-GPU builds
     docker buildx create --name jetson-builder \
         --driver docker-container \
-        --driver-opt image=moby/buildkit:buildx-stable-1 \
-        --driver-opt env.DOCKER_DEFAULT_RUNTIME=runc \
+        --driver-opt image=moby/buildkit:latest \
         --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 \
         --bootstrap --use || {
-        echo "Error creating new builder. Checking if default can be used..."
-        if docker buildx ls | grep -q "default"; then
-            echo "Using existing default builder."
-            docker buildx use default
-        else
-            echo "Error: Failed to set up any buildx builder."
-            exit 1
-        fi
+        echo "Error creating new builder. Trying fallback method..."
+        # Fallback to simpler creation method
+        docker buildx create --name jetson-builder --bootstrap --use || {
+            echo "Error creating new builder. Checking if default can be used..."
+            if docker buildx ls | grep -q "default"; then
+                echo "Using existing default builder."
+                docker buildx use default
+            else
+                echo "Error: Failed to set up any buildx builder."
+                exit 1
+            fi
+        }
     }
+    
+    # Add diagnostic output for troubleshooting
+    echo "Builder configuration:"
+    docker buildx inspect --bootstrap
 fi
 
 # Extra verification and configuration
