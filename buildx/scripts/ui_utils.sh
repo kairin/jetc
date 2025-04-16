@@ -36,7 +36,6 @@ readonly COLOR_BOLD='\033[1m'
 print_color() {
   local color="$1"
   local message="$2"
-  
   echo -e "${color}${message}${COLOR_RESET}"
 }
 
@@ -106,10 +105,10 @@ show_spinner() {
   
   while kill -0 $pid 2>/dev/null; do
     local temp=${spinstr#?}
-    printf " [%c] " "$spinstr"
+    printf " [%c]  " "$spinstr"
     local spinstr=$temp${spinstr%"$temp"}
     sleep $delay
-    printf "\b\b\b\b\b"
+    printf "\b\b\b\b\b\b"
   done
   
   printf "    \b\b\b\b"
@@ -127,32 +126,22 @@ show_spinner() {
 # Arguments: $1 = current value, $2 = max value, $3 = operation description
 # =========================================================================
 show_progress_bar() {
-  local current=$1
-  local max=$2
-  local description=$3
-  local percentage=$((current * 100 / max))
-  local completed=$((percentage / 2))
-  local remaining=$((50 - completed))
+  local current="$1"
+  local max="$2"
+  local description="${3:-Processing}"
   
-  # Create the progress bar
-  local bar="["
-  for ((i=0; i<completed; i++)); do
-    bar+="="
-  done
+  local percent=$((current * 100 / max))
+  local bar_length=50
+  local filled_length=$((bar_length * current / max))
   
-  if [ $completed -lt 50 ]; then
-    bar+=">"
-    for ((i=0; i<remaining-1; i++)); do
-      bar+=" "
-    done
-  else
-    bar+="="
+  printf "\r%s [" "$description"
+  printf "%${filled_length}s" "" | tr ' ' '#'
+  printf "%$(($bar_length - $filled_length))s" "" | tr ' ' '-'
+  printf "] %3d%%" "$percent"
+  
+  if [ "$current" -eq "$max" ]; then
+    echo
   fi
-  
-  bar+="] ${percentage}%"
-  
-  # Print the progress bar and operation description
-  printf "\r%-80s" "${description}: ${bar}"
 }
 
 # =========================================================================
