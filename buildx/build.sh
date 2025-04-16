@@ -46,6 +46,17 @@ log_to_folder_file() {
   return ${PIPESTATUS[0]}
 }
 
+# Ensure the build process continues even if individual builds fail
+set +e  # Don't exit on errors during builds
+
+# Function to handle build errors but continue with other builds
+handle_build_error() {
+  local folder=$1
+  local error_code=$2
+  echo "Build process for $folder exited with code $error_code"
+  echo "Continuing with next build..."
+}
+
 # Load environment variables from .env file
 if [ -f .env ]; then
   set -a  # Automatically export all variables
@@ -295,13 +306,15 @@ else
       echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
       # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the next build
       tag=$(build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG")
-      if [ $? -eq 0 ]; then
+      build_status=$?
+      if [ $build_status -eq 0 ]; then
           LATEST_SUCCESSFUL_NUMBERED_TAG="$tag"  # Update for the next numbered iteration
           FINAL_FOLDER_TAG="$tag"                # Update the overall last successful folder tag
           echo "Successfully built, pushed, and pulled numbered image: $tag" >&2
       else
           echo "Build, push or pull failed for $dir. Subsequent dependent builds might fail." >&2
           echo "See ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed error information"
+          handle_build_error "$dir" $build_status
           # BUILD_FAILED is already set within build_folder_image
       fi
     done
