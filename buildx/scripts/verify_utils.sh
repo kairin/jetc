@@ -218,9 +218,9 @@ verify_network_connectivity() {
 # Returns: 0 if requirements are met, 1 otherwise
 # =========================================================================
 verify_system_requirements() {
-  local image_tag="$1"
-  local min_disk="${2:-100}"  # Default 100MB
-  local min_memory="${3:-256}"  # Default 256MB
+  local image_tag=${1:-"unknown:latest"}
+  local min_memory=${2:-4096}  # Default 4GB
+  local min_disk=${3:-10240}   # Default 10GB
   
   echo "Verifying system requirements for $image_tag" >&2
   echo "Minimum requirements: ${min_disk}MB disk, ${min_memory}MB memory" >&2
