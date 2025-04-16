@@ -17,23 +17,46 @@ fi
 
 # ...existing code...
 
-# When this part appears in the script, modify it to handle builder creation properly
 echo "Setting up Docker buildx builder..."
 echo "Removing existing buildx builder: jetson-builder"
 docker buildx rm jetson-builder 2>/dev/null || true
 echo "jetson-builder removed"
 
-read -p "Do you want to enable GPU for building? (y/n, default: n): " enable_gpu
-enable_gpu=${enable_gpu:-n}
+# Check if NVIDIA runtime is available
+has_nvidia=0
+if command -v nvidia-smi &> /dev/null && nvidia-smi &> /dev/null; then
+    has_nvidia=1
+    echo "NVIDIA GPU detected on system"
+fi
+
+read -p "Do you want to enable GPU for building? (y/n, default: ${has_nvidia:+y}${has_nvidia:-n}): " enable_gpu_input
+enable_gpu=${enable_gpu_input:-${has_nvidia:+y}${has_nvidia:-n}}
 
 echo "Creating new buildx builder: jetson-builder"
 if [[ "$enable_gpu" =~ ^[Yy]$ ]]; then
     echo "Creating builder with GPU support..."
-    # Use the existing GPU-enabled builder creation command
-    docker buildx create --name jetson-builder --driver docker-container --driver-opt image=moby/buildkit:latest --use || {
+    # Use the extended builder creation with GPU support
+    docker buildx create --name jetson-builder \
+        --driver docker-container \
+        --driver-opt image=moby/buildkit:latest \
+        --driver-opt network=host \
+        --driver-opt env.DOCKER_BUILDKIT=1 \
+        --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 \
+        --bootstrap --use || {
         echo "Failed to create buildx builder with GPU support. Falling back to regular builder."
         enable_gpu="n"
     }
+    
+    # Verify GPU availability to buildkit if GPU was requested
+    if [[ "$enable_gpu" =~ ^[Yy]$ ]]; then
+        echo "Verifying GPU availability to buildkit..."
+        if ! docker run --rm --gpus all ubuntu nvidia-smi &> /dev/null; then
+            echo "Warning: NVIDIA GPU might not be accessible to Docker containers!"
+            echo "Builds may proceed without GPU acceleration."
+        else
+            echo "GPU is accessible to Docker containers."
+        fi
+    fi
 else
     echo "Creating builder without GPU support..."
     # Explicitly disable NVIDIA runtime for non-GPU builds
@@ -54,8 +77,21 @@ else
     }
 fi
 
+# Extra verification and configuration
 echo "Verifying builder status..."
 docker buildx inspect
 
-echo "Buildx builder ready."
+# Add this for compatibility with any scripts that might expect 'jetson-builder'
+if ! docker buildx ls | grep -q "jetson-builder"; then
+    echo "Warning: 'jetson-builder' not found in buildx builders. Some scripts may fail."
+    echo "Current builders:"
+    docker buildx ls
+else
+    echo "Buildx builder ready."
+fi
+
+# Export builder name for other scripts to use
+export BUILDX_BUILDER="$(docker buildx inspect --bootstrap | grep Name | awk '{print $2}')"
+echo "Using buildx builder: $BUILDX_BUILDER"
+
 # ...existing code...
