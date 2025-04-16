@@ -52,16 +52,22 @@ FINAL_FOLDER_TAG=""  # The tag of the last successfully built folder image
 TIMESTAMPED_LATEST_TAG=""  # Final timestamped tag name
 BUILD_FAILED=0       # Flag to track if any build failed
 
+# Set default base image for the first build
+DEFAULT_BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+
 # =========================================================================
 # Docker buildx setup
 # =========================================================================
 
-# Check and initialize buildx builder
+# Check and initialize buildx builder with NVIDIA container runtime
 if ! docker buildx inspect jetson-builder &>/dev/null; then
-  echo "Creating buildx builder: jetson-builder" >&2
-  docker buildx create --name jetson-builder
+  echo "Creating buildx builder: jetson-builder with NVIDIA container runtime" >&2
+  docker buildx create --name jetson-builder --driver-opt env.DOCKER_DEFAULT_RUNTIME=nvidia --driver-opt env.NVIDIA_VISIBLE_DEVICES=all --use
+else
+  # Ensure we're using the right builder
+  docker buildx use jetson-builder
+  echo "Using existing buildx builder: jetson-builder" >&2
 fi
-docker buildx use jetson-builder
 
 # Ask user about build cache usage
 read -p "Do you want to build with cache? (y/n): " use_cache
@@ -160,12 +166,16 @@ build_folder_image() {
 
   # Setup build arguments
   local build_args=()
-  if [ -n "$base_tag_arg" ]; then
-      build_args+=(--build-arg "BASE_IMAGE=$base_tag_arg")
-      echo "Using base image build arg: $base_tag_arg" >&2
-  else
-      echo "No base image build arg provided (likely the first image)." >&2
+  
+  # Use the default base image for the first build if no base tag is provided
+  if [ -z "$base_tag_arg" ]; then
+      base_tag_arg="$DEFAULT_BASE_IMAGE"
+      echo "Using default base image: $DEFAULT_BASE_IMAGE" >&2
   fi
+  
+  # Add the base image argument
+  build_args+=(--build-arg "BASE_IMAGE=$base_tag_arg")
+  echo "Using base image build arg: $base_tag_arg" >&2
 
   # Print build information
   echo "--------------------------------------------------" >&2
