@@ -195,9 +195,10 @@ build_folder_image() {
   local base_tag_arg=$2  # The tag to pass as BASE_IMAGE build-arg
   local image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')  # Lowercase image name
   local folder_log="${LOG_DIR}/$(get_log_folder_name "$folder")_$(date +"%Y%m%d-%H%M%S").log"
+  local fixed_tag=""  # Declare variable to hold the tag
 
   # Generate the image tag
-  local fixed_tag=$(echo "${DOCKER_USERNAME}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
+  fixed_tag=$(echo "${DOCKER_USERNAME}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
   echo "Generating fixed tag: $fixed_tag" | tee -a "$folder_log"
   
   # Record this tag as attempted even before we try to build it
@@ -279,7 +280,8 @@ build_folder_image() {
   BUILT_TAGS+=("$fixed_tag")
   
   # Return the tag name (will be captured by the caller)
-  echo "$fixed_tag"
+  # IMPORTANT: This needs to be the ONLY output to stdout at return
+  echo "$fixed_tag" > /tmp/last_built_tag.txt  # Save to temporary file
   return 0
 }
 
@@ -305,9 +307,12 @@ else
       echo "Processing numbered directory: $dir" >&2
       echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
       # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the next build
-      tag=$(build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG")
+      build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG" >/dev/null
       build_status=$?
+      
       if [ $build_status -eq 0 ]; then
+          # Use the tag saved to the temporary file
+          tag=$(cat /tmp/last_built_tag.txt)
           LATEST_SUCCESSFUL_NUMBERED_TAG="$tag"  # Update for the next numbered iteration
           FINAL_FOLDER_TAG="$tag"                # Update the overall last successful folder tag
           echo "Successfully built, pushed, and pulled numbered image: $tag" >&2
@@ -334,13 +339,16 @@ else
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir" >&2
       echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
-      tag=$(build_folder_image "$dir" "$BASE_FOR_OTHERS")
-      if [ $? -eq 0 ]; then
+      build_folder_image "$dir" "$BASE_FOR_OTHERS" >/dev/null
+      build_status=$?
+      if [ $build_status -eq 0 ]; then
+          tag=$(cat /tmp/last_built_tag.txt)
           FINAL_FOLDER_TAG="$tag"  # Update the overall last successful folder tag
           echo "Successfully built, pushed, and pulled other image: $tag" >&2
       else
           echo "Build, push or pull failed for $dir." >&2
           echo "See ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed error information"
+          handle_build_error "$dir" $build_status
           # BUILD_FAILED is already set within build_folder_image
       fi
     done
