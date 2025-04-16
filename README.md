@@ -1,67 +1,62 @@
+# JETC
+
+### **README.md**
+
 # JETC: Jetson Containers for Targeted Use Cases
 
-This repository provides a structured and automated system for building Docker containers tailored for Jetson devices, inspired by and based on [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform: Jetson](https://img.shields.io/badge/Platform-Jetson-green.svg)](https://developer.nvidia.com/embedded/jetson)
-[![Docker](https://img.shields.io/badge/Docker-Compatible-blue.svg)](https://www.docker.com/)
+## **Overview**
 
-## Table of Contents
-- [Overview](#overview)
-- [Repository Structure](#repository-structure)
-- [How the Build System Works](#how-the-build-system-works)
-- [Build Process in Detail](#build-process-in-detail)
-- [Container Verification System](#container-verification-system)
-- [Generative AI Components](#generative-ai-components)
-- [Running AI Web Interfaces](#running-ai-web-interfaces)
-- [Getting Started](#how-to-use)
-- [System Requirements](#system-requirements)
-- [Troubleshooting](#troubleshooting)
-- [Inspiration and Original Work](#inspiration-and-original-work)
-- [Contributing](#contributing)
-- [License](#license)
+This repository is designed to handle the preparation, patching, and building of Docker containers for various libraries and tools commonly used in AI, machine learning, and edge-computing workflows. The project leverages Docker's `buildx` to ensure compatibility with ARM64 (aarch64) devices, specifically NVIDIA Jetson platforms.
 
-## Overview
+The folder structure and scripts are designed to efficiently build and patch specific components, with flexibility to handle dependencies and downstream workflows.
 
-JETC handles the preparation, patching, and building of Docker containers for AI, machine learning, and edge-computing workflows on NVIDIA Jetson platforms. The project leverages Docker's `buildx` for ARM64 (aarch64) compatibility.
+## **Repository Structure**
 
-Key features:
-- Sequential, dependency-aware build system
-- Automated patching for library compatibility
-- Comprehensive verification tools
-- Ready-to-use AI and ML frameworks
-- Web UIs for generative AI workflows
+### **Root Structure**
 
-## Repository Structure
 
-### Root Structure
+```
+# Updated README.md for JETC Project
+
+I recommend enhancing your README.md with details about the new components and verification capabilities. Here's a comprehensive update:
+
+```markdown
+# JETC: Jetson Containers for Targeted Use Cases
+
+This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+
+## **Overview**
+
+This repository is designed to handle the preparation, patching, and building of Docker containers for various libraries and tools commonly used in AI, machine learning, and edge-computing workflows. The project leverages Docker's `buildx` to ensure compatibility with ARM64 (aarch64) devices, specifically NVIDIA Jetson platforms.
+
+The folder structure and scripts are designed to efficiently build and patch specific components, with flexibility to handle dependencies and downstream workflows.
+
+## **Repository Structure**
+
+### **Root Structure**
 
 ```
 .
+├─1
 ├── README.md                        # This file - repository documentation
-├── buildx/                          # Main directory containing build system
-│   ├── README.md                    # Documentation for buildx system
-│   ├── build/                       # Folder containing build directories for each component
-│   ├── build.sh                     # Main build script for orchestrating all 
-│   └── jetcrun.sh                   # Utility script for running Jetson containers
-builds
-│   └── scripts/                     # Helper scripts for the build system
-│       ├── auto_flatten_images.sh   # Script for flattening image layers
-│       ├── build_utils.sh           # Utilities for the build process
-│       ├── check_dockerstatus.sh    # Script to check Docker status
-│       ├── config.sh                # Configuration for builds
-│       ├── generate_app_checks.sh   # Helper script for generating application verification
-│       ├── image_builder.sh         # Core script for building images
-│       ├── list_installed_apps.sh   # Script for listing installed applications within a container
-│       ├── utils.sh                 # General utility functions
-│       └── verification.sh          # Container verification utilities
-└── .old_forAI_training              # Legacy training materials
+├─2
+├── buildx/build/                    # Folder containing build directories for each component
+├─3                    
+├── buildx/build.sh                  # Main build script for orchestrating all builds
+├── generate_app_checks.sh           # Helper script for generating application verification
+├── jetcrun.sh                       # Utility script for running Jetson containers
+└── list_installed_apps.sh           # Script for listing installed applications within a container
 ```
+---
 
-### Build Directory Structure
+### **`build/` Directory**
+
+The `build` directory is where individual components and their build processes are defined. Each subdirectory corresponds to a specific component or library, and is responsible for building and patching as needed.
 
 ```
-buildx/build/
+build/
 ├── 01-build-essential               # Base build for essential tools
 ├── 02-bazel                         # Bazel build system
 ├── 03-ninja                         # Ninja build tool
@@ -83,145 +78,62 @@ buildx/build/
 ```
 
 Each directory contains the following:
-- A Dockerfile for building the specific component
-- A patches/ folder for any patches required during the build process
-- Other optional files (README.md, test.py, etc.) for documentation and testing
-- jetcrun.sh is basically a script to run `jetson-containers run`
+- A `Dockerfile` for building the specific component.
+- A `patches/` folder for any patches required during the build process.
+- Other optional files (`README.md`, `test.py`, etc.) for documentation and testing.
 
-## How the Build System Works
+---
 
-This repository uses the buildx system for Docker to manage multi-platform builds, specifically targeting ARM64 (aarch64) devices. The main build process is orchestrated via `buildx/build.sh`, which performs the following steps:
+## **How the Build System Works**
 
-### Initialization
-- Loads environment variables from `.env`
-- Detects the platform (ensures aarch64)
-- Sets up a buildx builder if not already configured
+This repository uses the `buildx` system for Docker to manage multi-platform builds, specifically targeting ARM64 (aarch64) devices. The main build process is orchestrated via `build.sh`, which performs the following steps:
 
-### User Input
-- Prompts the user to decide whether to build with or without cache
+1. **Initialization**:
+   - Loads environment variables from `.env`.
+   - Detects the platform (ensures aarch64).
+   - Sets up a `buildx` builder if not already configured.
 
-### Build Process
-- Processes numbered directories in ascending order (e.g., 01-build-essential, 02-bazel)
-- Each numbered directory depends on the image built in the previous directory
-- Processes non-numbered directories after all numbered builds are completed
+2. **User Input**:
+   - Prompts the user to decide whether to build with or without cache.
 
-### Patch Handling
-- Applies patches during builds for components like 15-flash-attention
+3. **Build Process**:
+   - Processes **numbered directories** in ascending order (e.g., `01-build-essential`, `02-bazel`).
+     - Each numbered directory depends on the image built in the previous directory.
+   - Processes **non-numbered directories** after all numbered builds are completed.
 
-### Final Tagging
-- Creates a timestamped latest tag for the final built image
+4. **Patch Handling**:
+   - Applies patches during builds for components like `15-flash-attention`.
 
-### Post-Build Actions
-- Pulls all built images for validation
-- Offers several options for verifying and interacting with the final image
+5. **Final Tagging**:
+   - Creates a timestamped `latest` tag for the final built image.
 
-## Build Process in Detail
+6. **Post-Build Actions**:
+   - Pulls all built images for validation.
+   - Offers several options for verifying and interacting with the final image.
 
-The `buildx/build.sh` script automates the complete build pipeline for Jetson container images. Here's what happens when you run it:
+---
 
-### 1. Initialization
-```bash
-$ ./buildx/build.sh
-```
-- Loads configuration from `.env` file
-- Verifies Docker username is configured
-- Validates you're running on a Jetson device (ARM64 architecture)
-- Sets up Docker buildx for multi-architecture builds
-- Asks if you want to build with cache for faster builds
-
-### 2. Building Container Images
-The script processes directories in the `build/` folder in this order:
-
-- **Numbered directories first** (01-build-essential, 02-bazel, etc.)
-  - Processed sequentially as each image depends on the previous one
-  - Example: `your-dockerhub-username/jetc:02-bazel` is built on top of `your-dockerhub-username/jetc:01-build-essential`
-- **Non-numbered directories** (if any)
-  - Built using the last successful numbered image as base
-
-For each directory, the script:
-1. Creates a Docker image tag (e.g., `your-dockerhub-username/jetc:01-build-essential`)
-2. Builds the image using Docker buildx
-3. Pushes the image to Docker Hub
-4. Pulls the image back to verify it's accessible
-5. Verifies the image exists locally
-
-### 3. Creating Final Tagged Image
-After all images are built successfully:
-- Creates a timestamped "latest" tag (e.g., `your-dockerhub-username/jetc:latest-YYYYMMDD-HHMMSS`)
-- Pushes and pulls this final tag for verification
-
-### 4. Verification and Options
-The script offers several options for the final image:
-1. Start an interactive shell
-2. Run quick verification (common tools and packages)
-3. Run full verification (all system packages)
-4. List installed apps in the container
-5. Skip (do nothing)
-
-### 5. Final Verification
-- Performs a final check that all successfully built images exist locally
-- Reports overall success or failure
-
-## Example Build Process Output
-
-```
-Determining build order...
-Starting build process...
---- Building Numbered Directories ---
-Processing numbered directory: build/01-build-essential
-Generating fixed tag: your-dockerhub-username/jetc:01-build-essential
-Building and pushing image from folder: build/01-build-essential
-...
-Successfully built, pushed, and pulled numbered image: your-dockerhub-username/jetc:01-build-essential
-
-Processing numbered directory: build/02-bazel
-Generating fixed tag: your-dockerhub-username/jetc:02-bazel
-Using base image build arg: your-dockerhub-username/jetc:01-build-essential
-...
-Successfully built, pushed, and pulled numbered image: your-dockerhub-username/jetc:02-bazel
-
-... [continues for all directories] ...
-
---- Creating Final Timestamped Tag ---
-Attempting to tag your-dockerhub-username/jetc:18-comfyui as your-dockerhub-username/jetc:latest-YYYYMMDD-HHMMSS
-Successfully created, pushed, and pulled final timestamped tag.
-
-Final Image: your-dockerhub-username/jetc:latest-YYYYMMDD-HHMMSS
-What would you like to do with the final image?
-1) Start an interactive shell
-2) Run quick verification (common tools and packages)
-3) Run full verification (all system packages, may be verbose)
-4) List installed apps in the container
-5) Skip (do nothing)
-Enter your choice (1-5):
-```
-> **Note:** Replace `your-dockerhub-username/jetc` and `YYYYMMDD-HHMMSS` with your actual image naming convention and timestamp format.
-
-## Container Verification System
+## **Container Verification System**
 
 A key feature of this repository is the comprehensive verification system for built containers. After building, the system provides several options to verify the container's functionality:
 
-### Verification Options
+### **Verification Options**
 
-#### Interactive Shell
-- Launch a bash shell in the container for manual inspection
-- Example: `docker exec -it container_name bash`
+1. **Interactive Shell**: 
+   - Launch a bash shell in the container for manual inspection.
 
-#### Quick Verification
-- Run a quick check of common tools and packages
-- Verifies system tools and ML/AI frameworks
-- Completes in under a minute and provides basic assurance
+2. **Quick Verification**:
+   - Run a quick check of common tools and packages.
+   - Verifies system tools and ML/AI frameworks.
 
-#### Full Verification
-- Run a comprehensive check of all installed packages
-- Includes system packages, Python packages, and framework details
-- More thorough but can take several minutes to complete
+3. **Full Verification**:
+   - Run a comprehensive check of all installed packages.
+   - Includes system packages, Python packages, and framework details.
 
-#### Dedicated App Listing
-- Builds and runs a specialized container that lists all installed applications
-- Creates a comprehensive inventory of available tools and libraries
+4. **Dedicated App Listing**:
+   - Builds and runs a specialized container that lists all installed applications.
 
-### The `list_installed_apps.sh` Script
+### **The `list_installed_apps.sh` Script**
 
 This modular script provides detailed information about installed components:
 
@@ -241,241 +153,154 @@ Available modes:
 
 The script uses color-coded output to clearly indicate installed (✅) vs. missing (❌) components.
 
-Example output:
-```
-=== System Tools ===
-✅ git (version 2.34.1)
-✅ gcc (version 11.3.0)
-✅ cmake (version 3.22.1)
-✅ python3 (version 3.10.12)
-❌ maven (not found)
+---
 
-=== ML Frameworks ===
-✅ PyTorch (version 2.1.0)
-✅ TensorFlow (version 2.12.0)
-✅ ONNX Runtime (version 1.15.1)
-```
-
-Custom verification can be added by modifying the script to check for additional components.
-
-## Generative AI Components
+## **Generative AI Components**
 
 This repository includes components for running popular generative AI tools on Jetson:
 
-### Stable Diffusion
+### **Stable Diffusion**
+
 - **16-stable-diffusion**: Core models and backend libraries
 - **17-stable-diffusion-webui**: AUTOMATIC1111's WebUI implementation
   - Provides a web interface for image generation
   - Supports various models, sampling methods, and extensions
 
-### ComfyUI
+### **ComfyUI**
+
 - **18-comfyui**: Node-based UI for Stable Diffusion
   - Visual workflow editor for advanced image generation pipelines
   - Modular design allows for complex customization
 
-## Running AI Web Interfaces
+---
+
+## **Running AI Web Interfaces**
 
 To run the Stable Diffusion WebUI or ComfyUI after building:
 
-1. Start the container with port forwarding:
+1. **Start the container with port forwarding**:
+   ```bash
+   docker run -it --rm -p 7860:7860 -p 8188:8188 your-dockerhub-username/001:latest-timestamp bash
+   ```
 
-```bash
-# Replace your-dockerhub-username/jetc:latest-timestamp with your actual final image tag
-docker run -it --rm --gpus all -p 7860:7860 -p 8188:8188 your-dockerhub-username/jetc:latest-timestamp bash
-```
-> **Note:** The `--gpus all` flag is required for GPU acceleration with these UIs.
+2. **For Stable Diffusion WebUI**:
+   ```bash
+   cd /opt/stable-diffusion-webui
+   python launch.py --listen --port 7860
+   ```
+   Access the WebUI at `http://your-jetson-ip:7860`
 
-2. For Stable Diffusion WebUI:
+3. **For ComfyUI**:
+   ```bash
+   cd /opt/ComfyUI
+   python main.py --listen 0.0.0.0 --port 8188
+   ```
+   Access ComfyUI at `http://your-jetson-ip:8188`
 
-```bash
-cd /opt/stable-diffusion-webui
-# Added --enable-insecure-extension-access if needed, remove if not
-python launch.py --listen --port 7860 --enable-insecure-extension-access
-```
-Access the WebUI at http://<your-jetson-ip>:7860
+---
 
-3. For ComfyUI:
-
-```bash
-cd /opt/ComfyUI
-python main.py --listen 0.0.0.0 --port 8188
-```
-Access ComfyUI at http://<your-jetson-ip>:8188
-
-## How to Use
-
-### Prerequisites
-Before starting, ensure you have:
-- A compatible NVIDIA Jetson device
-- JetPack/L4T installed
-- Docker and Docker Buildx installed
-- A Docker Hub account
-- Sufficient storage space (50GB+ recommended)
-
-### Clone the Repository
-
-```bash
-git clone https://github.com/kairin/jetc.git
-cd jetc
-```
-
-### Set Up Environment Variables
-
-Create a `.env` file and set the DOCKER_USERNAME variable:
-
-```bash
-echo "DOCKER_USERNAME=your-dockerhub-username" > .env
-```
-> **Important:** Ensure `your-dockerhub-username` is replaced with your actual Docker Hub username.
-
-### Run the Build Script
-
-```bash
-cd buildx
-./build.sh
-```
-
-The build process will:
-1. Set up Docker buildx for ARM64
-2. Build containers sequentially
-3. Push to Docker Hub (requires login)
-4. Verify build success
-5. Offer post-build options
-
-### Selective Building (optional)
-
-To build only specific components, you might need to modify the build script or pass environment variables if the script supports it:
-
-```bash
-# Example: Build only first two components (syntax depends on build.sh implementation)
-BUILD_DIRS="01-build-essential 02-bazel" ./build.sh
-```
-
-### Using Built Images for Development
-
-The final image can be used as a development environment:
-
-```bash
-# Replace your-dockerhub-username/jetc:latest-timestamp with your actual final image tag
-docker run -it --rm --gpus all -v $(pwd):/workspace your-dockerhub-username/jetc:latest-timestamp bash
-```
-
-This mounts your current directory as a volume inside the container, allowing you to work with your project files.
-
-## System Requirements
-
-- **Hardware**: NVIDIA Jetson device (Tested primarily on AGX Orin 64GB, but should work on others)
-- **Operating System**: Jetson Linux (L4T) compatible with the target JetPack version
-
-## Build Requirements
-
-- Docker engine installed
-- Docker buildx plugin installed and configured
-- Docker Hub account (for pushing images)
-- Sufficient free disk space (Recommend at least 50GB, more for extensive caching)
-- Reliable internet connection
-- Environment file (`.env` in the project root or buildx directory) with DOCKER_USERNAME defined
-- Sufficient RAM and Swap (Especially for ML components, consider configuring 8GB+ swap)
-
-## Troubleshooting
-
-### Common Issues
-
-#### Build failures in ML components (e.g., PyTorch, TensorFlow, xformers)
-- Ensure you have sufficient RAM and Swap space configured on your Jetson. Building these can be memory intensive.
-- Try building without cache if a cached layer seems corrupted: `./build.sh --no-cache` (or similar flag, check build.sh).
-
-#### "No space left on device" errors
-- Clean up unused Docker resources: `docker system prune -af`
-- Remove old build caches: `docker builder prune -af`
-- Ensure your Jetson's storage isn't full.
-
-#### Web UI accessibility issues (Stable Diffusion, ComfyUI)
-- Verify the container was started with the correct port mapping (`-p 7860:7860`, `-p 8188:8188`).
-- Ensure you are using the correct IP address of your Jetson device in the browser.
-- Check if the services inside the container started correctly using the `--listen` flags.
-- Make sure no firewall is blocking the ports on the Jetson or your network.
-
-#### Build script fails with "platform error" or architecture mismatch
-- Confirm you are running the build script directly on the target Jetson (aarch64) device.
-- Ensure Docker buildx is correctly set up for linux/arm64. Check with `docker buildx ls`.
-
-#### Image verification fails after build (Pulling fails)
-- Check your internet connection.
-- Verify your Docker Hub credentials and ensure you are logged in (`docker login`).
-- Confirm the image was successfully pushed to Docker Hub during the build step. Check the build logs.
-
-#### Build hangs or fails on specific components
-- Try building with more swap space.
-- Isolate the issue by attempting to build only that specific component's directory (if the script allows). Check the Dockerfile for that component for potential issues.
-
-## Inspiration and Original Work
+## **Inspiration and Original Work**
 
 This repository is based on the excellent work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The decision not to fork the original repository is not due to a lack of interest in contributing, but because this project serves a different target audience with distinct requirements and goals. While the core concepts and approaches are similar, this repository introduces modifications and extensions tailored to specific workflows and use cases.
 
-## Target Audience
+---
+
+## **Target Audience**
 
 This repository is designed for developers and researchers working on:
+- AI and machine learning projects on NVIDIA Jetson platforms.
+- Generative AI applications on edge devices.
+- Optimized Docker container builds for ARM64 (aarch64) devices.
+- Customized workflows requiring patched or pre-built libraries.
 
-- AI and machine learning projects on NVIDIA Jetson platforms
-- Generative AI applications on edge devices
-- Optimized Docker container builds for ARM64 (aarch64) devices
-- Customized workflows requiring patched or pre-built libraries
+---
 
-## Contributing
+## **How to Use**
 
-While this repository is not a direct fork, contributions that align with its specific goals are welcome! If you have suggestions, bug reports, or improvements, feel free to open an issue or submit a pull request.
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/kairin/jetc.git
+   cd jetc
+   ```
 
-For contributions to the original foundational repository, please visit [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+2. **Set Up Environment Variables**:
+   - Create a `.env` file and set the `DOCKER_USERNAME` variable:
+     ```bash
+     echo "DOCKER_USERNAME=your-dockerhub-username" > .env
+     ```
 
-## License
+3. **Run the Build Script**:
+   - To build all components:
+     ```bash
+     ./build.sh
+     ```
+
+4. **Selective Building** (optional):
+   - To build only specific components, edit the build script or use:
+     ```bash
+     BUILD_DIRS="01-build-essential 02-bazel" ./build.sh
+     ```
+
+5. **Post-Build Options**:
+   - The script will offer several options after successful build:
+     - Start an interactive shell
+     - Run quick verification
+     - Run full verification
+     - Build and run list-apps container
+     - Skip (do nothing)
+
+6. **Using Built Images for Development**:
+   - The final image can be used as a development environment:
+     ```bash
+     docker run -it --rm -v $(pwd):/workspace your-dockerhub-username/001:latest-timestamp bash
+     ```
+
+---
+
+## **System Requirements**
+
+- NVIDIA Jetson device: I am particularly targeting the AGX ORIN with 64GB of shared memory.
+
+---
+
+## **Troubleshooting**
+
+### **Common Issues**
+
+1. **Build failures in ML components**:
+   - Ensure you have sufficient swap space (8GB+)
+   - Try building with cache: `use_cache=y`
+
+2. **"No space left on device" errors**:
+   - Clear Docker cache: `docker system prune -af`
+   - Increase available storage
+
+3. **Web UI accessibility issues**:
+   - Verify port forwarding is correct
+   - Ensure you're using `--listen` flags when starting services
+
+---
+
+## **Contributing**
+
+While this repository is not a fork, contributions are welcome! If you have suggestions, bug reports, or improvements, feel free to open an issue or submit a pull request.
+
+For contributions to the original repository, please visit [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+
+---
+
+## **License**
 
 This repository is released under the MIT License. See the LICENSE file for details.
 
-# JETC Docker Build System
-
-## Buildx Script Overview
-
-The `buildx/build.sh` script automates the Docker image building pipeline with robust error handling and verification. This script:
-
-### Key Features
-
-- **Sequential Build Process**: Builds images in numeric order from the `build/` directory, ensuring dependencies are respected
-- **Registry Integration**: Pushes images to Docker registry and verifies by pulling them back
-- **Verification**: Ensures all expected images are available locally before completing
-- **Timestamped Tagging**: Creates a final timestamped tag for the last successful build
-- **Layer Management**: Uses automated image flattening to prevent layer depth issues
-
-### Build Directory Structure
-
-The script processes directories in the following order:
-
-1. **Numbered Directories**: Folders with names matching `[0-9]*-*` are built sequentially in numeric order
-   - Each build uses the previous successful build as its base image
-   - Example: `01-base`, `02-runtime`, `03-dev`
-
-2. **Other Directories**: Non-numbered directories are built after all numbered ones
-   - All use the last successful numbered build as their base image
-   - Useful for variations that don't fit in the sequential pipeline
-
-### Error Handling
-
-- Fails fast with detailed error reporting
-- Skips dependent builds if prerequisites fail
-- Provides verification checks before final tagging
-
-### Components
-
-- **config.sh**: Environment configuration and validation
-- **utils.sh**: Common utility functions
-- **image_builder.sh**: Core image building logic
-- **verification.sh**: Image verification utilities
-
-## Usage
-
-```bash
-# Run the build process
-./buildx/build.sh
 ```
+This update:
 
-For advanced configuration, check the environment variables in `scripts/config.sh`.
+1. Adds the new components (16-18) to the build directory listing
+2. Creates a new "Container Verification System" section explaining our verification tools
+3. Adds a "Generative AI Components" section highlighting SD and ComfyUI
+4. Includes instructions for running the web interfaces
+5. Expands the "How to Use" section with selective building options
+6. Adds "System Requirements" and "Troubleshooting" sections
+7. Updates the "Target Audience" to include generative AI applications
+```

@@ -1,9 +1,3 @@
-# =========================================================================
-# IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
-# All builds MUST use Docker buildx to ensure consistent
-# multi-platform and efficient build processes.
-# =========================================================================
-
 #---
 # name: stable-diffusion
 # group: diffusion
@@ -16,33 +10,26 @@
 ARG BASE_IMAGE=kairin/001:15-flash-attention
 FROM ${BASE_IMAGE}
 
-# Install dependencies and set up Stable Diffusion repositories
 RUN set -ex \
-    # Install Python packages with version pinning \
-    && pip3 install --no-cache-dir \
-        diffusers==0.24.0 \
-        clip==1.0 \
-        kornia==0.7.0 \
-        taming-transformers==0.0.1 \
-        invisible-watermark==0.2.0 \
-        einops==0.7.0 \
-        pandas==2.1.1 \
-        scipy==1.11.3 \
-    \
-    # Get Python dist-packages path \
+    && pip3 install \
+        diffusers \
+        clip \
+        kornia \
+        taming-transformers \
+        invisible-watermark \
+        einops \
+        pandas \
+        scipy \
     && PYTHON_DIST_PACKAGES=$(python3 -c 'import sys; print(f"/usr/local/lib/python{sys.version_info.major}.{sys.version_info.minor}/dist-packages")') \
     && wget https://raw.githubusercontent.com/CompVis/taming-transformers/master/taming/modules/vqvae/quantize.py -O $PYTHON_DIST_PACKAGES/taming/modules/vqvae/quantize.py \
-    \
-    # Clean before cloning \
-    && rm -rf /opt/stable-diffusion /opt/stable-diffusion-optimized \
-    \
-    # Clone repositories \
+    # clone the main repo \
     && git clone --depth=1 https://github.com/CompVis/stable-diffusion /opt/stable-diffusion \
+    # memory-optimized version from https://github.com/CompVis/stable-diffusion/issues/39#issuecomment-1226538910 \
     && git clone --depth=1 https://github.com/basujindal/stable-diffusion /opt/stable-diffusion-optimized \
     && cp -r /opt/stable-diffusion-optimized/optimizedSD /opt/stable-diffusion/ \
     && rm -rf /opt/stable-diffusion-optimized \
-    \
-    # Apply fixes \
+    # Fix: File "/opt/stable-diffusion/ldm/models/diffusion/ddpm.py", line 19, in <module> \
+    #       from pytorch_lightning.utilities.distributed import rank_zero_only \
     && sed -i \
         -e 's|from pytorch_lightning.utilities.distributed|#from pytorch_lightning.utilities.distributed|g' \
         -e 's|@rank_zero_only||g' \
@@ -50,26 +37,14 @@ RUN set -ex \
     && sed -i \
         -e 's|from pytorch_lightning.utilities.distributed|#from pytorch_lightning.utilities.distributed|g' \
         -e 's|@rank_zero_only||g' \
-        /opt/stable-diffusion/optimizedSD/ddpm.py \
-    \
-    # Create directories \
-    && mkdir -p /data/models/diffusers \
-    && mkdir -p /data/images/stable-diffusion \
-    \
-    # Add verification checks \
-    && echo "# Check for Stable Diffusion packages" >> /tmp/sd_checks.sh \
-    && echo "check_python_pkg diffusers" >> /tmp/sd_checks.sh \
-    && echo "check_dir /opt/stable-diffusion 'Stable Diffusion'" >> /tmp/sd_checks.sh \
-    && cat /tmp/sd_checks.sh >> /opt/list_app_checks.sh \
-    \
-    # Cleanup \
-    && rm -rf /root/.cache/pip \
-    && find /opt/stable-diffusion -name ".git" -type d -exec rm -rf {} + \
-    && rm -f /tmp/sd_checks.sh
-
+        /opt/stable-diffusion/optimizedSD/ddpm.py
+    
 # add module to PYTHONPATH since it's not installable
 ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion \
     DIFFUSERS_CACHE=/data/models/diffusers
 
-# Define volumes for persistent data
-VOLUME ["/data/models/diffusers", "/data/images/stable-diffusion"]
+# Add verification checks for SD packages
+RUN echo "# Check for Stable Diffusion packages" >> /tmp/sd_checks.sh \
+    && echo "check_python_pkg diffusers" >> /tmp/sd_checks.sh \
+    && echo "check_python_pkg invisible_watermark" >> /tmp/sd_checks.sh \
+    && cat /tmp/sd_checks.sh >> /opt/list_app_checks.sh

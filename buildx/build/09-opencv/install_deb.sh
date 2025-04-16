@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-
-# =========================================================================
-# IMPORTANT: This build system requires Docker with buildx extension.
-# All builds MUST use Docker buildx to ensure consistent
-# multi-platform and efficient build processes.
-# =========================================================================
 OPENCV_URL=${1:-"$OPENCV_URL"}
 OPENCV_DEB=${2:-"OpenCV-${OPENCV_VERSION}-aarch64.tar.gz"}
 
