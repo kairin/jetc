@@ -55,6 +55,17 @@
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 
+# COMMIT-TRACKING: UUID-20240608-200500-JKLM
+# Description: Attempt to fix syntax error near line 287 by ensuring standard function call.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # =========================================================================
@@ -160,8 +171,9 @@ done
 # Returns: 0 if image exists, 1 if not
 # =========================================================================
 verify_image_exists() {
-  local tag=$1
-  if docker image inspect "$tag" &> /dev/null; then
+  local tag_to_check="$1" # Use a different local variable name just in case
+  # Ensure the docker command is correctly formatted
+  if docker image inspect "$tag_to_check" >/dev/null 2>&1; then
     return 0  # Image exists
   else
     return 1  # Image does not exist
@@ -227,10 +239,11 @@ list_installed_apps() {
 build_folder_image() {
   local folder=$1
   local base_tag_arg=$2
-  local image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
-  local fixed_tag=""
-
+  local image_name
+  image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
+  local fixed_tag
   fixed_tag=$(echo "${DOCKER_USERNAME}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
+
   echo "Generating fixed tag: $fixed_tag"
   ATTEMPTED_TAGS+=("$fixed_tag")
 
@@ -260,9 +273,8 @@ build_folder_image() {
   fi
 
   echo "Running: docker buildx build ${cmd_args[*]}"
-  # Run docker buildx build as the main process, no tee, no logging
   docker buildx build --progress=plain "${cmd_args[@]}"
-  build_status=$?
+  local build_status=$? # Capture status immediately
 
   if [ $build_status -ne 0 ]; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -270,34 +282,36 @@ build_folder_image() {
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     BUILD_FAILED=1
     return 1
-  fi
+  fi # Close build status check
 
   echo "Pulling built image: $fixed_tag"
   docker pull "$fixed_tag"
-  local pull_status=$?
+  local pull_status=$? # Capture status immediately
+
   if [ $pull_status -ne 0 ]; then
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       echo "Error: Failed to pull the built image $fixed_tag after push."
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       BUILD_FAILED=1
       return 1
-  fi
+  fi # Close pull status check
 
   echo "Verifying image $fixed_tag exists locally after pull..."
-  if ! verify_image_exists("$fixed_tag"); then
+  # Line approx 287: Ensure standard function call syntax
+  if ! verify_image_exists "$fixed_tag"; then
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
       echo "This indicates a potential issue with the Docker daemon or registry synchronization."
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       BUILD_FAILED=1
       return 1
-  fi
+  fi # Close verify image check
 
   echo "Image $fixed_tag verified locally."
   BUILT_TAGS+=("$fixed_tag")
   echo "$fixed_tag" > /tmp/last_built_tag.txt
   return 0
-}
+} # Close build_folder_image function
 
 # =========================================================================
 # Determine Build Order
