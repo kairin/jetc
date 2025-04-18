@@ -1,3 +1,5 @@
+<!-- THIS FILE IS REDUNDANT AND SHOULD BE REMOVED. The content in this file is already covered in the main README.md file in more detail. -->
+
 # JETC Buildx
 
 A containerized build system for Jetson CUDA applications and AI frameworks.
