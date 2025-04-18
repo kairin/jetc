@@ -71,9 +71,26 @@ function createSessionFolder() {
     }
 }
 
+// Add a function to create missing files
+function createMissingFiles() {
+    // Create snippets directory if it doesn't exist
+    const snippetsDir = path.join(process.cwd(), '.vscode/snippets');
+    if (!fs.existsSync(snippetsDir)) {
+        fs.mkdirSync(snippetsDir, { recursive: true });
+    }
+    
+    // Create or update each required file
+    createSnippetsFile();
+    createSettingsFile();
+    createReadmeFile();
+    createInitCopilotFile();
+    createGithubInstructionsFile();
+}
+
 // Main execution
 console.log('Setting up Copilot tracking system...');
 validateSetup();
 updateGitignore();
 createSessionFolder();
+createMissingFiles(); // Add this line
 console.log('Setup complete! To use, type "header" and press Tab in your files.');

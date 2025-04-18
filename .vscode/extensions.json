@@ -1,5 +1,7 @@
 {
     "recommendations": [
-        "github.vscode-codeql"
+        "github.vscode-codeql",
+        "aaron-bond.better-comments",
+        "github.copilot"
     ]
 }

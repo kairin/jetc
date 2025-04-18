@@ -49,7 +49,8 @@
             "**/*.java",
             "**/*.cpp",
             "**/*.h"
-        ]
+        ],
+        "instructionLocation": "${workspaceFolder}/.github/copilot-instructions.md"
     },
     "github.copilot.inlineSuggest.projectPath": "${workspaceFolder}",
     "github.copilot.inlineSuggest.enable": true
