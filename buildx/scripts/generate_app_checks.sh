@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20240608-202000-RSTU
-# Description: Remove --progress=plain flag to allow native buildx progress detection.
-# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Clarify UUID reuse policy in instructions
+# Author: Mr K
 #
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Current directory
-# │   └── generate_app_checks.sh <- THIS FILE
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── generate_app_checks.sh <- THIS FILE
 # └── ...                        <- Other project files
 
 set -e

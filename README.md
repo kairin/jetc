@@ -1,3 +1,13 @@
+<!--
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Clarify UUID reuse policy in instructions
+# Author: Mr K
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- THIS FILE
+# └── ...                        <- Other project files
+-->
 # JETC: Jetson Containers for Targeted Use Cases
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.

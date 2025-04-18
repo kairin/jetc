@@ -1,3 +1,14 @@
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Clarify UUID reuse policy in instructions
+# Author: Mr K
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
 #!/bin/bash
 
 # COMMIT-TRACKING: UUID-20250418-113042-7E2D
