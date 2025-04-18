@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20250419-135142-E53F
-# Description: Updated script to include VSCode tracking setup in Git templates
-# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Update author
+# Author: Mr K
 #
 # File location diagram:
 # jetc/                          <- Main project folder

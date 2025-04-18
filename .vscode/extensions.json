@@ -1,3 +1,13 @@
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Add tracking header
+# Author: Mr K
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── .vscode/                   <- VSCode settings directory
+# │   └── extensions.json        <- THIS FILE
+# └── ...                        <- Other project files
 {
     "recommendations": [
         "github.vscode-codeql",

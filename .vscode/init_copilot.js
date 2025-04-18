@@ -1,3 +1,14 @@
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Add header, update author
+# Author: Mr K
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── .vscode/                   <- VSCode settings directory
+# │   └── init_copilot.js        <- THIS FILE
+# └── ...                        <- Other project files
+
 // This script can be loaded by the VSCode Custom Editor API when available
 // or used with VSCode extensions that support JS hooks
 

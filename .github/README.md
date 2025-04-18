@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20250419-130145-D72A
-# Description: Added standard header to README.md
-# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Update author
+# Author: Mr K
 #
 # File location diagram:
 # jetc/                          <- Main project folder

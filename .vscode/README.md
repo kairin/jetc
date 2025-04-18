@@ -1,3 +1,14 @@
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Add header, update author, clarify UUID reuse in usage
+# Author: Mr K
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── .vscode/                   <- VSCode settings directory
+# │   └── README.md              <- THIS FILE
+# └── ...                        <- Other project files
+
 # VSCode Copilot Configuration
 
 This project uses custom VSCode settings to help maintain consistent code styles and headers.
@@ -14,6 +25,7 @@ This project uses custom VSCode settings to help maintain consistent code styles
 - The UUID timestamp is auto-populated based on current date/time
 - Complete the XXXX portion and description manually
 - Update the file location diagram to match the current file
+- **Important**: If modifying a file that *already has* a `COMMIT-TRACKING` header, **reuse** the existing UUID instead of generating a new one for that commit.
 
 ## Installation and Setup
 
