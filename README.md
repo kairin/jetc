@@ -87,36 +87,41 @@ When the build completes successfully, you can:
     └── logs/                        # Directory containing build logs
 ```
 
-### **`build/` Directory**
+### **`build/` Directory Structure**
 
-The `build` directory is where individual components and their build processes are defined. Each subdirectory corresponds to a specific component or library, and is responsible for building and patching as needed.
+The build system follows a specific directory structure:
 
 ```
-build/
-├── 01-build-essential               # Base build for essential tools
-├── 02-bazel                         # Bazel build system
-├── 03-ninja                         # Ninja build tool
-├── 04-python                        # Python setup
-├── 05-h5py                          # HDF5 for Python
-├── 06-rust                          # Rust programming language
-├── 07-protobuf_apt                  # Protobuf using APT
-├── 08-protobuf_cpp                  # Protobuf for C++
-├── 09-opencv                        # OpenCV for computer vision
-├── 10-bitsandbytes                  # Bitsandbytes library
-├── 11-diffusers                     # Hugging Face Diffusers
-├── 12-huggingface_hub               # Hugging Face Hub
-├── 13-transformers                  # Hugging Face Transformers
-├── 14-xformers                      # Xformers library
-├── 15-flash-attention               # FlashAttention library
-├── 16-stable-diffusion              # Stable Diffusion models and backend
-├── 17-stable-diffusion-webui        # Stable Diffusion Web UI (AUTOMATIC1111)
-└── 18-comfyui                       # ComfyUI workflow-based UI for Stable Diffusion
+buildx/build/
+├── 01-build-essential/  # First build - essential build tools
+├── 01-cuda/             # CUDA components
+│   ├── Dockerfile       # Main CUDA Dockerfile (entry point)
+│   ├── cuda/            # Core CUDA installation
+│   ├── cudnn/           # NVIDIA cuDNN
+│   ├── cuda-python/     # CUDA Python bindings
+│   ├── cupy/            # CuPy library
+│   └── pycuda/          # PyCUDA library
+├── 02-bazel/           # Bazel build system
+├── 03-ninja            # Ninja build tool
+├── 04-python           # Python setup
+└── ...                 # Other components
 ```
 
-Each directory contains the following:
-- A `Dockerfile` for building the specific component.
-- A `patches/` folder for any patches required during the build process.
-- Other optional files (`README.md`, `test.py`, etc.) for documentation and testing.
+### **Build Process Details**
+
+The build script (`build.sh`) processes directories in numerical order:
+
+1. Numbered directories (`01-*`, `02-*`, etc.) are built sequentially
+2. Each numbered directory must contain a `Dockerfile` at its root
+3. For directories with sub-components (like `01-cuda`), a main `Dockerfile` is required for the build script to work correctly
+
+### **Special Notes for CUDA and Other Complex Components**
+
+For complex components with multiple sub-components (like CUDA):
+
+1. Create a main `Dockerfile` in the component directory (e.g., `01-cuda/Dockerfile`)
+2. This main Dockerfile should install core functionality and set up the environment
+3. Sub-components can be built separately in later steps (e.g., through separate build entries)
 
 ## **How the Build System Works**
 
