@@ -1,13 +1,13 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Add tracking header
-# Author: Mr K
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── .vscode/                   <- VSCode settings directory
-# │   └── settings.json          <- THIS FILE
-# └── ...                        <- Other project files
+// COMMIT-TRACKING: UUID-20240729-004815-A3B1
+// Description: Correct header comment style for JSONC
+// Author: Mr K
+//
+// File location diagram:
+// jetc/                          <- Main project folder
+// ├── README.md                  <- Project documentation
+// ├── .vscode/                   <- VSCode settings directory
+// │   └── settings.json          <- THIS FILE
+// └── ...                        <- Other project files
 {
     "editor.fontSize": 12,
     "editor.wordWrap": "wordWrapColumn",
