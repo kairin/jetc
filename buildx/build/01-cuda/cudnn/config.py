@@ -1,5 +1,18 @@
+# COMMIT-TRACKING: UUID-20240730-100000-B4D1
+# Description: Add header, confirm test key removal for cudnn_package.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-cuda/             <- CUDA directory
+# │   │       └── cudnn/           <- Current directory
+# │   │           └── config.py    <- THIS FILE
+# └── ...                        <- Other project files
 
-from jetson_containers import L4T_VERSION, CUDA_VERSION, update_dependencies, package_requires, IS_TEGRA, IS_SBSA
+from jetson_containers import L4T_VERSION, CUDA_VERSION, update_dependencies, package_requires, IS_TEGRA, IS_SBSA, package
 from packaging.version import Version
 
 import os
@@ -38,7 +51,8 @@ def cudnn_package(version, url, deb=None, packages=None, cuda=None, requires=Non
     cudnn = package.copy()
     
     cudnn['name'] = f'cudnn:{version}'
-    
+    # cudnn['test'] = 'test.sh' # Removed
+
     cudnn['build_args'] = {
         'CUDNN_URL': url,
         'CUDNN_DEB': deb,

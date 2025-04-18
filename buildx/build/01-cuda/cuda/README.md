@@ -1,3 +1,18 @@
+<!--
+# COMMIT-TRACKING: UUID-20240730-100000-B4D1
+# Description: Update Dockerfile links after consolidation, add header.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-cuda/             <- CUDA directory
+# │   │       └── cuda/            <- Current directory
+# │   │           └── README.md    <- THIS FILE
+# └── ...                        <- Other project files
+-->
 # cuda
 
 > [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)
@@ -10,7 +25,7 @@
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Builds | [![`cuda-122_jp60`](https://img.shields.io/github/actions/workflow/status/dusty-nv/jetson-containers/cuda-122_jp60.yml?label=cuda-122:jp60)](https://github.com/dusty-nv/jetson-containers/actions/workflows/cuda-122_jp60.yml) |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['==35.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`pip_cache:cu122`](/packages/cuda/cuda) |
 | &nbsp;&nbsp;&nbsp;Dependants | [`cuda:12.2-samples`](/packages/cuda/cuda) [`cudnn:8.9`](/packages/cuda/cudnn) [`tensorrt:8.6`](/packages/tensorrt) |
 | &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 | &nbsp;&nbsp;&nbsp;Images | [`dustynv/cuda:12.2-r36.2.0`](https://hub.docker.com/r/dustynv/cuda/tags) `(2023-12-05, 3.4GB)`<br>[`dustynv/cuda:12.2-samples-r36.2.0`](https://hub.docker.com/r/dustynv/cuda/tags) `(2023-12-07, 4.8GB)` |
@@ -18,7 +33,7 @@
 | **`cuda:12.4`** | |
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['==36.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`pip_cache:cu124`](/packages/cuda/cuda) |
 | &nbsp;&nbsp;&nbsp;Dependants | [`cuda:12.4-samples`](/packages/cuda/cuda) [`cudnn:9.0`](/packages/cuda/cudnn) [`tensorrt:10.0`](/packages/tensorrt) |
 | &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 
@@ -26,47 +41,58 @@
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Builds | [![`cuda-122-samples_jp60`](https://img.shields.io/github/actions/workflow/status/dusty-nv/jetson-containers/cuda-122-samples_jp60.yml?label=cuda-122-samples:jp60)](https://github.com/dusty-nv/jetson-containers/actions/workflows/cuda-122-samples_jp60.yml) |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['==35.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda:12.2`](/packages/cuda/cuda) [`python`](/packages/build/python) [`cmake`](/packages/build/cmake/cmake_pip) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile.samples`](Dockerfile.samples) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`cuda:12.2`](/packages/cuda/cuda) [`cmake`](/packages/build/cmake/cmake_pip) |
+| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 | &nbsp;&nbsp;&nbsp;Images | [`dustynv/cuda:12.2-samples-r36.2.0`](https://hub.docker.com/r/dustynv/cuda/tags) `(2023-12-07, 4.8GB)` |
 | &nbsp;&nbsp;&nbsp;Notes | CUDA samples from https://github.com/NVIDIA/cuda-samples installed under /opt/cuda-samples |
 
 | **`cuda:12.4-samples`** | |
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['==36.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda:12.4`](/packages/cuda/cuda) [`python`](/packages/build/python) [`cmake`](/packages/build/cmake/cmake_pip) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile.samples`](Dockerfile.samples) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`cuda:12.4`](/packages/cuda/cuda) [`cmake`](/packages/build/cmake/cmake_pip) |
+| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 | &nbsp;&nbsp;&nbsp;Notes | CUDA samples from https://github.com/NVIDIA/cuda-samples installed under /opt/cuda-samples |
 
 | **`cuda:11.8`** | |
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['==35.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`pip_cache:cu118`](/packages/cuda/cuda) |
 | &nbsp;&nbsp;&nbsp;Dependants | [`cuda:11.8-samples`](/packages/cuda/cuda) |
 | &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 
 | **`cuda:11.8-samples`** | |
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['==35.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda:11.8`](/packages/cuda/cuda) [`python`](/packages/build/python) [`cmake`](/packages/build/cmake/cmake_pip) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile.samples`](Dockerfile.samples) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`cuda:11.8`](/packages/cuda/cuda) [`cmake`](/packages/build/cmake/cmake_pip) |
+| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 | &nbsp;&nbsp;&nbsp;Notes | CUDA samples from https://github.com/NVIDIA/cuda-samples installed under /opt/cuda-samples |
 
 | **`cuda:11.4`** | |
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Aliases | `cuda` |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['<36']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) |
-| &nbsp;&nbsp;&nbsp;Dependants | [`arrow:12.0.1`](/packages/arrow) [`arrow:14.0.1`](/packages/arrow) [`arrow:5.0.0`](/packages/arrow) [`audiocraft`](/packages/audio/audiocraft) [`auto_awq:0.2.4`](/packages/llm/auto_awq) [`auto_gptq:0.7.1`](/packages/llm/auto_gptq) [`awq:0.1.0`](/packages/llm/awq) [`bitsandbytes`](/packages/llm/bitsandbytes) [`bitsandbytes:builder`](/packages/llm/bitsandbytes) [`ctranslate2:4.2.0`](/packages/ctranslate2) [`ctranslate2:4.2.0-builder`](/packages/ctranslate2) [`ctranslate2:master`](/packages/ctranslate2) [`ctranslate2:master-builder`](/packages/ctranslate2) [`cuda-python:11.4`](/packages/cuda/cuda-python) [`cuda:11.4-samples`](/packages/cuda/cuda) [`cudf:21.10.02`](/packages/rapids/cudf) [`cudf:23.10.03`](/packages/rapids/cudf) [`cudnn`](/packages/cuda/cudnn) [`cuml`](/packages/rapids/cuml) [`cupy`](/packages/cuda/cupy) [`deepstream`](/packages/deepstream) [`efficientvit`](/packages/vit/efficientvit) [`exllama:0.0.14`](/packages/llm/exllama) [`exllama:0.0.15`](/packages/llm/exllama) [`faiss:1.7.3`](/packages/vectordb/faiss) [`faiss:1.7.3-builder`](/packages/vectordb/faiss) [`faiss:1.7.4`](/packages/vectordb/faiss) [`faiss:1.7.4-builder`](/packages/vectordb/faiss) [`faiss_lite`](/packages/vectordb/faiss_lite) [`faster-whisper`](/packages/audio/faster-whisper) [`flash-attention:2.5.6`](/packages/llm/flash-attention) [`flash-attention:2.5.6-builder`](/packages/llm/flash-attention) [`flash-attention:2.5.7`](/packages/llm/flash-attention) [`flash-attention:2.5.7-builder`](/packages/llm/flash-attention) [`gptq-for-llama`](/packages/llm/gptq-for-llama) [`gstreamer`](/packages/gstreamer) [`jetson-inference`](/packages/jetson-inference) [`jetson-utils`](/packages/jetson-utils) [`l4t-diffusion`](/packages/l4t/l4t-diffusion) [`l4t-ml`](/packages/l4t/l4t-ml) [`l4t-pytorch`](/packages/l4t/l4t-pytorch) [`l4t-tensorflow:tf1`](/packages/l4t/l4t-tensorflow) [`l4t-tensorflow:tf2`](/packages/l4t/l4t-tensorflow) [`langchain`](/packages/rag/langchain) [`langchain:samples`](/packages/rag/langchain) [`llama-index`](/packages/rag/llama-index) [`llama_cpp:0.2.57`](/packages/llm/llama_cpp) [`llava`](/packages/llm/llava) [`minigpt4`](/packages/llm/minigpt4) [`mlc:0.1.0`](/packages/llm/mlc) [`mlc:0.1.0-builder`](/packages/llm/mlc) [`mlc:0.1.1`](/packages/llm/mlc) [`mlc:0.1.1-builder`](/packages/llm/mlc) [`nanodb`](/packages/vectordb/nanodb) [`nanoowl`](/packages/vit/nanoowl) [`nanosam`](/packages/vit/nanosam) [`nemo`](/packages/nemo) [`numba`](/packages/numba) [`ollama`](/packages/llm/ollama) [`onnxruntime:1.11`](/packages/onnxruntime) [`onnxruntime:1.11-builder`](/packages/onnxruntime) [`onnxruntime:1.16.3`](/packages/onnxruntime) [`onnxruntime:1.16.3-builder`](/packages/onnxruntime) [`onnxruntime:1.17`](/packages/onnxruntime) [`onnxruntime:1.17-builder`](/packages/onnxruntime) [`onnxruntime:1.19`](/packages/onnxruntime) [`onnxruntime:1.19-builder`](/packages/onnxruntime) [`openai-triton`](/packages/openai-triton) [`openai-triton:builder`](/packages/openai-triton) [`opencv:4.5.0`](/packages/opencv) [`opencv:4.5.0-builder`](/packages/opencv) [`opencv:4.8.1`](/packages/opencv) [`opencv:4.8.1-builder`](/packages/opencv) [`opencv:4.9.0`](/packages/opencv) [`opencv:4.9.0-builder`](/packages/opencv) [`optimum`](/packages/llm/optimum) [`piper-tts`](/packages/audio/piper-tts) [`pycuda`](/packages/cuda/pycuda) [`pytorch:1.10`](/packages/pytorch) [`pytorch:1.9`](/packages/pytorch) [`pytorch:2.0`](/packages/pytorch) [`pytorch:2.0-builder`](/packages/pytorch) [`pytorch:2.1`](/packages/pytorch) [`pytorch:2.1-builder`](/packages/pytorch) [`pytorch:2.2`](/packages/pytorch) [`pytorch:2.2-builder`](/packages/pytorch) [`pytorch:2.3`](/packages/pytorch) [`pytorch:2.3-builder`](/packages/pytorch) [`raft`](/packages/rapids/raft) [`realsense`](/packages/hardware/realsense) [`ros:foxy-desktop`](/packages/ros) [`ros:foxy-ros-base`](/packages/ros) [`ros:foxy-ros-core`](/packages/ros) [`ros:galactic-desktop`](/packages/ros) [`ros:galactic-ros-base`](/packages/ros) [`ros:galactic-ros-core`](/packages/ros) [`ros:humble-desktop`](/packages/ros) [`ros:humble-ros-base`](/packages/ros) [`ros:humble-ros-core`](/packages/ros) [`ros:iron-desktop`](/packages/ros) [`ros:iron-ros-base`](/packages/ros) [`ros:iron-ros-core`](/packages/ros) [`ros:melodic-desktop`](/packages/ros) [`ros:melodic-ros-base`](/packages/ros) [`ros:melodic-ros-core`](/packages/ros) [`ros:noetic-desktop`](/packages/ros) [`ros:noetic-ros-base`](/packages/ros) [`ros:noetic-ros-core`](/packages/ros) [`sam`](/packages/vit/sam) [`stable-diffusion`](/packages/diffusion/stable-diffusion) [`stable-diffusion-webui`](/packages/diffusion/stable-diffusion-webui) [`tam`](/packages/vit/tam) [`tensorflow`](/packages/tensorflow) [`tensorflow2`](/packages/tensorflow) [`tensorrt`](/packages/tensorrt) [`tensorrt_llm:0.10.dev0`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`tensorrt_llm:0.10.dev0-builder`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`tensorrt_llm:0.5`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`tensorrt_llm:0.5-builder`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`text-generation-inference`](/packages/llm/text-generation-inference) [`text-generation-webui:1.7`](/packages/llm/text-generation-webui) [`text-generation-webui:6a7cd01`](/packages/llm/text-generation-webui) [`text-generation-webui:main`](/packages/llm/text-generation-webui) [`torch2trt`](/packages/pytorch/torch2trt) [`torch_tensorrt`](/packages/pytorch/torch_tensorrt) [`torchaudio:0.10.0`](/packages/pytorch/torchaudio) [`torchaudio:0.10.0-builder`](/packages/pytorch/torchaudio) [`torchaudio:0.9.0`](/packages/pytorch/torchaudio) [`torchaudio:0.9.0-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.0.1`](/packages/pytorch/torchaudio) [`torchaudio:2.0.1-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.1.0`](/packages/pytorch/torchaudio) [`torchaudio:2.1.0-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.2.2`](/packages/pytorch/torchaudio) [`torchaudio:2.2.2-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.3.0`](/packages/pytorch/torchaudio) [`torchaudio:2.3.0-builder`](/packages/pytorch/torchaudio) [`torchvision:0.10.0`](/packages/pytorch/torchvision) [`torchvision:0.11.1`](/packages/pytorch/torchvision) [`torchvision:0.15.1`](/packages/pytorch/torchvision) [`torchvision:0.16.2`](/packages/pytorch/torchvision) [`torchvision:0.17.2`](/packages/pytorch/torchvision) [`torchvision:0.18.0`](/packages/pytorch/torchvision) [`transformers`](/packages/llm/transformers) [`transformers:git`](/packages/llm/transformers) [`transformers:nvgpt`](/packages/llm/transformers) [`tritonserver`](/packages/tritonserver) [`tvm`](/packages/tvm) [`voicecraft`](/packages/audio/voicecraft) [`whisper`](/packages/audio/whisper) [`whisperx`](/packages/audio/whisperx) [`wyoming-piper:master`](/packages/smart-home/wyoming/piper) [`wyoming-whisper:latest`](/packages/smart-home/wyoming/wyoming-whisper) [`xformers:0.0.26`](/packages/llm/xformers) [`xformers:0.0.26-builder`](/packages/llm/xformers) [`xtts`](/packages/audio/xtts) [`zed`](/packages/hardware/zed) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile.builtin`](Dockerfile.builtin) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`pip_cache:cu114`](/packages/cuda/cuda) |
+| &nbsp;&nbsp;&nbsp;Dependants | *...(existing list)...* |
+| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 
 | **`cuda:11.4-samples`** | |
 | :-- | :-- |
 | &nbsp;&nbsp;&nbsp;Aliases | `cuda:samples` |
 | &nbsp;&nbsp;&nbsp;Requires | `L4T ['<36']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda:11.4`](/packages/cuda/cuda) [`python`](/packages/build/python) [`cmake`](/packages/build/cmake/cmake_pip) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile.samples`](Dockerfile.samples) |
+| &nbsp;&nbsp;&nbsp;Dependencies | [`cuda:11.4`](/packages/cuda/cuda) [`cmake`](/packages/build/cmake/cmake_pip) |
+| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 | &nbsp;&nbsp;&nbsp;Notes | CUDA samples from https://github.com/NVIDIA/cuda-samples installed under /opt/cuda-samples |
+
+<!-- Add entries for pip_cache containers if desired, or rely on config.py -->
+| **`pip_cache:cu124`** | |
+| :-- | :-- |
+| &nbsp;&nbsp;&nbsp;Aliases | `pip_cache` (if CUDA_VERSION=12.4) |
+| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==36.*']` (example) |
+| &nbsp;&nbsp;&nbsp;Dependencies | - |
+| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
+| &nbsp;&nbsp;&nbsp;Notes | Sets up pip cache environment variables |
+
+<!-- Repeat for other pip_cache versions as needed -->
 
 </details>
 

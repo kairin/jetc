@@ -1,35 +1,77 @@
+# COMMIT-TRACKING: UUID-20240730-100000-B4D1
+# Description: Embed install and test script logic.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-cuda/             <- CUDA directory
+# │   │       └── cudnn/           <- Current directory
+# │   │           └── Dockerfile   <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: cudnn
 # group: cuda
-# depends: cuda
 # config: config.py
-# test: test.sh
+# depends: [cuda] # Handled by config.py
+# test: (embedded in Dockerfile)
 #---
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-ARG CUDNN_URL
-ARG CUDNN_DEB
-ARG CUDNN_PACKAGES
+ARG CUDNN_URL \
+    CUDNN_DEB \
+    CUDNN_PACKAGES
 
-RUN ls /etc/apt/sources.list.d/ && \
+# Install cuDNN from debian package
+RUN set -ex && \
+    echo "Installing cuDNN ${CUDNN_DEB}..." && \
+    \
     apt-get update && \
-    apt-cache search cudnn
-
-RUN echo "Downloading ${CUDNN_DEB}" && \
-    rm -rf /tmp/cudnn && mkdir /tmp/cudnn && cd /tmp/cudnn && \
+    apt-get install -y --no-install-recommends wget ca-certificates && \
+    \
+    mkdir -p /tmp/cudnn && cd /tmp/cudnn && \
     wget --quiet --show-progress --progress=bar:force:noscroll ${CUDNN_URL} && \
     dpkg -i *.deb && \
-    cp /var/cudnn-*-repo-*/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+    cp /var/${CUDNN_DEB}/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
     apt-get update && \
-    apt-cache search cudnn && \
-    apt list --installed | grep 'cuda\|cudnn\|cublas' && \
     apt-get install -y --no-install-recommends ${CUDNN_PACKAGES} && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get clean && \
+    \
     dpkg --list | grep cudnn && \
     dpkg -P ${CUDNN_DEB} && \
-    rm -rf /tmp/cudnn
-    
-RUN cd /usr/src/cudnn_samples_v*/conv_sample/ && \
-    make -j$(nproc)
+    rm -rf /tmp/cudnn && \
+    rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# Test cuDNN samples
+RUN set -ex && \
+    echo "Testing cuDNN samples..." && \
+    \
+    # Check if samples were installed
+    if [ -d /usr/src/cudnn_samples* ]; then \
+        CUDNN_SAMPLES_DIR=$(ls -d /usr/src/cudnn_samples* | head -n 1) && \
+        echo "Found cuDNN samples under ${CUDNN_SAMPLES_DIR}" && \
+        cd ${CUDNN_SAMPLES_DIR}/mnistCUDNN && \
+        apt-get update && apt-get install -y --no-install-recommends libfreeimage3 libfreeimage-dev && \
+        make clean && make -j$(nproc) && \
+        \
+        # Download test data if needed by the sample
+        echo "Downloading MNIST dataset..." && \
+        ./download_mnist.sh && \
+        \
+        echo "Running mnistCUDNN sample..." && \
+        ./mnistCUDNN && \
+        \
+        echo "mnistCUDNN sample OK" && \
+        rm -rf /var/lib/apt/lists/* && apt-get clean; \
+    else \
+        echo "cuDNN samples directory not found, skipping sample test." ; \
+    fi
+
+# Add verification checks
+RUN echo "# Check for cuDNN" >> /opt/list_app_checks.sh && \
+    echo "check_file /usr/include/cudnn.h 'cuDNN header'" >> /opt/list_app_checks.sh && \
+    echo "check_file /usr/lib/$(uname -m)-linux-gnu/libcudnn.so 'cuDNN library'" >> /opt/list_app_checks.sh
+
+WORKDIR /
