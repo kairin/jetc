@@ -1,6 +1,6 @@
 <!--
-# COMMIT-TRACKING: UUID-20240730-045015-C0DA
-# Description: Add commit tracking header.
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Update commit tracking header UUID for consistency.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:

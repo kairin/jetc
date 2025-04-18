@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-045015-C0DA
-# Description: Remove default value for DISTRO ARG to fix build error with OS mismatch.
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Update commit tracking header UUID for consistency. Remove default DISTRO ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:

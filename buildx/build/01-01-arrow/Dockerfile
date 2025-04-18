@@ -1,9 +1,21 @@
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Update commit tracking header UUID for consistency. Embed test script logic.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-01-arrow/         <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: arrow
 # group: core
 # config: config.py
 # depends: [cuda, cmake, python]
-# test: test.py
+# # test: test.py # Removed as test is now embedded
 # notes: installed under `/usr/local`
 #---
 ARG BASE_IMAGE
@@ -53,3 +65,19 @@ RUN export PYARROW_WITH_CUDA=1 && \
     
 RUN pip3 install /opt/pyarrow*.whl
 RUN pip3 show pyarrow && python3 -c 'import pyarrow; print(pyarrow.__version__);'
+
+# Embed and run test.py logic
+RUN echo '#!/usr/bin/env python3' > /tmp/test_arrow.py && \
+    echo "print('testing PyArrow...')" >> /tmp/test_arrow.py && \
+    echo "import pyarrow" >> /tmp/test_arrow.py && \
+    echo "" >> /tmp/test_arrow.py && \
+    echo "print('PyArrow version: ' + str(pyarrow.__version__))" >> /tmp/test_arrow.py && \
+    echo "" >> /tmp/test_arrow.py && \
+    echo "pyarrow.show_info()" >> /tmp/test_arrow.py && \
+    python3 /tmp/test_arrow.py && \
+    rm /tmp/test_arrow.py
+
+# Add verification check for pyarrow
+RUN echo "# Check for PyArrow" >> /tmp/arrow_checks.sh \
+    && echo "check_python_package pyarrow 'PyArrow'" >> /tmp/arrow_checks.sh \
+    && cat /tmp/arrow_checks.sh >> /opt/list_app_checks.sh

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Add script to generate application checks from Dockerfile analysis
-# Author: Mr K
+# Description: Refactor script into a host-side Dockerfile analysis tool.
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -16,120 +16,113 @@ set -e
 
 # Use absolute paths or make paths relative to script location for reliability
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUILD_DIR="${SCRIPT_DIR}/build"
-OUTPUT_FILE="${SCRIPT_DIR}/generated_app_checks.sh"
+BUILD_DIR="${SCRIPT_DIR}/../build" # Go up one level to buildx/build
 
-echo "# Auto-generated checks from Dockerfile analysis" > "$OUTPUT_FILE"
-echo "# Generated on $(date)" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-echo "check_installed_applications() {" >> "$OUTPUT_FILE"
-echo "  echo -e \"\n\${BLUE}🔍 Verifying Applications Installed in Build Process:\${NC}\"" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
+# Define colors for output
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
 
-# Process each build folder in order
-find "$BUILD_DIR" -type d -name "[0-9]*-*" | sort | while read -r folder; do
+echo -e "${BLUE}===================================================${NC}"
+echo -e "${BLUE}🔍 Dockerfile Package Analysis Report${NC}"
+echo -e "${BLUE}===================================================${NC}"
+echo "Scanning Dockerfiles in: $BUILD_DIR"
+
+# Process each build folder
+find "$BUILD_DIR" -mindepth 1 -maxdepth 1 -type d | sort | while read -r folder; do
   folder_name=$(basename "$folder")
-  folder_number=${folder_name%%-*}
-  folder_desc=${folder_name#*-}
-  
+  dockerfile_path="$folder/Dockerfile"
+
   # Skip if no Dockerfile exists
-  if [ ! -f "$folder/Dockerfile" ]; then
+  if [ ! -f "$dockerfile_path" ]; then
     continue
   fi
 
-  echo "  # Applications from $folder_name" >> "$OUTPUT_FILE"
-  echo "  echo -e \"\n\${CYAN}[$folder_number] - $folder_desc:\${NC}\"" >> "$OUTPUT_FILE"
-  
-  # Extract apt-get install packages - improved pattern matching
-  if grep -q "apt-get install" "$folder/Dockerfile"; then
-    packages=$(grep -A20 "apt-get install" "$folder/Dockerfile" | grep -v "&&" | grep -v "apt-get" | tr -d '\\' | tr -s ' ' | sed 's/^[ \t]*//;s/[ \t]*$//' | grep -v '^$' | tr ' ' '\n' | grep -v '^-' | sort | uniq)
-    
-    for pkg in $packages; do
-      # Skip version pins and flags
-      if [[ "$pkg" == *\=* ]] || [[ "$pkg" == --* ]]; then
-        # Extract base package name from pinned version
-        if [[ "$pkg" == *\=* ]]; then
-          pkg=${pkg%%=*}
-        else
+  echo -e "\n${YELLOW}--- Analyzing: $folder_name ($dockerfile_path) ---${NC}"
+
+  # --- APT Package Extraction ---
+  apt_packages=$(awk '
+    /apt-get install|apt install/ { in_block=1 }
+    in_block {
+      # Remove comments and line continuation characters
+      line = $0
+      sub(/#.*/, "", line)
+      gsub(/\\$/, "", line)
+      # Print words after install, ignoring options
+      for (i=1; i<=NF; i++) {
+        if ($i == "install") {
+          start_printing=1
           continue
-        fi
+        }
+        if (start_printing && $i !~ /^-/ && $i !~ /=/ && $i != "&&" && $i != "\\") {
+          print $i
+        }
+      }
+      # Check if block ends (no line continuation)
+      if ($0 !~ /\\$/) {
+        in_block=0
+        start_printing=0
+      }
+    }
+  ' "$dockerfile_path" | grep -vE '^(apt-get|apt|install|update|clean|remove|purge|dist-upgrade|autoremove|upgrade|y|no-install-recommends)$' | sort | uniq)
+
+  if [ -n "$apt_packages" ]; then
+    echo -e "  ${GREEN}APT Packages Detected:${NC}"
+    echo "$apt_packages" | while read -r pkg; do
+      # Skip common non-command packages for cleaner report
+      if [[ "$pkg" == *"-dev" ]] || [[ "$pkg" == "locales"* ]] || [[ "$pkg" == "tzdata" ]] || [[ "$pkg" == "ca-certificates" ]] || [[ "$pkg" == "software-properties-common" ]] || [[ "$pkg" == "apt-transport-https" ]] || [[ "$pkg" == "gnupg" ]] || [[ "$pkg" == "lsb-release" ]]; then
+        echo "    - $pkg (utility/dev)"
+      else
+        echo "    - $pkg"
       fi
-      
-      # Skip certain packages that don't have commands
-      if [[ "$pkg" == "locales"* ]] || [[ "$pkg" == "tzdata" ]] || [[ "$pkg" == "ca-certificates" ]] || [[ "$pkg" == *"-dev" ]]; then
-        continue
-      fi
-      
-      # Common mapping of package names to executable commands
-      case "$pkg" in
-        "git-lfs") echo "  check_cmd git-lfs \"Git Large File Storage\"" >> "$OUTPUT_FILE" ;;
-        "python3-pip") echo "  check_cmd pip3 \"Python 3 Package Manager\"" >> "$OUTPUT_FILE" ;;
-        "ssh-client") echo "  check_cmd ssh \"SSH Client\"" >> "$OUTPUT_FILE" ;;
-        "build-essential") 
-          echo "  check_cmd gcc \"C Compiler (from build-essential)\"" >> "$OUTPUT_FILE"
-          echo "  check_cmd g++ \"C++ Compiler (from build-essential)\"" >> "$OUTPUT_FILE"
-          echo "  check_cmd make \"Make utility (from build-essential)\"" >> "$OUTPUT_FILE"
-          ;;
-        *) 
-          # Default - try the package name as the command
-          cmd="${pkg%%-*}" # Remove any suffix like -dev
-          echo "  check_cmd $cmd \"$pkg package\"" >> "$OUTPUT_FILE"
-          ;;
-      esac
     done
+  else
+    echo "  No apt packages detected."
   fi
-  
-  # Extract pip/pip3 install packages - with improved parsing
-  if grep -q "pip.*install" "$folder/Dockerfile"; then
-    pip_packages=$(grep -A20 "pip.*install" "$folder/Dockerfile" | grep -v "&&" | grep -v "pip" | tr -d '\\' | tr -s ' ' | sed 's/^[ \t]*//;s/[ \t]*$//' | grep -v '^$' | tr ' ' '\n' | grep -v '^-' | sort | uniq)
-    
-    for pkg in $pip_packages; do
-      # Skip version pins and flags
-      if [[ "$pkg" == *\=* ]] || [[ "$pkg" == --* ]] || [[ "$pkg" == -* ]]; then
-        if [[ "$pkg" == *\=* ]]; then
-          pkg=${pkg%%=*}
-        else
+
+  # --- PIP Package Extraction ---
+  pip_packages=$(awk '
+    /pip install|pip3 install/ { in_block=1 }
+    in_block {
+      # Remove comments and line continuation characters
+      line = $0
+      sub(/#.*/, "", line)
+      gsub(/\\$/, "", line)
+      # Print words after install, ignoring options/paths/versions
+      for (i=1; i<=NF; i++) {
+        if ($i == "install") {
+          start_printing=1
           continue
-        fi
-      fi
-      
-      # Add both CLI and module checks for Python packages
-      echo "  check_python_pkg $pkg" >> "$OUTPUT_FILE"
-      
-      # For commonly used packages with CLI tools, also check the command
-      case "$pkg" in
-        "numpy") echo "  # NumPy typically doesn't have a CLI tool" >> "$OUTPUT_FILE" ;;
-        "torch") echo "  check_python_import torch \"PyTorch ML framework\"" >> "$OUTPUT_FILE" ;;
-        "tensorflow") echo "  check_python_import tensorflow \"TensorFlow ML framework\"" >> "$OUTPUT_FILE" ;;
-        *) 
-          # Try to check if there might be a CLI tool with the same name
-          if [[ "$pkg" != *"-"* ]]; then
-            echo "  # Also try checking for CLI command for $pkg"  >> "$OUTPUT_FILE"
-            echo "  check_cmd $pkg \"Python package CLI (if available)\" || true" >> "$OUTPUT_FILE"
-          fi
-          ;;
-      esac
+        }
+        # Ignore options, requirements files, paths, version specs
+        if (start_printing && $i !~ /^-/ && $i !~ /\.txt$/ && $i !~ /\// && $i !~ /[=<>]/ && $i != "&&" && $i != "\\") {
+          print $i
+        }
+      }
+      # Check if block ends (no line continuation)
+      if ($0 !~ /\\$/) {
+        in_block=0
+        start_printing=0
+      }
+    }
+  ' "$dockerfile_path" | grep -vE '^(pip|pip3|install|upgrade|no-cache-dir)$' | sort | uniq)
+
+  if [ -n "$pip_packages" ]; then
+    echo -e "  ${GREEN}PIP Packages Detected:${NC}"
+    echo "$pip_packages" | while read -r pkg; do
+       echo "    - $pkg"
     done
+  else
+    echo "  No pip packages detected."
   fi
-  
-  # Look for custom scripts or files copied
-  if grep -q "COPY" "$folder/Dockerfile"; then
-    copied_files=$(grep "COPY" "$folder/Dockerfile" | awk '{for(i=2;i<NF;i++) print $i}' | grep -v "^/" | grep -v "^./" | grep -v "\*" | sort | uniq)
-    
-    for file in $copied_files; do
-      # Only check executable-looking files
-      if [[ "$file" != *"."* ]]; then
-        echo "  check_cmd $file \"Custom utility from $folder_desc\"" >> "$OUTPUT_FILE"
-      fi
-    done
-  fi
-  
-  echo "" >> "$OUTPUT_FILE"
+
 done
 
-# Close the function
-echo "}" >> "$OUTPUT_FILE"
-echo "" >> "$OUTPUT_FILE"
-echo "# End of auto-generated checks" >> "$OUTPUT_FILE"
+echo -e "\n${BLUE}===================================================${NC}"
+echo -e "${BLUE}🏁 Analysis complete${NC}"
+echo -e "${BLUE}===================================================${NC}"
 
-echo "Generated application checks in $OUTPUT_FILE"
+# Note: This script now only prints the analysis.
+# The actual verification checks are embedded in the Dockerfiles
+# and executed by list_installed_apps.sh inside the container.

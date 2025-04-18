@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-045015-C0DA
-# Description: Add commit tracking header.
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Update commit tracking header UUID for consistency. Embed vercmp/tarpack scripts. Remove default BASE_IMAGE.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,7 +21,7 @@
 # group: build
 # notes: installs compilers, build tools & configures the default locale
 #---
-ARG BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive \

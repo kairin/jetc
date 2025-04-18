@@ -67,13 +67,16 @@ else
     for dir in "${numbered_dirs[@]}"; do
       echo "Processing numbered directory: $dir"
       # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the next build
+      # The build_folder_image function (likely in docker_utils.sh) uses this argument
+      # to set the --build-arg BASE_IMAGE for the docker buildx command.
       build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE"
       build_status=$?
       
       if [ $build_status -eq 0 ]; then
           # Add to BUILT_TAGS array
           BUILT_TAGS+=("$fixed_tag")
-          LATEST_SUCCESSFUL_NUMBERED_TAG="$fixed_tag"  # Update for the next numbered iteration
+          # Update LATEST_SUCCESSFUL_NUMBERED_TAG for the next numbered iteration
+          LATEST_SUCCESSFUL_NUMBERED_TAG="$fixed_tag"  
           FINAL_FOLDER_TAG="$fixed_tag"                # Update the overall last successful folder tag
           echo "Successfully built, pushed, and pulled numbered image: $fixed_tag"
       else
@@ -96,6 +99,7 @@ else
     echo "Using base image for others: $BASE_FOR_OTHERS"
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir"
+      # Pass BASE_FOR_OTHERS as the base image tag
       build_folder_image "$dir" "$BASE_FOR_OTHERS" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE"
       build_status=$?
       if [ $build_status -eq 0 ]; then
