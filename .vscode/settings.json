@@ -32,6 +32,10 @@
     },
     // Removed deprecated setting "github.copilot.editor.enableAutoCompletions"
     "files.defaultLanguage": "${activeEditorLanguage}",
+    // Note: The 'fileHeaderComment.parameter' setting below configures an extension
+    // (like 'File Header Comment') to use '#' comments by default. This might conflict
+    // with the manual header guidance (e.g., using '//' for JS/JSONC) if the extension
+    // is used for automatic header insertion. Adjust or disable extension if needed.
     "fileHeaderComment.parameter": {
         "commentbegin": "# ",
         "commentprefix": "# ",

@@ -1,15 +1,13 @@
-/**
- * COMMIT-TRACKING: UUID-20240729-004815-A3B1
- * Description: Setup script for initializing the tracking system
- * Author: Mr K
- *
- * File location diagram:
- * jetc/                          <- Main project folder
- * ├── README.md                  <- Project documentation
- * ├── .vscode/                   <- VSCode settings directory
- * │   └── setup_tracking.js      <- THIS FILE
- * └── ...                        <- Other project files
- */
+// COMMIT-TRACKING: UUID-20240729-004815-A3B1
+// Description: Setup script for initializing the tracking system
+// Author: Mr K
+//
+// File location diagram:
+// jetc/                          <- Main project folder
+// ├── README.md                  <- Project documentation
+// ├── .vscode/                   <- VSCode settings directory
+// │   └── setup_tracking.js      <- THIS FILE
+// └── ...                        <- Other project files
 
 const fs = require('fs');
 const path = require('path');

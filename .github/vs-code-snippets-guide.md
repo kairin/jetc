@@ -1,5 +1,6 @@
+<!--
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update author, align embedded instructions with UUID reuse policy
+# Description: Correct header comment style for MD
 # Author: Mr K
 #
 # File location diagram:
@@ -8,6 +9,7 @@
 # ├── .github/                   <- GitHub directory
 # │   └── vs-code-snippets-guide.md  <- THIS FILE
 # └── ...                        <- Other project files
+-->
 
 # Setting Up VS Code User Snippets for Copilot Instructions
 
@@ -53,20 +55,60 @@ Replace the default content with this snippet definition:
       "",
       "## File Header Format",
       "",
-      "All modified files should include this header format:",
+      "All modified files should include this header format at the very top. **Choose the comment style appropriate for the file type.**",
       "",
-      "```",
-      "# COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX",
-      "# Description: Brief description of changes",
-      "# Author: Your name/identifier",
-      "#",
-      "# File location diagram:",
-      "# ${1:project}/                          <- Main project folder",
-      "# ├── README.md                  <- Project documentation",
-      "# ├── ${2:directory}/               <- File's directory",
-      "# │   └── ${3:filename}             <- THIS FILE",
-      "# └── ...                        <- Other project files",
-      "```",
+      "**Common Comment Styles:**",
+      "",
+      "*   **`#` Style:** (Shell scripts `.sh`, Python `.py`, Dockerfile, YAML `.yml`, etc.)",
+      "    ```",
+      "    # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX",
+      "    # Description: Brief description of changes",
+      "    # Author: Your name/identifier",
+      "    #",
+      "    # File location diagram:",
+      "    # ${1:project}/                          <- Main project folder",
+      "    # ├── README.md                  <- Project documentation",
+      "    # ├── ${2:directory}/               <- File's directory",
+      "    # │   └── ${3:filename}             <- THIS FILE",
+      "    # └── ...                        <- Other project files",
+      "    ```",
+      "*   **`//` Style:** (JavaScript `.js`, TypeScript `.ts`/`.tsx`, JSON with Comments `.jsonc`, C/C++, Java, etc.)",
+      "    ```javascript",
+      "    // COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX",
+      "    // Description: Brief description of changes",
+      "    // Author: Your name/identifier",
+      "    //",
+      "    // File location diagram:",
+      "    // ${1:project}/                          <- Main project folder",
+      "    // ├── README.md                  <- Project documentation",
+      "    // ├── ${2:directory}/               <- File's directory",
+      "    // │   └── ${3:filename}             <- THIS FILE",
+      "    // └── ...                        <- Other project files",
+      "    ```",
+      "*   **`<!-- -->` Style (Recommended for Markdown `.md`, HTML `.html`, XML `.xml`):**",
+      "    *   For Markdown files (`.md`), especially `README.md`, using HTML comments hides the header from the default rendered view on platforms like GitHub.",
+      "    *   Place the standard `#` style header *inside* the HTML comment block for consistency.",
+      "    ```markdown",
+      "    <!--",
+      "    # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX",
+      "    # Description: Brief description of changes",
+      "    # Author: Your name/identifier",
+      "    #",
+      "    # File location diagram:",
+      "    # ${1:project}/                          <- Main project folder",
+      "    # ├── README.md                  <- Project documentation",
+      "    # ├── ${2:directory}/               <- File's directory",
+      "    # │   └── ${3:filename}             <- THIS FILE",
+      "    # └── ...                        <- Other project files",
+      "    -->",
+      "",
+      "    # Actual Markdown Content Starts Here...",
+      "    ```",
+      "",
+      "**Important Note on JSON:**",
+      "",
+      "*   Standard JSON files (`.json`) **do not support comments**. Do **not** add the `COMMIT-TRACKING` header to these files. Rely on Git history for tracking changes to `.json` files.",
+      "*   VS Code configuration files like `settings.json` and `extensions.json` are often `.jsonc` (JSON with Comments) and **can** use the `//` style header.",
       "",
       "## How to Use",
       "",
@@ -75,7 +117,7 @@ Replace the default content with this snippet definition:
       "    *   **If the file being modified *already has* a `COMMIT-TRACKING` header:** **Reuse** the existing `UUID-YYYYMMDD-HHMMSS-XXXX` value from that header for your current set of changes. Use this *same reused UUID* across all files modified in the same logical commit/change set.",
       "    *   **If the file does *not* have a header, or you are creating a new file:** **Generate** a *new* UUID for the current commit using the format `UUID-YYYYMMDD-HHMMSS-XXXX` (YYYYMMDD = current date, HHMMSS = current time, XXXX = random identifier like last 4 chars of git commit hash or random hex). Use this *same new UUID* across all files modified or created in this commit.",
       "3.  Update the `Description:` line in the header with a brief summary of the changes made in this commit/change set.",
-      "4.  Update the `Author:` line if necessary.",
+      "4.  Update the `Author:` line if necessary. (e.g., to Mr K)",
       "5.  Ensure the `File location diagram:` accurately reflects the file's path within the `${1:project}` project structure.",
       "6.  Use the *same* UUID (whether reused or newly generated) across all files modified in the same logical commit.",
       "",
@@ -86,7 +128,7 @@ Replace the default content with this snippet definition:
       "```",
       "# COMMIT-TRACKING: UUID-20250418-113042-7E2D",
       "# Description: Fixed Docker buildx script syntax errors and improved build output handling",
-      "# Author: GitHub Copilot / User",
+      "# Author: Mr K / GitHub Copilot", // Updated Author Example
       "#",
       "# File location diagram:",
       "# ${1:project}/                          <- Main project folder",
@@ -112,7 +154,7 @@ Replace the default content with this snippet definition:
       "2. Make sure the file location diagram is accurate for each file",
       "3. For multi-file commits, use the same UUID across all files",
       "4. The UUID should be determined **once per commit/change set** (either reused from an existing file or newly generated) and applied consistently to all files touched in that set.",
-      "5. Add this header to all new files as well as modified files",
+      "5. Add this header (using the correct comment style) to all new files as well as modified files, **except for standard `.json` files**.", // Added JSON exception
       "",
       "$0"
     ],
