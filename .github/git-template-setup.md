@@ -1,11 +1,11 @@
-# COMMIT-TRACKING: UUID-20250419-122045-8F3A
-# Description: Created guide for setting up Git templates with Copilot instructions
+# COMMIT-TRACKING: UUID-20250419-130145-D72A
+# Description: Updated file location in header to reflect .github directory
 # Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
-# ├── docs/                      <- Documentation directory
+# ├── .github/                   <- GitHub directory
 # │   └── git-template-setup.md  <- THIS FILE
 # └── ...                        <- Other project files
 
