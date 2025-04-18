@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+
+# =========================================================================
+# IMPORTANT: This build system requires Docker with buildx extension.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
 set -ex
 
 PROTOBUF_URL=https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}
