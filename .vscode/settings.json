@@ -12,5 +12,6 @@
     "workbench.editor.autoLockGroups": {
         "default": true,
         "workbench.editorinputs.searchEditorInput": true
-    }
+    },
+    "markdown.validate.enabled": true
 }
