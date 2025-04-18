@@ -120,6 +120,13 @@ while [[ "$use_cache" != "y" && "$use_cache" != "n" ]]; do
   read -p "Do you want to build with cache? (y/n): " use_cache
 done
 
+# Ask user about interactive output
+read -p "Do you want to see interactive build progress? (y/n): " show_interactive
+while [[ "$show_interactive" != "y" && "$show_interactive" != "n" ]]; do
+  echo "Invalid input. Please enter 'y' for yes or 'n' for no." >&2
+  read -p "Do you want to see interactive build progress? (y/n): " show_interactive
+done
+
 # =========================================================================
 # Function: Verify image exists locally
 # Arguments: $1 = image tag to verify
@@ -237,10 +244,24 @@ build_folder_image() {
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
 
-  # Execute the build command and capture its output to folder log
+  # Execute the build command based on interactive preference
+  local build_status=0
   echo "Running: docker buildx build ${cmd_args[*]}" | tee -a "$folder_log"
-  docker buildx build "${cmd_args[@]}" 2>&1 | tee -a "$folder_log"
-  local build_status=${PIPESTATUS[0]}
+  
+  if [ "$show_interactive" = "y" ]; then
+    # Run with interactive output - direct to console
+    echo "Showing interactive buildx progress..." | tee -a "$folder_log"
+    # Only log the command to the file, but run directly for interactive display
+    docker buildx build "${cmd_args[@]}"
+    build_status=$?
+    # Write a summary of the result to the log
+    echo "Build completed with status code: $build_status" | tee -a "$folder_log"
+  else
+    # Non-interactive mode - capture all output to log
+    echo "Capturing buildx output to log file: $folder_log"
+    docker buildx build "${cmd_args[@]}" 2>&1 | tee -a "$folder_log"
+    build_status=${PIPESTATUS[0]}
+  fi
   
   # Check if build and push succeeded
   if [ $build_status -ne 0 ]; then
