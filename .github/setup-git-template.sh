@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20250419-130145-D72A
-# Description: Updated file location in header and fixed paths for .github directory
+# COMMIT-TRACKING: UUID-20250419-135142-E53F
+# Description: Updated script to include VSCode tracking setup in Git templates
 # Author: GitHub Copilot
 #
 # File location diagram:
@@ -23,16 +23,42 @@ case $structure_choice in
     echo "Creating standard template structure..."
     mkdir -p ~/.git-template/.github
     mkdir -p ~/.git-template/.vscode
+    mkdir -p ~/.git-template/.vscode/snippets
     
     # Copy Copilot instructions to the template
     cp "$(pwd)/.github/copilot-instructions.md" ~/.git-template/.github/
     
+    # Copy VSCode tracking system files
+    cp "$(pwd)/.vscode/setup_tracking.js" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/init_copilot.js" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/README.md" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/extensions.json" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/snippets/global.code-snippets" ~/.git-template/.vscode/snippets/
+    
     # Create VS Code settings file
     cat > ~/.git-template/.vscode/settings.json << EOF
 {
-  "github.copilot.advanced": {
-    "instructionLocation": "\${workspaceFolder}/.github/copilot-instructions.md"
-  }
+    "editor.snippetSuggestions": "top",
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
+    },
+    "better-comments.tags": [
+        {
+            "tag": "COMMIT-TRACKING:",
+            "color": "#FF9800",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": true,
+            "italic": false
+        }
+    ],
+    "github.copilot.advanced": {
+        "instructionLocation": "\${workspaceFolder}/.github/copilot-instructions.md"
+    }
 }
 EOF
     ;;
@@ -92,12 +118,36 @@ EOF
     echo "Invalid choice. Using standard structure."
     mkdir -p ~/.git-template/.github
     mkdir -p ~/.git-template/.vscode
+    mkdir -p ~/.git-template/.vscode/snippets
     cp "$(pwd)/.github/copilot-instructions.md" ~/.git-template/.github/
+    cp "$(pwd)/.vscode/setup_tracking.js" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/init_copilot.js" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/README.md" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/extensions.json" ~/.git-template/.vscode/
+    cp "$(pwd)/.vscode/snippets/global.code-snippets" ~/.git-template/.vscode/snippets/
     cat > ~/.git-template/.vscode/settings.json << EOF
 {
-  "github.copilot.advanced": {
-    "instructionLocation": "\${workspaceFolder}/.github/copilot-instructions.md"
-  }
+    "editor.snippetSuggestions": "top",
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
+    },
+    "better-comments.tags": [
+        {
+            "tag": "COMMIT-TRACKING:",
+            "color": "#FF9800",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": true,
+            "italic": false
+        }
+    ],
+    "github.copilot.advanced": {
+        "instructionLocation": "\${workspaceFolder}/.github/copilot-instructions.md"
+    }
 }
 EOF
     ;;
@@ -106,5 +156,9 @@ esac
 # Configure Git to use the template
 git config --global init.templateDir ~/.git-template
 
-echo "Git template setup complete! All new repositories will include your Copilot instructions."
+echo "Git template setup complete! All new repositories will include:"
+echo "- Copilot instructions (.github/copilot-instructions.md)"
+echo "- VSCode tracking setup (.vscode/*)"
+echo "- VSCode settings configured for Copilot instructions"
+echo ""
 echo "To test: mkdir test-repo && cd test-repo && git init"

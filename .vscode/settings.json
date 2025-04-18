@@ -20,7 +20,7 @@
         "markdown": true,
         "scminput": false
     },
-    "github.copilot.editor.enableAutoCompletions": true,
+    // Removed deprecated setting "github.copilot.editor.enableAutoCompletions"
     "files.defaultLanguage": "${activeEditorLanguage}",
     "fileHeaderComment.parameter": {
         "commentbegin": "# ",
@@ -53,5 +53,5 @@
         "instructionLocation": "${workspaceFolder}/.github/copilot-instructions.md"
     },
     "github.copilot.inlineSuggest.projectPath": "${workspaceFolder}",
-    "github.copilot.inlineSuggest.enable": true
+    // Removed redundant setting "github.copilot.inlineSuggest.enable" as it has no effect
 }
