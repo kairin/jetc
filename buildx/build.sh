@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
 # Description: Refactor build script to use modular components for better maintainability
 # Author: Mr K
@@ -8,8 +10,6 @@
 # ├── buildx/                    <- Current directory
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
-
-#!/bin/bash
 
 # Import utility scripts
 SCRIPT_DIR="$(dirname "$0")/scripts"
