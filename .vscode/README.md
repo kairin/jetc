@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Add header, update author, clarify UUID reuse in usage
+# Description: Add guidance about file-specific descriptions in headers
 # Author: Mr K
 #
 # File location diagram:
@@ -26,6 +26,7 @@ This project uses custom VSCode settings to help maintain consistent code styles
 - Complete the XXXX portion and description manually
 - Update the file location diagram to match the current file
 - **Important**: If modifying a file that *already has* a `COMMIT-TRACKING` header, **reuse** the existing UUID instead of generating a new one for that commit.
+- **Important**: Even when reusing the same UUID across multiple files, the Description line should be unique to each file and accurately describe what changes were made to that specific file.
 
 ## Installation and Setup
 
@@ -45,4 +46,24 @@ This project uses custom VSCode settings to help maintain consistent code styles
 ## Manual Instructions
 
 If the automatic setup doesn't work, manually add this header to all files:
+
+## Header Best Practices
+
+1. **UUID Consistency**: Use the same UUID across all files in a single commit/change set.
+2. **Description Uniqueness**: Each file should have a unique description that explains what specifically changed in that file.
+3. **Description Format**: Begin with a verb (Add, Update, Fix, Refactor, etc.) followed by concise details of the change.
+
+## Examples of Good File-Specific Descriptions:
+
+- "Add Docker utility functions for image verification" 
+- "Create environment setup functions for variables"
+- "Fix syntax error in build_folder_image function"
+- "Refactor build script to use modular components"
+
+## Examples of Bad (Too Generic) Descriptions:
+
+- "Update file" (too vague)
+- "Fix issues" (doesn't specify what issues)
+- "Make changes" (doesn't describe the actual changes)
+- "Clarify instructions" (should specify which instructions were clarified)
 

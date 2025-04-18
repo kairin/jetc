@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Clarify UUID reuse policy in instructions
+# Description: Add clarity about file-specific descriptions in headers
 # Author: Mr K
 #
 # File location diagram:
@@ -20,7 +20,7 @@ All modified files should include this header format at the very top. **Choose t
 *   **`#` Style:** (Shell scripts `.sh`, Python `.py`, Dockerfile, YAML `.yml`, etc.)
     ```
     # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
-    # Description: Brief description of changes
+    # Description: Brief description of changes SPECIFIC TO THIS FILE
     # Author: Your name/identifier
     #
     # File location diagram:
@@ -33,7 +33,7 @@ All modified files should include this header format at the very top. **Choose t
 *   **`//` Style:** (JavaScript `.js`, TypeScript `.ts`/`.tsx`, JSON with Comments `.jsonc`, C/C++, Java, etc.)
     ```javascript
     // COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
-    // Description: Brief description of changes
+    // Description: Brief description of changes SPECIFIC TO THIS FILE
     // Author: Your name/identifier
     //
     // File location diagram:
@@ -49,7 +49,7 @@ All modified files should include this header format at the very top. **Choose t
     ```markdown
     <!--
     # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
-    # Description: Brief description of changes
+    # Description: Brief description of changes SPECIFIC TO THIS FILE
     # Author: Your name/identifier
     #
     # File location diagram:
@@ -74,7 +74,10 @@ All modified files should include this header format at the very top. **Choose t
 2.  **UUID Management:**
     *   **If the file being modified *already has* a `COMMIT-TRACKING` header:** **Reuse** the existing `UUID-YYYYMMDD-HHMMSS-XXXX` value from that header for your current set of changes. Use this *same reused UUID* across all files modified in the same logical commit/change set.
     *   **If the file does *not* have a header, or you are creating a new file:** **Generate** a *new* UUID for the current commit using the format `UUID-YYYYMMDD-HHMMSS-XXXX` (YYYYMMDD = current date, HHMMSS = current time, XXXX = random identifier like last 4 chars of git commit hash or random hex). Use this *same new UUID* across all files modified or created in this commit.
-3.  Update the `Description:` line in the header with a brief summary of the changes made in this commit/change set.
+3.  **Update the `Description:` line uniquely for each file:**
+    *   While the UUID should be the same across all files in a commit, the description should describe the **specific changes made to that particular file**.
+    *   Example: A commit that adds logging might have "Add logging functionality" in one file's header and "Update imports for new logging module" in another file's header, but both would share the same UUID.
+    *   Avoid using generic descriptions that don't indicate what changed in the specific file.
 4.  Update the `Author:` line if necessary. (e.g., to Mr K)
 5.  Ensure the `File location diagram:` accurately reflects the file's path within the `jetc` project structure.
 6.  Use the *same* UUID (whether reused or newly generated) across all files modified in the same logical commit.
