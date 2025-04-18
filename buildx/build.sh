@@ -38,7 +38,7 @@ handle_build_error() {
 setup_build_environment || exit 1
 load_env_variables || exit 1
 setup_buildx_builder || exit 1
-get_user_preferences || exit 1
+get_user_preferences || exit 1 # This now sets $skip_intermediate_push_pull
 
 # Arrays to track build status
 declare -a BUILT_TAGS=()
@@ -69,14 +69,16 @@ else
       # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the next build
       # The build_folder_image function (likely in docker_utils.sh) uses this argument
       # to set the --build-arg BASE_IMAGE for the docker buildx command.
-      build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE"
+      # Pass $use_squash as the 7th argument
+      build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE" "$use_squash" "$skip_intermediate_push_pull"
       build_status=$?
-      
+
       if [ $build_status -eq 0 ]; then
           # Add to BUILT_TAGS array
+          # Note: $fixed_tag is set by build_folder_image on success
           BUILT_TAGS+=("$fixed_tag")
           # Update LATEST_SUCCESSFUL_NUMBERED_TAG for the next numbered iteration
-          LATEST_SUCCESSFUL_NUMBERED_TAG="$fixed_tag"  
+          LATEST_SUCCESSFUL_NUMBERED_TAG="$fixed_tag"
           FINAL_FOLDER_TAG="$fixed_tag"                # Update the overall last successful folder tag
           echo "Successfully built, pushed, and pulled numbered image: $fixed_tag"
       else
@@ -100,9 +102,11 @@ else
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir"
       # Pass BASE_FOR_OTHERS as the base image tag
-      build_folder_image "$dir" "$BASE_FOR_OTHERS" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE"
+      # Pass $use_squash as the 7th argument
+      build_folder_image "$dir" "$BASE_FOR_OTHERS" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE" "$use_squash" "$skip_intermediate_push_pull"
       build_status=$?
       if [ $build_status -eq 0 ]; then
+          # Note: $fixed_tag is set by build_folder_image on success
           BUILT_TAGS+=("$fixed_tag")
           FINAL_FOLDER_TAG="$fixed_tag"  # Update the overall last successful folder tag
           echo "Successfully built, pushed, and pulled other image: $fixed_tag"
@@ -120,33 +124,49 @@ echo "Folder build process complete!"
 # =========================================================================
 # Pre-Tagging Verification - Pull all attempted images to ensure they exist
 # =========================================================================
-echo "--- Verifying and Pulling All Attempted Images ---"
-if [ "$BUILD_FAILED" -eq 0 ] && [ ${#ATTEMPTED_TAGS[@]} -gt 0 ]; then
-    echo "Pulling ${#ATTEMPTED_TAGS[@]} image(s) before final tagging..."
-    PULL_ALL_FAILED=0
-    for tag in "${ATTEMPTED_TAGS[@]}"; do
-        echo "Pulling $tag..."
-        docker pull "$tag"
-        if [ $? -ne 0 ]; then
-            echo "Error: Failed to pull image $tag during pre-tagging verification."
-            PULL_ALL_FAILED=1
-        fi
-    done
+echo "--- Verifying and Pulling All Attempted Images (if needed) ---"
+# Only pull if intermediate push/pull was NOT skipped
+if [ "$skip_intermediate_push_pull" != "y" ]; then
+    if [ "$BUILD_FAILED" -eq 0 ] && [ ${#ATTEMPTED_TAGS[@]} -gt 0 ]; then
+        echo "Pulling ${#ATTEMPTED_TAGS[@]} image(s) before final tagging..."
+        PULL_ALL_FAILED=0
+        for tag in "${ATTEMPTED_TAGS[@]}"; do
+            echo "Pulling $tag..."
+            docker pull "$tag"
+            if [ $? -ne 0 ]; then
+                echo "Error: Failed to pull image $tag during pre-tagging verification."
+                PULL_ALL_FAILED=1
+            fi
+        done
 
-    if [ "$PULL_ALL_FAILED" -eq 1 ]; then
-        echo "Error: Failed to pull one or more required images before final tagging. Aborting."
-        BUILD_FAILED=1
+        if [ "$PULL_ALL_FAILED" -eq 1 ]; then
+            echo "Error: Failed to pull one or more required images before final tagging. Aborting."
+            BUILD_FAILED=1
+        else
+            echo "All attempted images successfully pulled/refreshed."
+        fi
     else
-        echo "All attempted images successfully pulled/refreshed."
+        if [ "$BUILD_FAILED" -ne 0 ]; then
+            echo "Skipping pre-tagging pull verification due to earlier build failures."
+        else
+            echo "No images were attempted, skipping pre-tagging pull verification."
+        fi
     fi
 else
-    if [ "$BUILD_FAILED" -ne 0 ]; then
-        echo "Skipping pre-tagging pull verification due to earlier build failures."
-    else
-        echo "No images were attempted, skipping pre-tagging pull verification."
+    echo "Skipping pre-tagging pull verification as intermediate push/pull was disabled."
+    # Add a verification step here to ensure the FINAL_FOLDER_TAG exists locally
+    if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
+        echo "Verifying final intermediate image $FINAL_FOLDER_TAG exists locally..."
+        if ! verify_image_exists "$FINAL_FOLDER_TAG"; then
+             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+             echo "Error: Image $FINAL_FOLDER_TAG (needed for final tag) not found locally even though push/pull was skipped."
+             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+             BUILD_FAILED=1
+        else
+             echo "Image $FINAL_FOLDER_TAG found locally."
+        fi
     fi
 fi
-
 echo "--------------------------------------------------"
 
 # =========================================================================
@@ -156,17 +176,19 @@ echo "--- Creating Final Timestamped Tag ---"
 if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
     TIMESTAMPED_LATEST_TAG=$(echo "${DOCKER_USERNAME}/001:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
     echo "Attempting to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG"
-    
-    # Verify base image exists locally before tagging
+
+    # Verify base image exists locally before tagging (redundant if pre-tagging verification passed, but safe)
     echo "Verifying image $FINAL_FOLDER_TAG exists locally before tagging..."
     if verify_image_exists "$FINAL_FOLDER_TAG"; then
         echo "Image $FINAL_FOLDER_TAG found locally. Proceeding with tag."
-        
-        # Tag, push, and pull the final timestamped image
+
+        # Tag the final timestamped image
         if docker tag "$FINAL_FOLDER_TAG" "$TIMESTAMPED_LATEST_TAG"; then
             echo "Pushing $TIMESTAMPED_LATEST_TAG"
+            # Always push the final timestamped tag
             if docker push "$TIMESTAMPED_LATEST_TAG"; then
                 echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG"
+                # Always pull the final timestamped tag to ensure it's the registry version
                 docker pull "$TIMESTAMPED_LATEST_TAG"
                 if [ $? -eq 0 ]; then
                     # Verify final image exists locally
@@ -194,8 +216,9 @@ if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
             BUILD_FAILED=1
         fi
     else
+        # This error case should ideally be caught by the pre-tagging verification now
         echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        echo "Error: Image $FINAL_FOLDER_TAG not found locally right before tagging, despite pre-tagging pull attempt."
+        echo "Error: Image $FINAL_FOLDER_TAG not found locally right before tagging."
         echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         BUILD_FAILED=1
     fi

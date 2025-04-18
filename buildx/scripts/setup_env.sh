@@ -97,7 +97,7 @@ setup_build_environment() {
 # =========================================================================
 # Function: Get user preferences for build
 # Returns: 0 if successful, 1 if not
-# Sets: use_cache
+# Sets: use_cache, use_squash, skip_intermediate_push_pull
 # =========================================================================
 get_user_preferences() {
   # Ask user about build cache usage
@@ -106,7 +106,29 @@ get_user_preferences() {
     echo "Invalid input. Please enter 'y' for yes or 'n' for no." >&2
     read -p "Do you want to build with cache? (y/n): " use_cache
   done
-  
+
+  # Ask user about squashing (experimental)
+  read -p "Do you want to attempt squashing image layers (experimental)? (y/n): " use_squash
+  while [[ "$use_squash" != "y" && "$use_squash" != "n" ]]; do
+    echo "Invalid input. Please enter 'y' for yes or 'n' for no." >&2
+    read -p "Do you want to attempt squashing image layers (experimental)? (y/n): " use_squash
+  done
+  if [ "$use_squash" == "y" ]; then
+      echo "Warning: Buildx --squash is experimental and may affect caching or build success." >&2
+  fi
+
+  # Ask user about skipping intermediate push/pull
+  read -p "Skip intermediate push/pull for each stage (requires --load)? (y/n): " skip_intermediate_push_pull
+  while [[ "$skip_intermediate_push_pull" != "y" && "$skip_intermediate_push_pull" != "n" ]]; do
+    echo "Invalid input. Please enter 'y' for yes or 'n' for no." >&2
+    read -p "Skip intermediate push/pull for each stage? (y/n): " skip_intermediate_push_pull
+  done
+  if [ "$skip_intermediate_push_pull" == "y" ]; then
+      echo "Note: Skipping push/pull. Will use '--load' to make images available locally." >&2
+  fi
+
   export use_cache
+  export use_squash
+  export skip_intermediate_push_pull # Export the new preference
   return 0
 }

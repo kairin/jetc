@@ -81,7 +81,9 @@ list_installed_apps() {
 
 # =========================================================================
 # Function: Build, push, and pull a Docker image from a folder
-# Arguments: $1 = folder path, $2 = base image tag (optional), $3 = use_cache (y/n)
+# Arguments: $1 = folder path, $2 = base image tag (optional), $3 = use_cache (y/n),
+#            $4 = docker_username, $5 = platform, $6 = default_base_image,
+#            $7 = use_squash (y/n), $8 = skip_intermediate_push_pull (y/n)
 # Returns: The fixed tag name on success via $fixed_tag, non-zero exit status on failure
 # =========================================================================
 build_folder_image() {
@@ -91,7 +93,9 @@ build_folder_image() {
   local docker_username=$4
   local platform=$5
   local default_base_image=$6
-  
+  local use_squash=$7
+  local skip_push_pull=$8 # Added argument
+
   # Variable to store the tag name
   fixed_tag=""
   
@@ -115,16 +119,37 @@ build_folder_image() {
   echo "Using base image build arg: $base_tag_arg"
 
   echo "--------------------------------------------------"
-  echo "Building and pushing image from folder: $folder"
+  echo "Building image from folder: $folder"
   echo "Image Name: $image_name"
   echo "Platform: $platform"
   echo "Tag: $fixed_tag"
+  echo "Skip Intermediate Push/Pull: $skip_push_pull"
   echo "--------------------------------------------------"
 
-  local cmd_args=("--platform" "$platform" "-t" "$fixed_tag" "${build_args[@]}" --push "$folder")
+  # Base command args
+  local cmd_args=("--platform" "$platform" "-t" "$fixed_tag" "${build_args[@]}")
+
+  # Add --no-cache if requested
   if [ "$use_cache" != "y" ]; then
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
+  # Add --squash if requested
+  if [ "$use_squash" == "y" ]; then
+      echo "Attempting build with --squash (experimental)"
+      cmd_args=("--squash" "${cmd_args[@]}")
+  fi
+
+  # Add --push or --load based on preference
+  if [ "$skip_push_pull" == "y" ]; then
+      echo "Using --load instead of --push"
+      cmd_args+=("--load")
+  else
+      echo "Using --push"
+      cmd_args+=("--push")
+  fi
+
+  # Add the folder path at the end
+  cmd_args+=("$folder")
 
   echo "Running: docker buildx build ${cmd_args[*]}"
   docker buildx build "${cmd_args[@]}"
@@ -132,27 +157,36 @@ build_folder_image() {
 
   if [ $build_status -ne 0; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "Error: Failed to build and push image for $image_name ($folder)."
+    echo "Error: Failed to build image for $image_name ($folder)."
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     return 1
   fi
 
-  echo "Pulling built image: $fixed_tag"
-  docker pull "$fixed_tag"
-  local pull_status=$?
+  # Only pull if we pushed
+  if [ "$skip_push_pull" != "y" ]; then
+      echo "Pulling built image: $fixed_tag"
+      docker pull "$fixed_tag"
+      local pull_status=$?
 
-  if [ $pull_status -ne 0; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      echo "Error: Failed to pull the built image $fixed_tag after push."
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      return 1
+      if [ $pull_status -ne 0; then
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo "Error: Failed to pull the built image $fixed_tag after push."
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          return 1
+      fi
+  else
+      echo "Skipped pulling image $fixed_tag as push was skipped."
   fi
 
-  echo "Verifying image $fixed_tag exists locally after pull..."
+  echo "Verifying image $fixed_tag exists locally..."
   if ! verify_image_exists "$fixed_tag"; then
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
-      echo "This indicates a potential issue with the Docker daemon or registry synchronization."
+      if [ "$skip_push_pull" == "y" ]; then
+          echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker buildx build --load'."
+      else
+          echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
+      fi
+      echo "This indicates a potential issue with the Docker daemon or buildx driver."
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       return 1
   fi
