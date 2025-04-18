@@ -368,3 +368,9 @@ When you see messages like "Build, push or pull failed for build/10-bitsandbytes
 ## **License**
 
 This repository is released under the MIT License. See the LICENSE file for details.
+
+## **Build Process Details**
+
+The current build process structure has been reorganized to enhance stability and dependency management:
+
+### **Updated Build Directory Structure**
