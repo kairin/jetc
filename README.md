@@ -1,6 +1,6 @@
 <!--
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update README with modular script structure documentation
+# Description: Enhanced acknowledgment of dusty-nv/jetson-containers as the original work
 # Author: Mr K
 #
 # File location diagram:
@@ -9,6 +9,8 @@
 # └── ...                        <- Other project files
 -->
 # JETC: Jetson Containers for Targeted Use Cases
+
+> **IMPORTANT ACKNOWLEDGMENT**: This project is based on the work from [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The primary contribution here is an implementation focused on utilizing Docker's buildx functionality for streamlined container building on Jetson devices. All credit for the original container implementations goes to the dusty-nv team.
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
 
@@ -305,7 +307,11 @@ To run the Stable Diffusion WebUI or ComfyUI after building:
 
 ## **Inspiration and Original Work**
 
-This repository is based on the excellent work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The decision not to fork the original repository is not due to a lack of interest in contributing, but because this project serves a different target audience with distinct requirements and goals.
+This repository is fundamentally based on the excellent work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The containers, configurations, and AI implementations originate from that project. **This project should be considered a specialized fork** that focuses specifically on streamlining the build process using Docker's buildx functionality.
+
+The decision not to fork the original repository is not due to a lack of interest in contributing, but because this project serves a different target audience with distinct requirements and goals, particularly around the build process implementation.
+
+For the most comprehensive and up-to-date Jetson container implementations, please refer to the original [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers) repository.
 
 ## **How to Use**
 
