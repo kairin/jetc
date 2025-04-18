@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Use POSIX-compliant '.' instead of 'source' to load .env
+# Description: Explicitly declare arrays using 'declare -a' for Bash compatibility
 # Author: Mr K
 #
 # File location diagram:
@@ -165,8 +165,8 @@ PLATFORM="linux/arm64"
 # =========================================================================
 
 # Arrays and tracking variables
-BUILT_TAGS=()        # Tracks successfully built, pushed, pulled and verified images
-ATTEMPTED_TAGS=()    # Tracks all tags the script attempts to build
+declare -a BUILT_TAGS=()        # Tracks successfully built, pushed, pulled and verified images
+declare -a ATTEMPTED_TAGS=()    # Tracks all tags the script attempts to build
 LATEST_SUCCESSFUL_NUMBERED_TAG=""  # Most recent successfully built numbered image
 FINAL_FOLDER_TAG=""  # The tag of the last successfully built folder image
 TIMESTAMPED_LATEST_TAG=""  # Final timestamped tag name
