@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Clarify UUID reuse policy in instructions
+# Description: Use POSIX-compliant '.' instead of 'source' to load .env
 # Author: Mr K
 #
 # File location diagram:
@@ -136,7 +136,7 @@ fi
 
 if [ -n "$ENV_FILE" ]; then
   set -a  # Automatically export all variables
-  source "$ENV_FILE"
+  . "$ENV_FILE" # Use '.' instead of 'source' for POSIX compatibility
   set +a  # Stop automatically exporting
 else
   echo ".env file not found in current directory or ../.vscode directory!" >&2
