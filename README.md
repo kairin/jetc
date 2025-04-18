@@ -1,19 +1,3 @@
-# COMMIT-TRACKING: UUID-20240608-193500-EFGH
-# Description: Final review confirming native buildx execution and removal of all logging interference. Updated headers.
-# Author: GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation (THIS FILE)
-# ├── buildx/                    <- Main build scripts and utilities
-# │   ├── build/                 <- Component build directories
-# │   ├── build.sh               <- Main orchestrator script
-# │   ├── generate_app_checks.sh <- App verification generator
-# │   ├── jetcrun.sh             <- Jetson container runner
-# │   ├── list_installed_apps.sh <- Container app verification script
-# │   └── logs/                  <- Build logs (if any, generated externally)
-# └── ...                        <- Other project files
-
 # JETC: Jetson Containers for Targeted Use Cases
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.

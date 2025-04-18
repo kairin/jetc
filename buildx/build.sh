@@ -66,6 +66,28 @@
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 
+# COMMIT-TRACKING: UUID-20240608-201500-NOPQ
+# Description: Analysis complete - No revert needed. Updating headers only.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
+# COMMIT-TRACKING: UUID-20240608-202000-RSTU
+# Description: Remove --progress=plain flag to allow native buildx progress detection.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # =========================================================================
@@ -205,17 +227,6 @@ verify_container_apps() {
   docker rm -f "$container_id" > /dev/null
   
   return $?
-}
-
-# =========================================================================
-# Function: List installed apps in the latest image
-# Arguments: $1 = image tag to check
-# =========================================================================
-list_installed_apps() {
-    local image_tag=$1
-    
-    if [ -z "$image_tag" ]; then
-        echo "Error: No image tag provided to list_installed_apps function" >&2
         return 1
     fi
     
@@ -273,7 +284,7 @@ build_folder_image() {
   fi
 
   echo "Running: docker buildx build ${cmd_args[*]}"
-  docker buildx build --progress=plain "${cmd_args[@]}"
+  docker buildx build "${cmd_args[@]}"
   local build_status=$? # Capture status immediately
 
   if [ $build_status -ne 0 ]; then

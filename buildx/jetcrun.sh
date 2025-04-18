@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240608-193500-EFGH
-# Description: Final review confirming native buildx execution and removal of all logging interference. Updated headers. Resolve merge conflicts.
+# COMMIT-TRACKING: UUID-20240608-202000-RSTU
+# Description: Remove --progress=plain flag to allow native buildx progress detection.
 # Author: GitHub Copilot
 #
 # File location diagram:
