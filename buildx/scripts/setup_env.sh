@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Clarify UUID reuse policy in instructions
+# Description: Create environment setup functions for variables and user preferences
 # Author: Mr K
 #
 # File location diagram:
