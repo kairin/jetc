@@ -1,12 +1,75 @@
 # JETC: Jetson Containers for Targeted Use Cases
 
-This repository provides a structured and automated system for building Docker containers tailored for Jetson devices. The project is inspired by and based on the work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).
+This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
 
-## **Overview**
+![Jetson Containers](https://img.shields.io/badge/NVIDIA-Jetson-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 
-This repository is designed to handle the preparation, patching, and building of Docker containers for various libraries and tools commonly used in AI, machine learning, and edge-computing workflows. The project leverages Docker's `buildx` to ensure compatibility with ARM64 (aarch64) devices, specifically NVIDIA Jetson platforms.
+## **What Can You Do With This Repo?**
 
-The folder structure and scripts are designed to efficiently build and patch specific components, with flexibility to handle dependencies and downstream workflows.
+With JETC, you can:
+
+- **Run Stable Diffusion** and other AI image generation models on your Jetson
+- **Use web interfaces** like Stable Diffusion WebUI and ComfyUI for creating AI art
+- **Build optimized containers** with all dependencies pre-configured
+- **Save hours of setup time** by avoiding manual installation of complex AI frameworks
+
+## **Quick Start Guide**
+
+If you're new to this project, here's how to get started:
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/kairin/jetc.git
+   cd jetc/buildx
+   ```
+
+2. **Set up your Docker username**
+   ```bash
+   echo "DOCKER_USERNAME=your-dockerhub-username" > .env
+   ```
+
+3. **Run the build script**
+   ```bash
+   ./build.sh
+   ```
+
+4. **Choose an option when prompted**
+   When asked "Do you want to build with cache? (y/n):", type `n` for a clean build or `y` to use cached layers (faster but may use outdated components).
+
+5. **Wait for the build to complete**
+   This process will take 1-3 hours depending on your Jetson model.
+
+## **What to Expect During the Build Process**
+
+As a beginner, here's what you'll see during the build:
+
+- The script will build multiple containers in sequence (01-build-essential, 02-bazel, etc.)
+- You'll see progress messages for each component showing success or failure
+- **Some components might fail** - this is normal and the script will continue with the next one
+- At the end, you'll have a collection of usable containers even if some steps failed
+
+![Build Process Example](https://raw.githubusercontent.com/kairin/jetc/main/docs/images/build_process_example.png)
+
+## **After the Build: Using Your AI Applications**
+
+When the build completes successfully, you can:
+
+1. **Run Stable Diffusion WebUI**
+   ```bash
+   # Replace 'latest-timestamp' with the actual timestamp from your build
+   docker run -it --rm -p 7860:7860 your-dockerhub-username/001:latest-timestamp bash
+   cd /opt/stable-diffusion-webui
+   python launch.py --listen --port 7860
+   ```
+   Then open `http://your-jetson-ip:7860` in your browser
+
+2. **Use ComfyUI**
+   ```bash
+   docker run -it --rm -p 8188:8188 your-dockerhub-username/001:latest-timestamp bash
+   cd /opt/ComfyUI
+   python main.py --listen 0.0.0.0 --port 8188
+   ```
+   Then open `http://your-jetson-ip:8188` in your browser
 
 ## **Repository Structure**
 
