@@ -70,12 +70,22 @@ handle_build_error() {
 }
 
 # Load environment variables from .env file
+# Check multiple locations for the .env file
+ENV_FILE=""
 if [ -f .env ]; then
+  ENV_FILE=".env"
+  echo "Found .env file in current directory"
+elif [ -f "../.vscode/.env" ]; then
+  ENV_FILE="../.vscode/.env"
+  echo "Found .env file in ../.vscode directory"
+fi
+
+if [ -n "$ENV_FILE" ]; then
   set -a  # Automatically export all variables
-  source .env
+  source "$ENV_FILE"
   set +a  # Stop automatically exporting
 else
-  echo ".env file not found!" >&2
+  echo ".env file not found in current directory or ../.vscode directory!" >&2
   exit 1
 fi
 

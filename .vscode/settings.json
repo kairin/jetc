@@ -15,7 +15,10 @@
     },
     "markdown.validate.enabled": true,
     "github.copilot.enable": {
-        "*": true
+        "*": true,
+        "plaintext": false,
+        "markdown": true,
+        "scminput": false
     },
     "github.copilot.editor.enableAutoCompletions": true,
     "files.defaultLanguage": "${activeEditorLanguage}",
