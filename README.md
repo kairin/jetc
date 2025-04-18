@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240608-181500-7B2C
-# Description: Update documentation to reflect native buildx output, removal of tee/log redirection, and improved build robustness
+# COMMIT-TRACKING: UUID-20240608-193500-EFGH
+# Description: Final review confirming native buildx execution and removal of all logging interference. Updated headers.
 # Author: GitHub Copilot
 #
 # File location diagram:
@@ -11,7 +11,7 @@
 # │   ├── generate_app_checks.sh <- App verification generator
 # │   ├── jetcrun.sh             <- Jetson container runner
 # │   ├── list_installed_apps.sh <- Container app verification script
-# │   └── logs/                  <- Build logs (if any)
+# │   └── logs/                  <- Build logs (if any, generated externally)
 # └── ...                        <- Other project files
 
 # JETC: Jetson Containers for Targeted Use Cases
@@ -177,38 +177,32 @@ The improved build system in this repository uses Docker's `buildx` to manage mu
 
 Recent updates to the build system include:
 
-1. **Native Docker Buildx Output**:  
-   - The build script now runs `docker buildx build` as the main process, with no `tee` or output redirection.
-   - This ensures you see the full, native buildx progress, colors, and interactive output as intended by Docker.
-   - All previous use of `tee` and global output redirection has been removed for clarity and compatibility.
+1.  **Native Docker Buildx Output**:
+    *   The build script (`build.sh`) now runs `docker buildx build` directly, without any interference from `tee` or internal script logging/redirection.
+    *   This ensures you see the **full, native buildx progress**, colors, and interactive output directly in your terminal.
+    *   All previous internal logging mechanisms that could interfere with native output have been removed.
 
-2. **Enhanced Error Handling**: 
-   - The build process continues even when individual components fail.
-   - Each failure is clearly reported without stopping the entire build chain.
-   - Exit code 1 indicates a component build failure, but the script continues to the next component.
-   - This allows the system to build as many components as possible in a single run.
+2.  **Enhanced Error Handling**:
+    *   The build process continues even when individual components fail.
+    *   Failures are clearly reported, allowing the script to attempt building subsequent components.
 
-3. **Improved Logging (Optional)**:
-   - While the script no longer logs via `tee`, you can still capture logs by running the script with `| tee build.log` at the shell level if desired.
-   - Each component's output is now shown directly in the terminal for better user experience.
+3.  **Optional External Logging**:
+    *   While the script itself doesn't log to files anymore, you can still capture the entire output (including the native buildx output) by running the script with standard shell redirection, e.g., `./build.sh | tee build.log`.
 
-4. **Better Tag Handling**:
-   - More reliable image tag tracking throughout the build process.
-   - Proper verification of built images between steps.
+4.  **Better Tag Handling & Verification**:
+    *   Improved tracking and verification of image tags throughout the build process.
 
-5. **Progress Reporting**:
-   - Clearer console output showing which components succeeded and failed.
-   - References to log files for detailed error information (if you choose to log externally).
+5.  **Clear Progress Reporting**:
+    *   Console output clearly indicates the status of each component build.
 
-6. **Header Comments and File Structure**:
-   - All scripts now include a standardized header at the top, documenting the commit UUID, description, author, and file location diagram.
-   - This improves traceability and maintainability for all contributors.
+6.  **Standardized Headers**:
+    *   All scripts include a consistent header for tracking changes (UUID, description, author, location).
 
-**Why these changes were made:**  
-- To provide a more intuitive and robust build experience for Jetson users.
-- To ensure that Docker buildx output is always visible and interactive, matching native Docker CLI behavior.
-- To simplify troubleshooting and reduce confusion caused by output redirection or duplicated logs.
-- To align all scripts and documentation with a consistent, professional standard for open-source projects.
+**Why these changes were made:**
+*   To provide the most intuitive build experience by showing the **native `docker buildx` output** without modification.
+*   To eliminate potential issues caused by output buffering or redirection through tools like `tee`.
+*   To simplify the script by removing complex internal logging logic.
+*   To maintain build robustness and improve traceability.
 
 ## **Container Verification System**
 
@@ -311,22 +305,16 @@ This repository is based on the excellent work provided by [dusty-nv/jetson-cont
      ```bash
      ./build.sh
      ```
-   - The script will now continue building all components even if some fail
-   - Each build generates its own detailed log file for troubleshooting
+   - You will see the native `docker buildx` output directly in your terminal.
+   - The script will continue building components even if some fail.
 
-4. **View Build Logs**:
-   - Check the logs directory for detailed build information:
-     ```bash
-     ls -l logs/
-     ```
-   - Each component has its own log file with timestamp
-
-5. **Post-Build Verification**:
-   - After building, you can:
-     - Start an interactive shell
-     - Run quick verification
-     - Run full verification
-     - List installed applications
+4. **View Build Output / Optional Logging**:
+    *   The primary build output is shown directly in the console.
+    *   If you need a log file, run the script like this:
+        ```bash
+        ./build.sh | tee build_$(date +"%Y%m%d-%H%M%S").log
+        ```
+    *   The `logs/` directory is still created but won't be populated by the script itself unless you redirect output externally.
 
 ## **Removing Old Files**
 

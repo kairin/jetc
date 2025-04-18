@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20240608-181500-7B2C
-# Description: Script to generate application verification checks from Dockerfiles
+# COMMIT-TRACKING: UUID-20240608-193500-EFGH
+# Description: Final review confirming native buildx execution and removal of all logging interference. Updated headers. Resolve merge conflicts.
 # Author: GitHub Copilot
 #
 # File location diagram:

@@ -33,8 +33,19 @@
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 
-# COMMIT-TRACKING: UUID-20240608-181500-7B2C
-# Description: Remove all use of tee and log redirection; all output is native to terminal
+# COMMIT-TRACKING: UUID-20240608-192000-ABCD
+# Description: Remove all logging functions and tee; only native docker buildx output is shown
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
+# COMMIT-TRACKING: UUID-20240608-193500-EFGH
+# Description: Final review confirming native buildx execution and removal of all logging interference. Updated headers.
 # Author: GitHub Copilot
 #
 # File location diagram:
@@ -47,13 +58,11 @@
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # =========================================================================
-# Setup logging
+# Setup build directory (LOG_DIR is now only used for error context)
 LOG_DIR="logs"
 mkdir -p "$LOG_DIR"
-MAIN_LOG_FILE="${LOG_DIR}/build_$(date +"%Y%m%d-%H%M%S").log"
-echo "Logging all output to: $MAIN_LOG_FILE"
 
-# Function to get a sanitized folder name for log files
+# Function to get a sanitized folder name for log files (kept for error messages)
 get_log_folder_name() {
   local folder_path=$1
   basename "$folder_path" | tr -d '/' | tr ' ' '_'
@@ -217,34 +226,24 @@ list_installed_apps() {
 # =========================================================================
 build_folder_image() {
   local folder=$1
-  local base_tag_arg=$2  # The tag to pass as BASE_IMAGE build-arg
-  local image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')  # Lowercase image name
-  local folder_log="${LOG_DIR}/$(get_log_folder_name "$folder")_$(date +"%Y%m%d-%H%M%S").log"
-  local fixed_tag=""  # Declare variable to hold the tag
+  local base_tag_arg=$2
+  local image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
+  local fixed_tag=""
 
-  # Generate the image tag
   fixed_tag=$(echo "${DOCKER_USERNAME}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
   echo "Generating fixed tag: $fixed_tag"
-  
-  # Record this tag as attempted even before we try to build it
   ATTEMPTED_TAGS+=("$fixed_tag")
 
-  # Validate Dockerfile exists in the folder
   if [ ! -f "$folder/Dockerfile" ]; then
     echo "Warning: Dockerfile not found in $folder. Skipping."
-    return 1  # Skip this folder
+    return 1
   fi
 
-  # Setup build arguments
   local build_args=()
-  
-  # Use the default base image for the first build if no base tag is provided
   if [ -z "$base_tag_arg" ]; then
       base_tag_arg="$DEFAULT_BASE_IMAGE"
       echo "Using default base image: $DEFAULT_BASE_IMAGE"
   fi
-  
-  # Add the base image argument
   build_args+=(--build-arg "BASE_IMAGE=$base_tag_arg")
   echo "Using base image build arg: $base_tag_arg"
 
@@ -255,27 +254,24 @@ build_folder_image() {
   echo "Tag: $fixed_tag"
   echo "--------------------------------------------------"
 
-  # Build and push the image - show buildx output directly, log after
   local cmd_args=("--platform" "$PLATFORM" "-t" "$fixed_tag" "${build_args[@]}" --push "$folder")
   if [ "$use_cache" != "y" ]; then
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
 
   echo "Running: docker buildx build ${cmd_args[*]}"
+  # Run docker buildx build as the main process, no tee, no logging
   docker buildx build --progress=plain "${cmd_args[@]}"
   build_status=$?
 
-  # Check if build and push succeeded
   if [ $build_status -ne 0 ]; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     echo "Error: Failed to build and push image for $image_name ($folder)."
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "See detailed build log: $folder_log"
     BUILD_FAILED=1
     return 1
   fi
 
-  # Pull the image immediately after successful push to verify it's accessible
   echo "Pulling built image: $fixed_tag"
   docker pull "$fixed_tag"
   local pull_status=$?
@@ -287,9 +283,8 @@ build_folder_image() {
       return 1
   fi
 
-  # Verify image exists locally after pull
   echo "Verifying image $fixed_tag exists locally after pull..."
-  if ! verify_image_exists "$fixed_tag"; then
+  if ! verify_image_exists("$fixed_tag"); then
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
       echo "This indicates a potential issue with the Docker daemon or registry synchronization."
@@ -299,13 +294,8 @@ build_folder_image() {
   fi
 
   echo "Image $fixed_tag verified locally."
-
-  # Record successful build
   BUILT_TAGS+=("$fixed_tag")
-
-  # Return the tag name (will be captured by the caller)
-  # IMPORTANT: This needs to be the ONLY output to stdout at return
-  echo "$fixed_tag" > /tmp/last_built_tag.txt  # Save to temporary file
+  echo "$fixed_tag" > /tmp/last_built_tag.txt
   return 0
 }
 
@@ -328,7 +318,6 @@ if [ ${#numbered_dirs[@]} -eq 0 ]; then
 else
     for dir in "${numbered_dirs[@]}"; do
       echo "Processing numbered directory: $dir" >&2
-      echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
       # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the next build
       build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG"
       build_status=$?
@@ -341,7 +330,6 @@ else
           echo "Successfully built, pushed, and pulled numbered image: $tag" >&2
       else
           echo "Build, push or pull failed for $dir. Subsequent dependent builds might fail." >&2
-          echo "See ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed error information"
           handle_build_error "$dir" $build_status
           # BUILD_FAILED is already set within build_folder_image
       fi
@@ -360,7 +348,6 @@ else
     echo "Using base image for others: $BASE_FOR_OTHERS" >&2
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir" >&2
-      echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
       build_folder_image "$dir" "$BASE_FOR_OTHERS"
       build_status=$?
       if [ $build_status -eq 0 ]; then
@@ -369,7 +356,6 @@ else
           echo "Successfully built, pushed, and pulled other image: $tag" >&2
       else
           echo "Build, push or pull failed for $dir." >&2
-          echo "See ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed error information"
           handle_build_error "$dir" $build_status
           # BUILD_FAILED is already set within build_folder_image
       fi
@@ -585,11 +571,3 @@ else
     echo "--------------------------------------------------" >&2
     exit 0  # Exit with success code
 fi
-
-# At the end of the script, add a summary of logs
-echo "--------------------------------------------------"
-echo "Log files created during this build:"
-echo "Main build log: $MAIN_LOG_FILE"
-echo "Folder-specific logs:"
-ls -1 "${LOG_DIR}/$(date +"%Y%m%d")"*".log" | grep -v "$(basename "$MAIN_LOG_FILE")" || echo "No folder-specific logs found"
-echo "--------------------------------------------------"
