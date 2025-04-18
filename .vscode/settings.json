@@ -13,5 +13,41 @@
         "default": true,
         "workbench.editorinputs.searchEditorInput": true
     },
-    "markdown.validate.enabled": true
+    "markdown.validate.enabled": true,
+    "github.copilot.enable": {
+        "*": true
+    },
+    "github.copilot.editor.enableAutoCompletions": true,
+    "files.defaultLanguage": "${activeEditorLanguage}",
+    "fileHeaderComment.parameter": {
+        "commentbegin": "# ",
+        "commentprefix": "# ",
+        "commentend": ""
+    },
+    "editor.snippetSuggestions": "top",
+    "better-comments.tags": [
+        {
+            "tag": "COMMIT-TRACKING:",
+            "color": "#FF9800",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": true,
+            "italic": false
+        }
+    ],
+    "github.copilot.advanced": {
+        "trackedFiles": [
+            "**/*.py",
+            "**/*.sh",
+            "**/*.js",
+            "**/*.tsx",
+            "**/*.jsx",
+            "**/*.java",
+            "**/*.cpp",
+            "**/*.h"
+        ]
+    },
+    "github.copilot.inlineSuggest.projectPath": "${workspaceFolder}",
+    "github.copilot.inlineSuggest.enable": true
 }
