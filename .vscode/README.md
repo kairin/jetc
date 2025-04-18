@@ -1,3 +1,4 @@
+<!--
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
 # Description: Add header, update author, clarify UUID reuse in usage
 # Author: Mr K
@@ -8,6 +9,7 @@
 # ├── .vscode/                   <- VSCode settings directory
 # │   └── README.md              <- THIS FILE
 # └── ...                        <- Other project files
+-->
 
 # VSCode Copilot Configuration
 
@@ -45,4 +47,3 @@ This project uses custom VSCode settings to help maintain consistent code styles
 ## Manual Instructions
 
 If the automatic setup doesn't work, manually add this header to all files:
-

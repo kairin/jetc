@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update author
+# Description: Update author, add note about not committing local instructions
 # Author: Mr K
 #
 # File location diagram:
@@ -10,6 +10,8 @@
 # ├── .github/                   <- GitHub directory
 # │   └── setup-git-template.sh  <- THIS FILE
 # └── ...                        <- Other project files
+
+# LOCAL INSTRUCTIONS - DO NOT COMMIT TO GIT
 
 # Ask user for template structure preference
 echo "Do you want to use:"

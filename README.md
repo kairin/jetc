@@ -1,3 +1,16 @@
+<!--
+# COMMIT-TRACKING: UUID-20240729-004815-A3B1
+# Description: Add a note about the importance of not committing local instructions to Git, Update the author to "Mr K"
+# Author: Mr K
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── [directory]/               <- File's directory
+# │   └── [filename]             <- THIS FILE
+# └── ...                        <- Other project files
+-->
+
 # JETC: Jetson Containers for Targeted Use Cases
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
@@ -30,7 +43,7 @@ If you're new to this project, here's how to get started:
 
 3. **Run the build script**
    ```bash
-   ./build.sh
+   ./scripts/build.sh
    ```
 
 4. **Choose an option when prompted**
@@ -81,7 +94,7 @@ When the build completes successfully, you can:
 ├── README.md                        # This file - repository documentation
 ├── buildx/                          # Main directory containing build system
     ├── build/                       # Folder containing build directories for each component
-    ├── build.sh                     # Main build script for orchestrating all builds
+    ├── scripts/                     # Folder containing modularized build scripts
     ├── generate_app_checks.sh       # Helper script for generating application verification
     ├── jetcrun.sh                   # Utility script for running Jetson containers
     ├── list_installed_apps.sh       # Script for listing installed applications within a container
@@ -110,7 +123,7 @@ buildx/build/
 
 ### **Build Process Details**
 
-The build script (`build.sh`) processes directories in numerical order:
+The build script (`scripts/build.sh`) processes directories in numerical order:
 
 1. Numbered directories (`01-*`, `02-*`, etc.) are built sequentially
 2. Each numbered directory must contain a `Dockerfile` at its root
@@ -126,7 +139,7 @@ For complex components with multiple sub-components (like CUDA):
 
 ## **How the Build System Works**
 
-The improved build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process is orchestrated via `build.sh`, which now features enhanced error handling and logging:
+The improved build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process is orchestrated via `scripts/build.sh`, which now features enhanced error handling and logging:
 
 1. **Initialization and Logging**:
    - Creates timestamped log files for the main build process
@@ -162,7 +175,7 @@ The improved build system in this repository uses Docker's `buildx` to manage mu
 Recent updates to the build system include:
 
 1.  **Native Docker Buildx Output**:
-    *   The build script (`build.sh`) now runs `docker buildx build` directly, without any interference from `tee` or internal script logging/redirection.
+    *   The build script (`scripts/build.sh`) now runs `docker buildx build` directly, without any interference from `tee` or internal script logging/redirection.
     *   This ensures you see the **full, native buildx progress**, colors, and interactive output directly in your terminal.
     *   All previous internal logging mechanisms that could interfere with native output have been removed.
 
@@ -171,7 +184,7 @@ Recent updates to the build system include:
     *   Failures are clearly reported, allowing the script to attempt building subsequent components.
 
 3.  **Optional External Logging**:
-    *   While the script itself doesn't log to files anymore, you can still capture the entire output (including the native buildx output) by running the script with standard shell redirection, e.g., `./build.sh | tee build.log`.
+    *   While the script itself doesn't log to files anymore, you can still capture the entire output (including the native buildx output) by running the script with standard shell redirection, e.g., `./scripts/build.sh | tee build.log`.
 
 4.  **Better Tag Handling & Verification**:
     *   Improved tracking and verification of image tags throughout the build process.
@@ -287,7 +300,7 @@ This repository is based on the excellent work provided by [dusty-nv/jetson-cont
 3. **Run the Build Script**:
    - To build all components:
      ```bash
-     ./build.sh
+     ./scripts/build.sh
      ```
    - You will see the native `docker buildx` output directly in your terminal.
    - The script will continue building components even if some fail.
@@ -296,7 +309,7 @@ This repository is based on the excellent work provided by [dusty-nv/jetson-cont
     *   The primary build output is shown directly in the console.
     *   If you need a log file, run the script like this:
         ```bash
-        ./build.sh | tee build_$(date +"%Y%m%d-%H%M%S").log
+        ./scripts/build.sh | tee build_$(date +"%Y%m%d-%H%M%S").log
         ```
     *   The `logs/` directory is still created but won't be populated by the script itself unless you redirect output externally.
 

@@ -113,3 +113,5 @@ Save this script to a file (e.g., `setup-git-template.sh`), make it executable (
 - Existing repositories won't be affected
 - If you update your Copilot instructions, you'll need to update the template
 - This works for both local repositories and those created from GitHub clones (if you run `git init` again)
+
+# LOCAL INSTRUCTIONS - DO NOT COMMIT TO GIT

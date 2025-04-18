@@ -1,3 +1,4 @@
+/* 
 // COMMIT-TRACKING: UUID-20240729-004815-A3B1
 // Description: Correct header comment style for JS
 // Author: Mr K
@@ -8,6 +9,9 @@
 // ├── .vscode/                   <- VSCode settings directory
 // │   └── init_copilot.js        <- THIS FILE
 // └── ...                        <- Other project files
+
+// LOCAL INSTRUCTIONS - DO NOT COMMIT TO GIT
+*/
 
 // This script can be loaded by the VSCode Custom Editor API when available
 // or used with VSCode extensions that support JS hooks
