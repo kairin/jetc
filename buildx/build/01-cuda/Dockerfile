@@ -1,3 +1,15 @@
+# COMMIT-TRACKING: UUID-20240730-045015-C0DA
+# Description: Remove default value for DISTRO ARG to fix build error with OS mismatch.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-cuda/             <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: cuda-base
 # group: cuda

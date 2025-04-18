@@ -1,3 +1,17 @@
+<!--
+# COMMIT-TRACKING: UUID-20240730-045015-C0DA
+# Description: Add commit tracking header.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-00-build-essential/ <- Current directory
+# │   │       └── README.md        <- THIS FILE
+# └── ...                        <- Other project files
+-->
 # build-essential
 
 > [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)
