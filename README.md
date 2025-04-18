@@ -92,11 +92,49 @@ When the build completes successfully, you can:
 ├── buildx/                          # Main directory containing build system
     ├── build/                       # Folder containing build directories for each component
     ├── build.sh                     # Main build script for orchestrating all builds
-    ├── generate_app_checks.sh       # Helper script for generating application verification
+    ├── scripts/                     # Directory containing modular script components
+    │   ├── docker_utils.sh          # Docker utility functions
+    │   ├── setup_env.sh             # Environment setup functions
+    │   ├── setup_buildx.sh          # Docker buildx setup functions
+    │   ├── post_build_menu.sh       # Post-build menu options
+    │   ├── generate_app_checks.sh   # Helper script for generating application verification
+    │   └── list_installed_apps.sh   # Script for listing installed applications within a container
     ├── jetcrun.sh                   # Utility script for running Jetson containers
-    ├── list_installed_apps.sh       # Script for listing installed applications within a container
     └── logs/                        # Directory containing build logs
 ```
+
+### **Modular Script Structure**
+
+The build system has been modularized for better maintainability:
+
+1. **`buildx/build.sh`** - Main orchestration script that:
+   - Sources all required modular scripts
+   - Determines build order and dependencies
+   - Manages the overall build process
+   - Handles errors and final tagging
+
+2. **`buildx/scripts/docker_utils.sh`** - Contains Docker utility functions:
+   - `verify_image_exists()` - Check if a Docker image exists locally
+   - `verify_container_apps()` - Run verification inside a container
+   - `list_installed_apps()` - List installed applications in a container
+   - `build_folder_image()` - Build, push and pull a Docker image
+
+3. **`buildx/scripts/setup_env.sh`** - Handles environment setup:
+   - `load_env_variables()` - Load environment variables from .env file
+   - `setup_build_environment()` - Initialize build environment variables
+   - `get_user_preferences()` - Get user input for build preferences
+
+4. **`buildx/scripts/setup_buildx.sh`** - Sets up Docker buildx:
+   - `setup_buildx_builder()` - Create or use Docker buildx builder
+
+5. **`buildx/scripts/post_build_menu.sh`** - Post-build options:
+   - `show_post_build_menu()` - Interactive menu for post-build operations
+
+6. **`buildx/scripts/list_installed_apps.sh`** - Container verification:
+   - Functions for checking installed applications in containers
+
+7. **`buildx/scripts/generate_app_checks.sh`** - Generates verification code:
+   - Creates checks based on Dockerfiles for application verification
 
 ### **`build/` Directory Structure**
 
@@ -120,7 +158,7 @@ buildx/build/
 
 ### **Build Process Details**
 
-The build script (`build.sh`) processes directories in numerical order:
+The modularized build script (`build.sh`) processes directories in numerical order:
 
 1. Numbered directories (`01-*`, `02-*`, etc.) are built sequentially
 2. Each numbered directory must contain a `Dockerfile` at its root
@@ -134,69 +172,58 @@ For complex components with multiple sub-components (like CUDA):
 2. This main Dockerfile should install core functionality and set up the environment
 3. Sub-components can be built separately in later steps (e.g., through separate build entries)
 
-## **How the Build System Works**
+## **How the Modular Build System Works**
 
-The improved build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process is orchestrated via `build.sh`, which now features enhanced error handling and logging:
+The modularized build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process follows these steps:
 
-1. **Initialization and Logging**:
-   - Creates timestamped log files for the main build process
-   - Generates separate log files for each component build
-   - Loads environment variables from `.env`
-   - Detects the platform (ensures aarch64)
-   - Sets up a `buildx` builder with NVIDIA container runtime
+1. **Initialization and Environment Setup**:
+   - The main `build.sh` script sources modular components from `scripts/`
+   - `setup_env.sh` loads environment variables and initializes tracking
+   - `setup_buildx.sh` sets up the Docker buildx builder
 
 2. **User Input**:
-   - Prompts the user to decide whether to build with or without cache
+   - The script prompts the user to decide whether to build with or without cache
 
-3. **Resilient Build Process**:
+3. **Build Process**:
    - Processes **numbered directories** in ascending order (01-build-essential, 02-bazel, etc.)
-     - Each numbered directory builds upon the previous one
-     - Continues the build process even if individual components fail
-     - Reports success or failure for each component clearly in the console
-   - Processes **non-numbered directories** after all numbered builds
-   - Creates detailed logs for troubleshooting each component
+   - Each step uses utility functions from `docker_utils.sh`
+   - Continues the build process even if individual components fail
 
 4. **Verification and Tagging**:
    - Creates a timestamped `latest` tag for the final built image
    - Verifies all images are accessible locally
-   - Supports verification of installed apps in containers
 
 5. **Post-Build Options**:
-   - Interactive shell for exploring the container
-   - Quick verification for common tools and packages
-   - Full verification for comprehensive system inspection
-   - Listing of all installed applications
+   - Uses `post_build_menu.sh` to provide interactive options
+   - Options include interactive shell, verification, and app listing
 
 ## **Recent Improvements**
 
 Recent updates to the build system include:
 
-1.  **Native Docker Buildx Output**:
-    *   The build script (`build.sh`) now runs `docker buildx build` directly, without any interference from `tee` or internal script logging/redirection.
-    *   This ensures you see the **full, native buildx progress**, colors, and interactive output directly in your terminal.
-    *   All previous internal logging mechanisms that could interfere with native output have been removed.
+1.  **Modular Script Structure**:
+    *   The build script has been split into modular components for better maintainability
+    *   Each script handles a specific aspect of the build process
+    *   Scripts can be updated independently without affecting the entire system
 
 2.  **Enhanced Error Handling**:
-    *   The build process continues even when individual components fail.
-    *   Failures are clearly reported, allowing the script to attempt building subsequent components.
+    *   The build process continues even when individual components fail
+    *   Failures are clearly reported, allowing the script to attempt building subsequent components
 
-3.  **Optional External Logging**:
-    *   While the script itself doesn't log to files anymore, you can still capture the entire output (including the native buildx output) by running the script with standard shell redirection, e.g., `./build.sh | tee build.log`.
+3.  **Native Docker Buildx Output**:
+    *   The build script runs `docker buildx build` directly, without any interference
+    *   This ensures you see the **full, native buildx progress**, colors, and interactive output directly in your terminal
 
 4.  **Better Tag Handling & Verification**:
-    *   Improved tracking and verification of image tags throughout the build process.
+    *   Improved tracking and verification of image tags throughout the build process
 
-5.  **Clear Progress Reporting**:
-    *   Console output clearly indicates the status of each component build.
-
-6.  **Standardized Headers**:
-    *   All scripts include a consistent header for tracking changes (UUID, description, author, location).
+5.  **Standardized Headers**:
+    *   All scripts include a consistent header for tracking changes (UUID, description, author, location)
 
 **Why these changes were made:**
-*   To provide the most intuitive build experience by showing the **native `docker buildx` output** without modification.
-*   To eliminate potential issues caused by output buffering or redirection through tools like `tee`.
-*   To simplify the script by removing complex internal logging logic.
-*   To maintain build robustness and improve traceability.
+*   To provide a more maintainable and modular codebase
+*   To make it easier to understand and modify specific parts of the build process
+*   To provide the most intuitive build experience by showing the **native `docker buildx` output**
 
 ## **Container Verification System**
 
@@ -223,7 +250,7 @@ A key feature of this repository is the comprehensive verification system for bu
 This modular script provides detailed information about installed components:
 
 ```bash
-./list_installed_apps.sh [mode]
+./scripts/list_installed_apps.sh [mode]
 ```
 
 Available modes:
@@ -308,7 +335,6 @@ This repository is based on the excellent work provided by [dusty-nv/jetson-cont
         ```bash
         ./build.sh | tee build_$(date +"%Y%m%d-%H%M%S").log
         ```
-    *   The `logs/` directory is still created but won't be populated by the script itself unless you redirect output externally.
 
 ## **Removing Old Files**
 
