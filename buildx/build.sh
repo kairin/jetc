@@ -11,20 +11,31 @@
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 
+# COMMIT-TRACKING: UUID-20240418-172300-ABCD
+# Description: Echo buildx command and log file after each build step for better visibility
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
+# COMMIT-TRACKING: UUID-20240608-153000-9A1B
+# Description: Show docker buildx output natively, log after build completes, no tee/echo duplication
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # =========================================================================
-# Docker Image Building and Verification Script
-# 
-# This script automates the process of building, pushing, pulling, and
-# verifying Docker images from a series of directories. It handles:
-# 1. Building images in numeric order from the build/ directory
-# 2. Pushing images to Docker registry
-# 3. Pulling images to verify they're accessible
-# 4. Creating a final timestamped tag for the last successful build
-# 5. Verifying all images are available locally
-# =========================================================================
-
 # Setup logging
 LOG_DIR="logs"
 mkdir -p "$LOG_DIR"
@@ -254,27 +265,24 @@ build_folder_image() {
   echo "Tag: $fixed_tag" | tee -a "$folder_log"
   echo "--------------------------------------------------" | tee -a "$folder_log"
 
-  # Build and push the image - log output to folder-specific log
+  # Build and push the image - show buildx output directly, log after
   local cmd_args=("--platform" "$PLATFORM" "-t" "$fixed_tag" "${build_args[@]}" --push "$folder")
   if [ "$use_cache" != "y" ]; then
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
-  
-  # Execute the build command based on interactive preference
-  local build_status=0
+
+  # Save buildx output to a temp file for logging, but show it live to user
+  local buildx_tmp_log
+  buildx_tmp_log=$(mktemp)
   echo "Running: docker buildx build ${cmd_args[*]}" | tee -a "$folder_log"
-  
-  # NOTE: IMPORTANT VISUAL INDICATORS
-  # Previous AI-assisted modifications removed visual output indicators
-  # that are critical for user understanding of build progress.
-  # DO NOT REMOVE OR REDIRECT these visual indicators in future modifications.
-  # The --progress option is intentionally set to show appropriate build output.
-  
-  echo "Showing interactive buildx progress..." | tee -a "$folder_log"
-  # Use --progress=plain to show detailed build output
-  docker buildx build --progress=plain "${cmd_args[@]}" 2>&1 | tee -a "$folder_log"
+  # Show buildx output natively, but also save to temp log for later archival
+  docker buildx build --progress=plain "${cmd_args[@]}" 2>&1 | tee "$buildx_tmp_log"
   build_status=${PIPESTATUS[0]}
-  
+
+  # Append buildx output to folder log after build completes
+  cat "$buildx_tmp_log" >> "$folder_log"
+  rm -f "$buildx_tmp_log"
+
   # Check if build and push succeeded
   if [ $build_status -ne 0 ]; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
