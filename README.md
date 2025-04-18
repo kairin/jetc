@@ -56,8 +56,9 @@ When the build completes successfully, you can:
 
 1. **Run Stable Diffusion WebUI**
    ```bash
-   # Replace 'latest-timestamp' with the actual timestamp from your build
-   docker run -it --rm -p 7860:7860 your-dockerhub-username/001:latest-timestamp bash
+   # Replace with your actual tag from the build
+   # Format: your-dockerhub-username/001:latest-YYYYMMDD-HHMMSS-1
+   docker run -it --rm -p 7860:7860 your-dockerhub-username/001:latest-20250418-123456-1 bash
    cd /opt/stable-diffusion-webui
    python launch.py --listen --port 7860
    ```
@@ -65,7 +66,7 @@ When the build completes successfully, you can:
 
 2. **Use ComfyUI**
    ```bash
-   docker run -it --rm -p 8188:8188 your-dockerhub-username/001:latest-timestamp bash
+   docker run -it --rm -p 8188:8188 your-dockerhub-username/001:latest-20250418-123456-1 bash
    cd /opt/ComfyUI
    python main.py --listen 0.0.0.0 --port 8188
    ```
