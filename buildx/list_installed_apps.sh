@@ -1,3 +1,14 @@
+# COMMIT-TRACKING: UUID-20240608-181500-7B2C
+# Description: Container application verification script with modular checks
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── list_installed_apps.sh <- THIS FILE
+# └── ...                        <- Other project files
+
 #!/usr/bin/env bash
 set -e
 

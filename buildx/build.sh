@@ -33,6 +33,17 @@
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 
+# COMMIT-TRACKING: UUID-20240608-181500-7B2C
+# Description: Remove all use of tee and log redirection; all output is native to terminal
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
 set -e  # Exit immediately if a command exits with a non-zero status
 
 # =========================================================================
@@ -42,31 +53,10 @@ mkdir -p "$LOG_DIR"
 MAIN_LOG_FILE="${LOG_DIR}/build_$(date +"%Y%m%d-%H%M%S").log"
 echo "Logging all output to: $MAIN_LOG_FILE"
 
-# Enable logging to both console and log file
-exec > >(tee -a "$MAIN_LOG_FILE") 2>&1
-
 # Function to get a sanitized folder name for log files
 get_log_folder_name() {
   local folder_path=$1
   basename "$folder_path" | tr -d '/' | tr ' ' '_'
-}
-
-# Function to create and log to a folder-specific log file
-# while still keeping output in the main log
-log_to_folder_file() {
-  local folder_path=$1
-  local folder_name=$(get_log_folder_name "$folder_path")
-  local cmd=$2
-  local folder_log="${LOG_DIR}/${folder_name}_$(date +"%Y%m%d-%H%M%S").log"
-  
-  echo "Logging folder-specific output to: $folder_log"
-  
-  # Run the command and tee output to both the folder log and stdout
-  # (which is already being captured by the main log)
-  eval "$cmd" 2>&1 | tee -a "$folder_log"
-  
-  # Return the exit code of the command, not tee
-  return ${PIPESTATUS[0]}
 }
 
 # Ensure the build process continues even if individual builds fail
@@ -234,14 +224,14 @@ build_folder_image() {
 
   # Generate the image tag
   fixed_tag=$(echo "${DOCKER_USERNAME}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
-  echo "Generating fixed tag: $fixed_tag" | tee -a "$folder_log"
+  echo "Generating fixed tag: $fixed_tag"
   
   # Record this tag as attempted even before we try to build it
   ATTEMPTED_TAGS+=("$fixed_tag")
 
   # Validate Dockerfile exists in the folder
   if [ ! -f "$folder/Dockerfile" ]; then
-    echo "Warning: Dockerfile not found in $folder. Skipping." | tee -a "$folder_log"
+    echo "Warning: Dockerfile not found in $folder. Skipping."
     return 1  # Skip this folder
   fi
 
@@ -251,19 +241,19 @@ build_folder_image() {
   # Use the default base image for the first build if no base tag is provided
   if [ -z "$base_tag_arg" ]; then
       base_tag_arg="$DEFAULT_BASE_IMAGE"
-      echo "Using default base image: $DEFAULT_BASE_IMAGE" | tee -a "$folder_log"
+      echo "Using default base image: $DEFAULT_BASE_IMAGE"
   fi
   
   # Add the base image argument
   build_args+=(--build-arg "BASE_IMAGE=$base_tag_arg")
-  echo "Using base image build arg: $base_tag_arg" | tee -a "$folder_log"
+  echo "Using base image build arg: $base_tag_arg"
 
-  echo "--------------------------------------------------" | tee -a "$folder_log"
-  echo "Building and pushing image from folder: $folder" | tee -a "$folder_log"
-  echo "Image Name: $image_name" | tee -a "$folder_log"
-  echo "Platform: $PLATFORM" | tee -a "$folder_log"
-  echo "Tag: $fixed_tag" | tee -a "$folder_log"
-  echo "--------------------------------------------------" | tee -a "$folder_log"
+  echo "--------------------------------------------------"
+  echo "Building and pushing image from folder: $folder"
+  echo "Image Name: $image_name"
+  echo "Platform: $PLATFORM"
+  echo "Tag: $fixed_tag"
+  echo "--------------------------------------------------"
 
   # Build and push the image - show buildx output directly, log after
   local cmd_args=("--platform" "$PLATFORM" "-t" "$fixed_tag" "${build_args[@]}" --push "$folder")
@@ -271,52 +261,44 @@ build_folder_image() {
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
 
-  # Save buildx output to a temp file for logging, but show it live to user
-  local buildx_tmp_log
-  buildx_tmp_log=$(mktemp)
-  echo "Running: docker buildx build ${cmd_args[*]}" | tee -a "$folder_log"
-  # Show buildx output natively, but also save to temp log for later archival
-  docker buildx build --progress=plain "${cmd_args[@]}" 2>&1 | tee "$buildx_tmp_log"
-  build_status=${PIPESTATUS[0]}
-
-  # Append buildx output to folder log after build completes
-  cat "$buildx_tmp_log" >> "$folder_log"
-  rm -f "$buildx_tmp_log"
+  echo "Running: docker buildx build ${cmd_args[*]}"
+  docker buildx build --progress=plain "${cmd_args[@]}"
+  build_status=$?
 
   # Check if build and push succeeded
   if [ $build_status -ne 0 ]; then
-    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
-    echo "Error: Failed to build and push image for $image_name ($folder)." | tee -a "$folder_log"
-    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
-    echo "See detailed build log: $folder_log" | tee -a "$folder_log"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "Error: Failed to build and push image for $image_name ($folder)."
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "See detailed build log: $folder_log"
     BUILD_FAILED=1
     return 1
   fi
 
   # Pull the image immediately after successful push to verify it's accessible
-  echo "Pulling built image: $fixed_tag" | tee -a "$folder_log"
-  docker pull "$fixed_tag" 2>&1 | tee -a "$folder_log"
-  local pull_status=${PIPESTATUS[0]}
+  echo "Pulling built image: $fixed_tag"
+  docker pull "$fixed_tag"
+  local pull_status=$?
   if [ $pull_status -ne 0 ]; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
-      echo "Error: Failed to pull the built image $fixed_tag after push." | tee -a "$folder_log"
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "Error: Failed to pull the built image $fixed_tag after push."
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       BUILD_FAILED=1
       return 1
   fi
 
   # Verify image exists locally after pull
-  echo "Verifying image $fixed_tag exists locally after pull..." | tee -a "$folder_log"
+  echo "Verifying image $fixed_tag exists locally after pull..."
   if ! verify_image_exists "$fixed_tag"; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
-      echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'." | tee -a "$folder_log"
-      echo "This indicates a potential issue with the Docker daemon or registry synchronization." | tee -a "$folder_log"
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" | tee -a "$folder_log"
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
+      echo "This indicates a potential issue with the Docker daemon or registry synchronization."
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       BUILD_FAILED=1
       return 1
   fi
 
-  echo "Image $fixed_tag verified locally." | tee -a "$folder_log"
+  echo "Image $fixed_tag verified locally."
 
   # Record successful build
   BUILT_TAGS+=("$fixed_tag")

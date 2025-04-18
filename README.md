@@ -1,3 +1,19 @@
+# COMMIT-TRACKING: UUID-20240608-181500-7B2C
+# Description: Update documentation to reflect native buildx output, removal of tee/log redirection, and improved build robustness
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation (THIS FILE)
+# ├── buildx/                    <- Main build scripts and utilities
+# │   ├── build/                 <- Component build directories
+# │   ├── build.sh               <- Main orchestrator script
+# │   ├── generate_app_checks.sh <- App verification generator
+# │   ├── jetcrun.sh             <- Jetson container runner
+# │   ├── list_installed_apps.sh <- Container app verification script
+# │   └── logs/                  <- Build logs (if any)
+# └── ...                        <- Other project files
+
 # JETC: Jetson Containers for Targeted Use Cases
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
@@ -161,24 +177,38 @@ The improved build system in this repository uses Docker's `buildx` to manage mu
 
 Recent updates to the build system include:
 
-1. **Enhanced Error Handling**: 
-   - The build process now continues even when individual components fail
-   - Each failure is clearly reported without stopping the entire build chain
-   - Exit code 1 indicates a component build failure, but the script continues to the next component
-   - This allows the system to build as many components as possible in a single run
+1. **Native Docker Buildx Output**:  
+   - The build script now runs `docker buildx build` as the main process, with no `tee` or output redirection.
+   - This ensures you see the full, native buildx progress, colors, and interactive output as intended by Docker.
+   - All previous use of `tee` and global output redirection has been removed for clarity and compatibility.
 
-2. **Improved Logging**:
-   - Each component now generates its own dedicated log file
-   - Timestamped logs make it easy to track build history
-   - Separate logs simplify troubleshooting specific component issues
+2. **Enhanced Error Handling**: 
+   - The build process continues even when individual components fail.
+   - Each failure is clearly reported without stopping the entire build chain.
+   - Exit code 1 indicates a component build failure, but the script continues to the next component.
+   - This allows the system to build as many components as possible in a single run.
 
-3. **Better Tag Handling**:
-   - More reliable image tag tracking throughout the build process
-   - Proper verification of built images between steps
+3. **Improved Logging (Optional)**:
+   - While the script no longer logs via `tee`, you can still capture logs by running the script with `| tee build.log` at the shell level if desired.
+   - Each component's output is now shown directly in the terminal for better user experience.
 
-4. **Progress Reporting**:
-   - Clearer console output showing which components succeeded and failed
-   - References to log files for detailed error information
+4. **Better Tag Handling**:
+   - More reliable image tag tracking throughout the build process.
+   - Proper verification of built images between steps.
+
+5. **Progress Reporting**:
+   - Clearer console output showing which components succeeded and failed.
+   - References to log files for detailed error information (if you choose to log externally).
+
+6. **Header Comments and File Structure**:
+   - All scripts now include a standardized header at the top, documenting the commit UUID, description, author, and file location diagram.
+   - This improves traceability and maintainability for all contributors.
+
+**Why these changes were made:**  
+- To provide a more intuitive and robust build experience for Jetson users.
+- To ensure that Docker buildx output is always visible and interactive, matching native Docker CLI behavior.
+- To simplify troubleshooting and reduce confusion caused by output redirection or duplicated logs.
+- To align all scripts and documentation with a consistent, professional standard for open-source projects.
 
 ## **Container Verification System**
 

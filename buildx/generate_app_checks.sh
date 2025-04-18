@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20250418-123015-9A3F
+# COMMIT-TRACKING: UUID-20240608-181500-7B2C
 # Description: Script to generate application verification checks from Dockerfiles
-# Author: GitHub Copilot / User
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
