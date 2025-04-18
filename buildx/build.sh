@@ -248,18 +248,21 @@ build_folder_image() {
   local build_status=0
   echo "Running: docker buildx build ${cmd_args[*]}" | tee -a "$folder_log"
   
+  # NOTE: IMPORTANT VISUAL INDICATORS
+  # Previous AI-assisted modifications removed visual output indicators
+  # that are critical for user understanding of build progress.
+  # DO NOT REMOVE OR REDIRECT these visual indicators in future modifications.
+  # The --progress option is intentionally set to show appropriate build output.
+  
   if [ "$show_interactive" = "y" ]; then
-    # Run with interactive output - direct to console
+    # Run with interactive output directly to console
     echo "Showing interactive buildx progress..." | tee -a "$folder_log"
-    # Only log the command to the file, but run directly for interactive display
-    docker buildx build "${cmd_args[@]}"
-    build_status=$?
-    # Write a summary of the result to the log
-    echo "Build completed with status code: $build_status" | tee -a "$folder_log"
+    # Use --progress=plain to show detailed build output
+    docker buildx build --progress=plain "${cmd_args[@]}" 2>&1 | tee -a "$folder_log"
+    build_status=${PIPESTATUS[0]}
   else
-    # Non-interactive mode - capture all output to log
-    echo "Capturing buildx output to log file: $folder_log"
-    docker buildx build "${cmd_args[@]}" 2>&1 | tee -a "$folder_log"
+    # Non-interactive mode - still show compact progress but log everything
+    docker buildx build --progress=auto "${cmd_args[@]}" 2>&1 | tee -a "$folder_log"
     build_status=${PIPESTATUS[0]}
   fi
   
@@ -328,7 +331,7 @@ else
       echo "Processing numbered directory: $dir" >&2
       echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
       # Pass the LATEST_SUCCESSFUL_NUMBERED_TAG as the base for the next build
-      build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG" >/dev/null
+      build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG"
       build_status=$?
       
       if [ $build_status -eq 0 ]; then
@@ -360,7 +363,7 @@ else
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir" >&2
       echo "Check ${LOG_DIR}/$(get_log_folder_name "$dir")_*.log for detailed build logs"
-      build_folder_image "$dir" "$BASE_FOR_OTHERS" >/dev/null
+      build_folder_image "$dir" "$BASE_FOR_OTHERS"
       build_status=$?
       if [ $build_status -eq 0 ]; then
           tag=$(cat /tmp/last_built_tag.txt)
