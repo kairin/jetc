@@ -192,7 +192,7 @@ RUN if [ "${INSTALL_MODE}" = "package" ] || [ "${INSTALL_MODE}" = "builtin" ]; t
         export CUDA_BIN_PATH="${CUDA_HOME}/bin"; \
         export CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}"; \
         export PATH="$CUDA_HOME/bin:${PATH}"; \
-        export LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"; \
+        export LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"; \
         export DEBIAN_FRONTEND=noninteractive; \
         # Add verification checks only for package/builtin modes
         echo "# Check for CUDA" >> /tmp/cuda_checks.sh; \
@@ -243,7 +243,7 @@ ENV TAR_INDEX_URL=${TAR_INDEX_URL} \
     CUDA_BIN_PATH="${CUDA_HOME}/bin" \
     CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}" \
     PATH="$CUDA_HOME/bin:${PATH}" \
-    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}" \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /

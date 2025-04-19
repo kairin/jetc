@@ -46,7 +46,7 @@ ENV NVIDIA_VISIBLE_DEVICES=all \
     CUDA_BIN_PATH="${CUDA_HOME}/bin" \
     CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}" \
     PATH="$CUDA_HOME/bin:${PATH}" \
-    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}" \
+    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}" \
     DEBIAN_FRONTEND=noninteractive
 
 # Add verification checks for CUDA
