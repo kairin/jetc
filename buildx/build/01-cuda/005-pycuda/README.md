@@ -15,10 +15,10 @@
 # ├── buildx/                    <- Buildx directory
 # │   ├── build/                   <- Build stages directory
 # │   │   └── 01-cuda/             <- CUDA directory
-# │   │       └── cuda-python/     <- Current directory
+# │   │       └── pycuda/          <- Current directory
 # │   │           └── README.md    <- THIS FILE
 # └── ...                        <- Other project files
 -->
-# cuda-python
+# pycuda
 
 > Documentation for all CUDA subcomponents is now consolidated in [../README.md](../README.md).
