@@ -1,57 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-130000-PEP1
-# Description: Add --break-system-packages flag to pip install for numba.
-# Author: Mr K / GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── build/                 <- Parent directory
-# │       └── 01-01-numba/       <- Current directory
-# │           └── Dockerfile     <- THIS FILE
-# └── ...                        <- Other project files
-
-# COMMIT-TRACKING: UUID-20240730-140000-ARG1
-# Description: Add default value for ARG BASE_IMAGE.
-# Author: Mr K / GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── build/                 <- Parent directory
-# │       └── 01-01-numba/       <- Current directory
-# │           └── Dockerfile     <- THIS FILE
-# └── ...                        <- Other project files
-
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
-# Author: Mr K / GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── build/                 <- Parent directory
-# │       └── 01-01-numba/       <- Current directory
-# │           └── Dockerfile     <- THIS FILE
-# └── ...                        <- Other project files
-
-# COMMIT-TRACKING: UUID-20240730-170000-DYN1
-# Description: Revert to dynamic BASE_IMAGE ARG.
-# Author: Mr K / GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── build/                 <- Parent directory
-# │       └── 01-01-numba/       <- Current directory
-# │           └── Dockerfile     <- THIS FILE
-# └── ...                        <- Other project files
-
-# COMMIT-TRACKING: UUID-20240730-180000-LNT1
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -65,7 +13,7 @@
 
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 # Install llvm-dev and check version in one layer
 RUN apt-get update && \

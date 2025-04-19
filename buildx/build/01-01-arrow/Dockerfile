@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-170000-DYN1
-# Description: Revert to dynamic BASE_IMAGE ARG.
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -10,14 +10,7 @@
 # │   │   └── 01-01-arrow/         <- Current directory
 # │   │       └── Dockerfile       <- THIS FILE
 # └── ...                        <- Other project files
-#---
-# name: arrow
-# group: core
-# config: config.py
-# depends: [cuda, cmake, python]
-# # test: test.py # Removed as test is now embedded
-# notes: installed under `/usr/local`
-#---
+
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM --platform=linux/arm64 ${BASE_IMAGE}

@@ -39,21 +39,20 @@
 # │       └── 16-stable-diffusion/ <- Current directory
 # │           └── Dockerfile       <- THIS FILE
 # └── ...                        <- Other project files
-# =========================================================================
-# IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
-# All builds MUST use Docker buildx to ensure consistent
-# multi-platform and efficient build processes.
-# =========================================================================
 
-#---
-# name: stable-diffusion
-# group: diffusion
-# depends: [pytorch, torchvision, transformers]
-# requires: '>=34.1.0'
-# test: test.sh
-# docs: docs.md
-# notes: disabled on JetPack 4
-#---
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 16-stable-diffusion/ <- Current directory
+# │           └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
+
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM --platform=linux/arm64 ${BASE_IMAGE}

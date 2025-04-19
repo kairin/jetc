@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-170000-DYN1
-# Description: Fix flash-attention build script errors and consolidate test functionality
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
