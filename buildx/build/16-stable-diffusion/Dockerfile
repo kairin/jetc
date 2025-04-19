@@ -56,7 +56,7 @@
 #---
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 # Install dependencies and set up Stable Diffusion repositories
 RUN set -ex \
