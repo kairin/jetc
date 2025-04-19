@@ -1,7 +1,7 @@
 <!--
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Add clarity about file-specific descriptions in headers
-# Author: Mr K
+# COMMIT-TRACKING: UUID-20240729-101500-B4E1
+# Description: Add machine-readable YAML summary of instructions
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -110,6 +110,73 @@ UUID-20250418-113042-7E2D: Fixed Docker buildx script syntax errors
 ```
 
 This allows easy cross-referencing between commits and the files that were modified.
+
+## Machine-Readable Summary (YAML)
+
+```yaml
+# Summary of commit tracking and header rules for potential automation
+commit_tracking:
+  enabled: true
+  header_required: true
+  uuid_format: "UUID-YYYYMMDD-HHMMSS-XXXX" # XXXX = random identifier (e.g., hex)
+  uuid_management:
+    reuse_existing: true # Reuse UUID from file if present for the commit set
+    generate_new: true   # Generate new UUID if no header exists in any modified file for the commit set
+    consistency: "commit_set" # Use the same UUID across all files in one commit/change set
+  fields:
+    - name: "COMMIT-TRACKING"
+      value_format: "UUID-YYYYMMDD-HHMMSS-XXXX"
+      required: true
+    - name: "Description"
+      value_format: "string"
+      required: true
+      scope: "file_specific" # Description must be specific to the changes in THIS file
+    - name: "Author"
+      value_format: "string"
+      required: true
+    - name: "File location diagram"
+      value_format: "multiline_string"
+      required: true
+      template: |
+        jetc/                          <- Main project folder
+        ├── README.md                  <- Project documentation
+        ├── [directory]/               <- File's directory
+        │   └── [filename]             <- THIS FILE
+        └── ...                        <- Other project files
+  comment_styles:
+    - style: "#"
+      extensions: [".sh", ".py", "Dockerfile", ".yml", ".yaml"]
+      template: |
+        # COMMIT-TRACKING: {uuid}
+        # Description: {description}
+        # Author: {author}
+        #
+        # File location diagram:
+        # {diagram}
+    - style: "//"
+      extensions: [".js", ".ts", ".tsx", ".jsonc", ".c", ".cpp", ".java", ".go"] # Add other relevant extensions
+      template: |
+        // COMMIT-TRACKING: {uuid}
+        // Description: {description}
+        // Author: {author}
+        //
+        // File location diagram:
+        // {diagram}
+    - style: "<!-- -->"
+      extensions: [".md", ".html", ".xml"]
+      template: |
+        <!--
+        # COMMIT-TRACKING: {uuid}
+        # Description: {description}
+        # Author: {author}
+        #
+        # File location diagram:
+        # {diagram}
+        -->
+  exclusions:
+    - extension: ".json" # Standard JSON files do not support comments
+  commit_message_format: "{uuid}: {summary}" # Example: UUID-20250418-113042-7E2D: Fixed Docker buildx script syntax errors
+```
 
 ## Additional Guidelines
 
