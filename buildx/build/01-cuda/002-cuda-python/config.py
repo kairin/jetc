@@ -19,7 +19,6 @@ def cuda_python(version, cuda=None):
 
     pkg['name'] = f"cuda-python:{version}"
     pkg['dockerfile'] = 'Dockerfile' # Point to unified Dockerfile
-    # pkg['test'] = [...] # Removed, tests embedded in Dockerfile
 
     if not cuda:
         cuda = version

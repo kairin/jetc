@@ -58,4 +58,6 @@ RUN echo "Running PyCUDA test..." && \
     pip3 show pycuda && \
     rm -rf /tmp/pycuda
 
+# All test logic is already embedded in the Dockerfile.
+
 WORKDIR /

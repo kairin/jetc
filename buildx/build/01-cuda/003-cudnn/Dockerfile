@@ -70,6 +70,8 @@ RUN set -ex && \
         echo "cuDNN samples directory not found, skipping sample test." ; \
     fi
 
+# All test logic is already embedded in the Dockerfile.
+
 # Add verification checks
 RUN echo "# Check for cuDNN" >> /opt/list_app_checks.sh && \
     echo "check_file /usr/include/cudnn.h 'cuDNN header'" >> /opt/list_app_checks.sh && \
