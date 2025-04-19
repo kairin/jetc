@@ -65,17 +65,16 @@ RUN set -ex \
         diffusers==0.24.0 \
         openai-clip \
         kornia==0.7.0 \
-        taming-transformers==0.0.1 \
         invisible-watermark==0.2.0 \
         einops==0.7.0 \
         pandas==2.1.1 \
         scipy==1.11.3 \
     \
-    # Get Python dist-packages path \
-    && PYTHON_DIST_PACKAGES=$(python3 -c 'import sys; print(f"/usr/local/lib/python{sys.version_info.major}.{sys.version_info.minor}/dist-packages")') \
-    && wget https://raw.githubusercontent.com/CompVis/taming-transformers/master/taming/modules/vqvae/quantize.py -O $PYTHON_DIST_PACKAGES/taming/modules/vqvae/quantize.py \
+    # Clone taming-transformers directly rather than using pip package \
+    && rm -rf /opt/taming-transformers \
+    && git clone --depth=1 https://github.com/CompVis/taming-transformers /opt/taming-transformers \
     \
-    # Clean before cloning \
+    # Clean before cloning stable-diffusion \
     && rm -rf /opt/stable-diffusion /opt/stable-diffusion-optimized \
     \
     # Clone repositories \
@@ -110,7 +109,7 @@ RUN set -ex \
     && rm -f /tmp/sd_checks.sh
 
 # add module to PYTHONPATH since it's not installable
-ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion \
+ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion:/opt/taming-transformers \
     DIFFUSERS_CACHE=/data/models/diffusers
 
 # Define volumes for persistent data
