@@ -9,4 +9,4 @@
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 
-jetson-containers run --gpus all -v /media/kkk:/workspace -it --rm --user root $(autotag kairin/001:latest-20250412-230811-1) /bin/bash
+jetson-containers run --gpus all -v /media/kkk:/workspace -it --rm --user root kairin/001:latest-20250412-230811-1 /bin/bash

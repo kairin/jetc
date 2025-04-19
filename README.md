@@ -415,6 +415,16 @@ When you see messages like "Build, push or pull failed for build/10-bitsandbytes
    - If component X depends on failed component Y, try modifying X's Dockerfile
    - Add the necessary packages directly in component X instead of relying on Y
 
+## **Development Guidelines**
+
+When contributing to this project, please follow our [Copilot coding standards](.github/copilot-instructions.md) which include:
+
+- File header format with commit tracking
+- Code organization principles
+- Minimal diff guidelines
+
+These standards ensure consistent documentation and tracking across the codebase.
+
 ## **License**
 
 This repository is released under the MIT License. See the LICENSE file for details.

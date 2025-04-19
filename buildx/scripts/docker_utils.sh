@@ -114,12 +114,24 @@ build_folder_image() {
     return 1
   fi
 
-  # Check if base_image_tag is provided
+  # Check if base_image_tag is provided and attempt to pull if it doesn't exist locally
   if [[ -z "$base_image_tag" ]]; then
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       echo "Error: Base image tag not provided for build of $folder."
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       return 1
+  fi
+  
+  # Verify base image exists locally or can be pulled
+  if ! verify_image_exists "$base_image_tag"; then
+      echo "Base image $base_image_tag not found locally. Attempting to pull..."
+      if ! docker pull "$base_image_tag"; then
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          echo "Error: Base image $base_image_tag not found locally and could not be pulled."
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          return 1
+      fi
+      echo "Successfully pulled base image: $base_image_tag"
   fi
 
   echo "--------------------------------------------------"

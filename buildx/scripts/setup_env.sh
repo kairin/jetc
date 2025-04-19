@@ -26,6 +26,9 @@ load_env_variables() {
   elif [ -f "../.vscode/.env" ]; then
     ENV_FILE="../.vscode/.env"
     echo "Found .env file in ../.vscode directory"
+  elif [ -f "$(dirname "$0")/../.env" ]; then
+    ENV_FILE="$(dirname "$0")/../.env"
+    echo "Found .env file in parent directory"
   fi
 
   if [ -n "$ENV_FILE" ]; then
@@ -33,13 +36,14 @@ load_env_variables() {
     . "$ENV_FILE" # Use '.' instead of 'source' for POSIX compatibility
     set +a  # Stop automatically exporting
   else
-    echo ".env file not found in current directory or ../.vscode directory!" >&2
+    echo -e "\033[0;31mERROR: .env file not found in any standard location!\033[0m" >&2
+    echo "Create a .env file with at least: DOCKER_USERNAME=yourname" >&2
     return 1
   fi
 
   # Verify required environment variables
   if [ -z "$DOCKER_USERNAME" ]; then
-    echo "Error: DOCKER_USERNAME is not set. Please define it in the .env file." >&2
+    echo -e "\033[0;31mERROR: DOCKER_USERNAME is not set. Please define it in the .env file.\033[0m" >&2
     return 1
   fi
   
@@ -97,24 +101,11 @@ setup_build_environment() {
 # Returns: 0 if successful, 1 if not
 # =========================================================================
 check_install_dialog() {
-  if ! command -v dialog &> /dev/null; then
-    echo "Dialog package not found. Installing dialog..." >&2
-    if command -v apt-get &> /dev/null; then
-      sudo apt-get update -y && sudo apt-get install -y dialog
-    elif command -v yum &> /dev/null; then
-      sudo yum install -y dialog
-    else
-      echo "Could not install dialog: Unsupported package manager." >&2
-      return 1
-    }
-  fi
-  
-  if ! command -v dialog &> /dev/null; then
-    echo "Failed to install dialog. Falling back to basic prompts." >&2
-    return 1
-  fi
-  
-  return 0
+  # Source the dedicated script
+  source "$(dirname "$0")/check_install_dialog.sh"
+  # Call the function from that script
+  check_install_dialog
+  return $?
 }
 
 # =========================================================================
