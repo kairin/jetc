@@ -28,7 +28,7 @@
 # └── ...                        <- Other project files
 
 # COMMIT-TRACKING: UUID-20240730-180000-LNT1
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# Description: Fix taming-transformers path structure issues and add verification testing
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -96,18 +96,24 @@ RUN set -ex \
            /opt/stable-diffusion/optimizedSD/ddpm.py || true \
     \
     # Create directories \
+    && mkdir -p /data/models/stable-diffusion \
     && mkdir -p /data/models/diffusers \
     && mkdir -p /data/images/stable-diffusion \
+    \
+    # Create test script \
+    && echo '#!/bin/bash' > /opt/test_sd.sh \
+    && echo 'cd /opt/stable-diffusion && python3 -c "import sys; sys.path.append(\"/opt/taming-transformers\"); from ldm.util import instantiate_from_config; print(\"Stable Diffusion imports working\")"' >> /opt/test_sd.sh \
+    && echo 'cd /opt/stable-diffusion && python3 -c "import sys; sys.path.append(\"/opt/taming-transformers\"); from taming.modules.vqvae.quantize import VectorQuantizer; print(\"Taming-transformers VectorQuantizer imported successfully\")"' >> /opt/test_sd.sh \
+    && chmod +x /opt/test_sd.sh \
+    && /opt/test_sd.sh \
     \
     # Add verification checks \
     && echo "# Check for Stable Diffusion packages" >> /tmp/sd_checks.sh \
     && echo "check_python_pkg diffusers" >> /tmp/sd_checks.sh \
     && echo "check_dir /opt/stable-diffusion 'Stable Diffusion'" >> /tmp/sd_checks.sh \
     && echo "check_dir /opt/taming-transformers 'Taming Transformers'" >> /tmp/sd_checks.sh \
+    && echo "check_file /opt/test_sd.sh 'Stable Diffusion Test'" >> /tmp/sd_checks.sh \
     && cat /tmp/sd_checks.sh >> /opt/list_app_checks.sh \
-    \
-    # Verify installation can import taming-transformers \
-    && python3 -c "import sys; sys.path.append('/opt/taming-transformers'); from taming.modules.vqvae.quantize import VectorQuantizer; print('Taming-transformers VectorQuantizer imported successfully')" \
     \
     # Cleanup \
     && rm -rf /root/.cache/pip \
@@ -118,5 +124,58 @@ RUN set -ex \
 ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion:/opt/taming-transformers \
     DIFFUSERS_CACHE=/data/models/diffusers
 
+# Create wrapper script with usage instructions
+RUN echo '#!/bin/bash' > /usr/local/bin/sd-txt2img && \
+    echo '# Stable Diffusion txt2img wrapper script' >> /usr/local/bin/sd-txt2img && \
+    echo 'MODEL="/data/models/stable-diffusion/sd-v1-4.ckpt"' >> /usr/local/bin/sd-txt2img && \
+    echo 'PROMPT="${1:-a photograph of an astronaut riding a horse}"' >> /usr/local/bin/sd-txt2img && \
+    echo 'OUTDIR="/data/images/stable-diffusion"' >> /usr/local/bin/sd-txt2img && \
+    echo '' >> /usr/local/bin/sd-txt2img && \
+    echo 'if [ ! -f "$MODEL" ]; then' >> /usr/local/bin/sd-txt2img && \
+    echo '  echo "Downloading stable-diffusion model..."' >> /usr/local/bin/sd-txt2img && \
+    echo '  mkdir -p /data/models/stable-diffusion' >> /usr/local/bin/sd-txt2img && \
+    echo '  wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt -O "$MODEL"' >> /usr/local/bin/sd-txt2img && \
+    echo 'fi' >> /usr/local/bin/sd-txt2img && \
+    echo '' >> /usr/local/bin/sd-txt2img && \
+    echo 'mem_capacity=$(grep MemTotal /proc/meminfo | awk "{print \$2}")' >> /usr/local/bin/sd-txt2img && \
+    echo 'if [ $mem_capacity -gt 8388608 ]; then' >> /usr/local/bin/sd-txt2img && \
+    echo '  echo "Using standard txt2img (requires >8GB RAM)"' >> /usr/local/bin/sd-txt2img && \
+    echo '  cd /opt/stable-diffusion && python3 scripts/txt2img.py --plms \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --n_samples 1 --n_iter 1 --ddim_steps 25 \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --outdir "$OUTDIR" \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --ckpt "$MODEL" \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --prompt "$PROMPT"' >> /usr/local/bin/sd-txt2img && \
+    echo 'else' >> /usr/local/bin/sd-txt2img && \
+    echo '  echo "Using optimized txt2img for lower memory usage"' >> /usr/local/bin/sd-txt2img && \
+    echo '  cd /opt/stable-diffusion && python3 optimizedSD/optimized_txt2img.py \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --sampler plms --seed 42 \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --n_samples 1 --n_iter 1 --ddim_steps 25 \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --outdir "$OUTDIR" \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --ckpt "$MODEL" \\' >> /usr/local/bin/sd-txt2img && \
+    echo '    --prompt "$PROMPT"' >> /usr/local/bin/sd-txt2img && \
+    echo 'fi' >> /usr/local/bin/sd-txt2img && \
+    chmod +x /usr/local/bin/sd-txt2img && \
+    echo "echo 'Run sd-txt2img \"your prompt here\" to generate images'" >> /root/.bashrc
+
 # Define volumes for persistent data
-VOLUME ["/data/models/diffusers", "/data/images/stable-diffusion"]
+VOLUME ["/data/models/diffusers", "/data/images/stable-diffusion", "/data/models/stable-diffusion"]
+
+# Set working directory
+WORKDIR /opt/stable-diffusion
+
+# Provide helpful usage information at container start
+CMD echo "Stable Diffusion Container" && \
+    echo "------------------------" && \
+    echo "Usage examples:" && \
+    echo "1. Generate an image with default prompt:" && \
+    echo "   sd-txt2img" && \
+    echo "2. Generate an image with custom prompt:" && \
+    echo "   sd-txt2img \"a cat wearing sunglasses on a beach\"" && \
+    echo "3. Run custom scripts:" && \
+    echo "   cd /opt/stable-diffusion" && \
+    echo "   python3 scripts/txt2img.py --help" && \
+    echo "" && \
+    echo "Images are saved to /data/images/stable-diffusion" && \
+    echo "Models are stored in /data/models/stable-diffusion" && \
+    echo "" && \
+    exec /bin/bash
