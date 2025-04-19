@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update commit tracking header UUID for consistency. Remove default DISTRO ARG.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Hardcode FROM line based on previous stage.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -16,8 +16,8 @@
 # notes: installs core CUDA components and sets up environment
 # depends: [build-essential]
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:01-01-numpy
 
 ARG CUDA_URL \
     CUDA_DEB \

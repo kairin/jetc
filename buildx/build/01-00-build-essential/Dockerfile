@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Remove ARG BASE_IMAGE; FROM line will be set by build script.
+# Description: Hardcode FROM line with default base image.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,8 +21,8 @@
 # group: build
 # notes: installs compilers, build tools & configures the default locale
 #---
-# The build script will replace the line below with the correct base image
-FROM ${BASE_IMAGE}
+# Hardcoded base image for the first stage
+FROM kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANGUAGE=en_US:en \

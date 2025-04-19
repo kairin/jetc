@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Create environment setup functions for variables and user preferences
-# Author: Mr K
+# COMMIT-TRACKING: UUID-20240730-160000-HRD1
+# Description: Remove DEFAULT_BASE_IMAGE and LATEST_SUCCESSFUL_NUMBERED_TAG variables.
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -70,13 +70,9 @@ setup_build_environment() {
   # Initialize build tracking arrays
   declare -a BUILT_TAGS=() 
   declare -a ATTEMPTED_TAGS=()
-  LATEST_SUCCESSFUL_NUMBERED_TAG=""
   FINAL_FOLDER_TAG=""
   TIMESTAMPED_LATEST_TAG=""
   BUILD_FAILED=0
-  
-  # Set default base image for the first build
-  DEFAULT_BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
   
   # Export all variables so they're available to the main script
   export CURRENT_DATE_TIME
@@ -85,11 +81,9 @@ setup_build_environment() {
   export LOG_DIR
   export BUILT_TAGS
   export ATTEMPTED_TAGS
-  export LATEST_SUCCESSFUL_NUMBERED_TAG
   export FINAL_FOLDER_TAG
   export TIMESTAMPED_LATEST_TAG
   export BUILD_FAILED
-  export DEFAULT_BASE_IMAGE
   
   return 0
 }

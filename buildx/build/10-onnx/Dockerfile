@@ -6,8 +6,8 @@
 # test: test.py
 # notes: the `protobuf_apt` is added as a dependency on JetPack 4 (newer versions of onnx build it in-tree)
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:09-opencv
 
 ARG ONNX_VERSION
 

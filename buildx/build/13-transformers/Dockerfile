@@ -13,8 +13,8 @@
 # docs: docs.md
 # notes: for quantization support in Transformers, use the bitsandbytes, AutoGPTQ, or AutoAWQ containers.
 #---
-ARG BASE_IMAGE=kairin/001:12-huggingface_hub
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:12-huggingface_hub
 
 # Set default values for build arguments
 ARG TRANSFORMERS_PACKAGE=transformers

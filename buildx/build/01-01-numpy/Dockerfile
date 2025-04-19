@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-100000-B4D1
-# Description: Embed install/test scripts, add verification checks.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Hardcode FROM line based on previous stage.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -16,8 +16,8 @@
 # depends: [build-essential, python]
 # # test: test.py # Removed as test is now embedded
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:01-01-numba
 
 # https://github.com/numpy/numpy/issues/18131#issuecomment-755438271
 ENV OPENBLAS_CORETYPE=ARMV8

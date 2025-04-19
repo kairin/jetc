@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-100000-B4D1
-# Description: Embed install and test script logic.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Hardcode FROM line based on previous stage.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -18,8 +18,8 @@
 # depends: [cuda] # Handled by config.py
 # test: (embedded in Dockerfile)
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:cuda-python
 
 ARG CUDNN_URL \
     CUDNN_DEB \

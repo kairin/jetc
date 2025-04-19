@@ -6,8 +6,8 @@
 # test: test.py
 # notes: the `onnxruntime-gpu` wheel that's built is saved in the container under `/opt`
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:10-onnx
 
 ARG ONNXRUNTIME_VERSION \
     ONNXRUNTIME_BRANCH \

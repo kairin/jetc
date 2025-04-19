@@ -1,3 +1,15 @@
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Hardcode FROM line based on previous stage.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 15-flash-attention/  <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 # =========================================================================
 # IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
 # All builds MUST use Docker buildx to ensure consistent
@@ -11,8 +23,8 @@
 # requires: '>=35'
 # test: test.py
 #---
-ARG BASE_IMAGE=kairin/001:14-xformers
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:14-xformers
 
 # Build Arguments
 ARG MAX_JOBS=6

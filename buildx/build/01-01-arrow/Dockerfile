@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update commit tracking header UUID for consistency. Embed test script logic.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Hardcode FROM line based on previous stage.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -18,8 +18,8 @@
 # # test: test.py # Removed as test is now embedded
 # notes: installed under `/usr/local`
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:01-00-build-essential
 
 ARG ARROW_BRANCH
 

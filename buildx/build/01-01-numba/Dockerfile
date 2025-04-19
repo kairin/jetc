@@ -25,7 +25,7 @@
 # └── ...                        <- Other project files
 
 # COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Remove ARG BASE_IMAGE; FROM line will be set by build script.
+# Description: Hardcode FROM line based on previous stage.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -37,8 +37,8 @@
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
 
-# The build script will replace the line below with the correct base image
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:01-01-arrow
 
 # Install llvm-dev and check version in one layer
 RUN apt-get update && \

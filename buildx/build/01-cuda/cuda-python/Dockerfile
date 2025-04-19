@@ -6,8 +6,8 @@
 # depends: [cuda, numpy] # Handled by config.py
 # test: (embedded in Dockerfile)
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:cuda
 
 ARG CUDA_PYTHON_VERSION
 ARG INSTALL_MODE="install" # Mode can be 'install' or 'build'

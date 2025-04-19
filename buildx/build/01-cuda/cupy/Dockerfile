@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-100000-B4D1
-# Description: Embed install/build scripts and test logic using INSTALL_MODE.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Hardcode FROM line based on previous stage.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -19,8 +19,8 @@
 # depends: [cuda, python, numpy] # Handled by config.py
 # test: (embedded in Dockerfile)
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:cudnn
 
 ARG CUPY_VERSION
 ARG CUPY_NVCC_GENERATE_CODE

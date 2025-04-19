@@ -12,8 +12,8 @@
 # docs: docs.md
 # notes: disabled on JetPack 4
 #---
-ARG BASE_IMAGE=kairin/001:16-stable-diffusion
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:16-stable-diffusion
 
 # Determine appropriate branch/tag based on L4T version and install extensions
 RUN set -ex \

@@ -6,8 +6,8 @@
 # depends: [build-essential] (implicitly handled by build system based on config)
 # test: (embedded in Dockerfile)
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Hardcoded base image from the previous stage
+FROM kairin/001:01-cuda
 
 # --- Common ARGs ---
 ARG DEBIAN_FRONTEND=noninteractive
