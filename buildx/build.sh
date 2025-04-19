@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Refactor build script to use modular components for better maintainability
-# Author: Mr K
+# COMMIT-TRACKING: UUID-20240730-110000-RST1
+# Description: Refactor conditional tests to use [[ ... ]] syntax for robustness.
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -61,7 +61,7 @@ mapfile -t other_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d ! -n
 echo "Starting build process..."
 # 1. Build Numbered Directories in Order (sequential dependencies)
 echo "--- Building Numbered Directories ---"
-if [ ${#numbered_dirs[@]} -eq 0 ]; then
+if [[ ${#numbered_dirs[@]} -eq 0 ]]; then
     echo "No numbered directories found in $BUILD_DIR."
 else
     for dir in "${numbered_dirs[@]}"; do
@@ -73,7 +73,7 @@ else
       build_folder_image "$dir" "$LATEST_SUCCESSFUL_NUMBERED_TAG" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE" "$use_squash" "$skip_intermediate_push_pull"
       build_status=$?
 
-      if [ $build_status -eq 0 ]; then
+      if [[ $build_status -eq 0 ]]; then
           # Add to BUILT_TAGS array
           # Note: $fixed_tag is set by build_folder_image on success
           BUILT_TAGS+=("$fixed_tag")
@@ -91,9 +91,9 @@ fi
 
 # 2. Build Other (Non-Numbered) Directories
 echo "--- Building Other Directories ---"
-if [ ${#other_dirs[@]} -eq 0 ]; then
+if [[ ${#other_dirs[@]} -eq 0 ]]; then
     echo "No non-numbered directories found in $BUILD_DIR."
-elif [ "$BUILD_FAILED" -ne 0 ]; then
+elif [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "Skipping other directories due to previous build failures."
 else
     # Use the tag from the LAST successfully built numbered image as the base for ALL others
@@ -105,7 +105,7 @@ else
       # Pass $use_squash as the 7th argument
       build_folder_image "$dir" "$BASE_FOR_OTHERS" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$DEFAULT_BASE_IMAGE" "$use_squash" "$skip_intermediate_push_pull"
       build_status=$?
-      if [ $build_status -eq 0 ]; then
+      if [[ $build_status -eq 0 ]]; then
           # Note: $fixed_tag is set by build_folder_image on success
           BUILT_TAGS+=("$fixed_tag")
           FINAL_FOLDER_TAG="$fixed_tag"  # Update the overall last successful folder tag
@@ -126,27 +126,27 @@ echo "Folder build process complete!"
 # =========================================================================
 echo "--- Verifying and Pulling All Attempted Images (if needed) ---"
 # Only pull if intermediate push/pull was NOT skipped
-if [ "$skip_intermediate_push_pull" != "y" ]; then
-    if [ "$BUILD_FAILED" -eq 0 ] && [ ${#ATTEMPTED_TAGS[@]} -gt 0 ]; then
+if [[ "$skip_intermediate_push_pull" != "y" ]]; then
+    if [[ "$BUILD_FAILED" -eq 0 ]] && [[ ${#ATTEMPTED_TAGS[@]} -gt 0 ]]; then
         echo "Pulling ${#ATTEMPTED_TAGS[@]} image(s) before final tagging..."
         PULL_ALL_FAILED=0
         for tag in "${ATTEMPTED_TAGS[@]}"; do
             echo "Pulling $tag..."
             docker pull "$tag"
-            if [ $? -ne 0 ]; then
+            if [[ $? -ne 0 ]]; then
                 echo "Error: Failed to pull image $tag during pre-tagging verification."
                 PULL_ALL_FAILED=1
             fi
         done
 
-        if [ "$PULL_ALL_FAILED" -eq 1 ]; then
+        if [[ "$PULL_ALL_FAILED" -eq 1 ]]; then
             echo "Error: Failed to pull one or more required images before final tagging. Aborting."
             BUILD_FAILED=1
         else
             echo "All attempted images successfully pulled/refreshed."
         fi
     else
-        if [ "$BUILD_FAILED" -ne 0 ]; then
+        if [[ "$BUILD_FAILED" -ne 0 ]]; then
             echo "Skipping pre-tagging pull verification due to earlier build failures."
         else
             echo "No images were attempted, skipping pre-tagging pull verification."
@@ -155,7 +155,7 @@ if [ "$skip_intermediate_push_pull" != "y" ]; then
 else
     echo "Skipping pre-tagging pull verification as intermediate push/pull was disabled."
     # Add a verification step here to ensure the FINAL_FOLDER_TAG exists locally
-    if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
+    if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
         echo "Verifying final intermediate image $FINAL_FOLDER_TAG exists locally..."
         if ! verify_image_exists "$FINAL_FOLDER_TAG"; then
              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -173,7 +173,7 @@ echo "--------------------------------------------------"
 # Create Final Timestamped Tag
 # =========================================================================
 echo "--- Creating Final Timestamped Tag ---"
-if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
+if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
     TIMESTAMPED_LATEST_TAG=$(echo "${DOCKER_USERNAME}/001:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
     echo "Attempting to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG"
 
@@ -190,7 +190,7 @@ if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
                 echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG"
                 # Always pull the final timestamped tag to ensure it's the registry version
                 docker pull "$TIMESTAMPED_LATEST_TAG"
-                if [ $? -eq 0 ]; then
+                if [[ $? -eq 0 ]]; then
                     # Verify final image exists locally
                     echo "Verifying final image $TIMESTAMPED_LATEST_TAG exists locally after pull..."
                     if verify_image_exists "$TIMESTAMPED_LATEST_TAG"; then
@@ -223,7 +223,7 @@ if [ -n "$FINAL_FOLDER_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
         BUILD_FAILED=1
     fi
 else
-    if [ "$BUILD_FAILED" -ne 0 ]; then
+    if [[ "$BUILD_FAILED" -ne 0 ]]; then
         echo "Skipping final timestamped tag creation due to previous errors."
     else
         echo "Skipping final timestamped tag creation as no base image was successfully built/pushed/pulled."
@@ -233,7 +233,7 @@ fi
 echo "--------------------------------------------------"
 echo "Build, Push, Pull, and Tagging process complete!"
 echo "Total images successfully built/pushed/pulled/verified: ${#BUILT_TAGS[@]}"
-if [ "$BUILD_FAILED" -ne 0 ]; then
+if [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "Warning: One or more steps failed. See logs above."
 fi
 echo "--------------------------------------------------"
@@ -244,7 +244,7 @@ echo "--------------------------------------------------"
 echo "(Image pulling and verification now happens during build process)"
 
 # Run the very last successfully built & timestamped image (optional)
-if [ -n "$TIMESTAMPED_LATEST_TAG" ] && [ "$BUILD_FAILED" -eq 0 ]; then
+if [[ -n "$TIMESTAMPED_LATEST_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
     # Check if the timestamped tag is in the BUILT_TAGS array (validation)
     tag_exists=0
     for t in "${BUILT_TAGS[@]}"; do
@@ -268,7 +268,7 @@ echo "--------------------------------------------------"
 echo "--- Verifying all SUCCESSFULLY PROCESSED images exist locally ---"
 VERIFICATION_FAILED=0
 # Use BUILT_TAGS here
-if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
+if [[ ${#BUILT_TAGS[@]} -gt 0 ]]; then
     echo "Checking ${#BUILT_TAGS[@]} image(s) recorded as successful:"
     for tag in "${BUILT_TAGS[@]}"; do
         echo -n "Verifying $tag... "
@@ -282,10 +282,10 @@ if [ ${#BUILT_TAGS[@]} -gt 0 ]; then
         fi
     done
 
-    if [ "$VERIFICATION_FAILED" -eq 1 ]; then
+    if [[ "$VERIFICATION_FAILED" -eq 1 ]]; then
         echo "Error: One or more successfully processed images were missing locally during final check."
         # Ensure BUILD_FAILED reflects this verification failure
-        if [ "$BUILD_FAILED" -eq 0 ]; then
+        if [[ "$BUILD_FAILED" -eq 0 ]]; then
            BUILD_FAILED=1
            echo "(Marking build as failed due to final verification failure)"
         fi
@@ -301,7 +301,7 @@ fi
 # Script Completion
 # =========================================================================
 echo "--------------------------------------------------"
-if [ "$BUILD_FAILED" -ne 0 ]; then
+if [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "Script finished with one or more errors."
     echo "--------------------------------------------------"
     exit 1  # Exit with failure code
