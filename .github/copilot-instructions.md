@@ -187,5 +187,5 @@ commit_tracking:
 5. Add this header (using the correct comment style) to all new files as well as modified files, **except for standard `.json` files**.
 6. **Do not create new files or folders.** Only modify existing files within the provided project structure.
 7. **Always seek explicit permission before providing code changes.** Describe the plan (steps, files) and wait for user approval before showing the code modifications.
-8. **Append the current COMMIT-TRACKING header block** from this instructions file to the end of every chat response.
+8. **Append the current COMMIT-TRACKING header block** from this instructions file to the end of every chat response, **formatted within a Markdown code block** for easy copying.
 
