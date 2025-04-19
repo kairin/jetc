@@ -20,6 +20,10 @@ check_install_dialog() {
       sudo apt-get update -y && sudo apt-get install -y dialog
     elif command -v yum &> /dev/null; then
       sudo yum install -y dialog
+    elif command -v dnf &> /dev/null; then
+      sudo dnf install -y dialog
+    elif command -v pacman &> /dev/null; then
+      sudo pacman -S --noconfirm dialog
     else
       echo "Could not install dialog: Unsupported package manager." >&2
       return 1
