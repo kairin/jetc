@@ -142,14 +142,15 @@ get_user_preferences() {
   local squash_default="off" # off = No = Don't use --squash
   local skip_push_pull_default="on" # on = Yes = Use --load
 
-  # Use --checklist for boolean options - Clarified descriptions
+  # Use --checklist for boolean options - Added visual '[ ]' for 'No'
+  # Note: Only the first checkbox [ ] is functional. The second is just text.
   dialog --backtitle "Docker Build Configuration" \
-         --title "Build Preferences (Check=Yes, Uncheck=No)" \
-         --checklist "\nSelect build options (use Spacebar to toggle, Enter to confirm):" 18 85 4 \
-         "cache" "Use Build Cache (Yes=Use cache, No=--no-cache)" "$cache_default" \
-         "squash" "Squash Layers (Yes=--squash, No=No squash)" "$squash_default" \
-         "skip_push_pull" "Skip Push/Pull (Yes=--load, No=--push)" "$skip_push_pull_default" \
-         "use_builder" "Use 'jetson-builder' (Recommended: Yes)" "on" \
+         --title "Build Preferences ([X]=Yes, [ ]=No)" \
+         --checklist "\nSelect build options (Spacebar toggles [X], Enter confirms):" 18 85 4 \
+         "cache" "[ ] Use Build Cache   [ ] No (--no-cache)" "$cache_default" \
+         "squash" "[ ] Squash Layers     [ ] No (--squash)" "$squash_default" \
+         "skip_push_pull" "[ ] Skip Push/Pull  [ ] No (--load)" "$skip_push_pull_default" \
+         "use_builder" "[ ] Use Builder       [ ] No (Recommended: Yes)" "on" \
          2>$temp_file
 
   checklist_exit_status=$?
