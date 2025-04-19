@@ -23,8 +23,8 @@
 # test: test.py
 # notes: provides `huggingface-cli` and `huggingface-downloader` tools
 #---
-# Use ARG for dynamic base image injection
-ARG BASE_IMAGE
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM ${BASE_IMAGE}
 
 # Set default version if not provided

@@ -50,8 +50,21 @@
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
 
-# Use ARG for dynamic base image injection
-ARG BASE_IMAGE
+# COMMIT-TRACKING: UUID-20240730-180000-LNT1
+# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 01-01-numba/       <- Current directory
+# │           └── Dockerfile     <- THIS FILE
+# └── ...                        <- Other project files
+
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM ${BASE_IMAGE}
 
 # Install llvm-dev and check version in one layer

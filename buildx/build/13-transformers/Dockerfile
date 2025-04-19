@@ -13,8 +13,8 @@
 # docs: docs.md
 # notes: for quantization support in Transformers, use the bitsandbytes, AutoGPTQ, or AutoAWQ containers.
 #---
-# Use ARG for dynamic base image injection
-ARG BASE_IMAGE
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM ${BASE_IMAGE}
 
 # Set default values for build arguments

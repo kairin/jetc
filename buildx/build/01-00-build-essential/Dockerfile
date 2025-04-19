@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-170000-DYN1
-# Description: Revert to dynamic BASE_IMAGE ARG.
+# COMMIT-TRACKING: UUID-20240730-180000-LNT1
+# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,8 +21,8 @@
 # group: build
 # notes: installs compilers, build tools & configures the default locale
 #---
-# Use ARG for dynamic base image injection
-ARG BASE_IMAGE
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive \

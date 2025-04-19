@@ -12,8 +12,8 @@
 # test: test.sh
 # docs: docs.md
 #---
-# Use ARG for dynamic base image injection
-ARG BASE_IMAGE
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM ${BASE_IMAGE}
 
 # Determine appropriate branch/tag based on L4T version and install extensions
