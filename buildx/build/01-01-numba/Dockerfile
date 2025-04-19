@@ -1,21 +1,16 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Add comments clarifying embedded test script generation.
+# COMMIT-TRACKING: UUID-20240730-130000-PEP1
+# Description: Add --break-system-packages flag to pip install for numba.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-01-numba/         <- Current directory
-# │   │       └── Dockerfile       <- THIS FILE
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 01-01-numba/       <- Current directory
+# │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
-#---
-# name: numba
-# group: cuda
-# depends: [cuda, numpy]
-# # test: test.py # Removed as test is now embedded
-#---
+
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
@@ -35,7 +30,7 @@ RUN apt-get update && \
 #RUN llvm-config --version
 
 # Install numba and check version in one layer
-RUN pip3 install --no-cache-dir numba && \
+RUN pip3 install --no-cache-dir --break-system-packages numba && \
     echo "Installed numba version:" && \
     pip3 show numba && python3 -c 'import numba; print(numba.__version__)'
 
