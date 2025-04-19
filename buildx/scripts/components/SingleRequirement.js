@@ -3,10 +3,11 @@
 // Author: GitHub Copilot
 //
 // File location diagram:
-// jetc/                            <- Main project folder
-// └── src/                         <- Source code
-//     └── components/              <- React components
-//         └── SingleRequirement.js <- THIS FILE
+// jetc/                               <- Main project folder
+// └── buildx/                         <- Build directory
+//     └── scripts/                    <- Scripts directory
+//         └── components/             <- React components
+//             └── SingleRequirement.js<- THIS FILE
 
 import React from 'react';
 import RadioOption from './RadioOption';
