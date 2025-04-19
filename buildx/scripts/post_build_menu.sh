@@ -38,10 +38,10 @@ show_post_build_menu() {
   # Check if dialog is installed and use it; otherwise fall back to basic prompt
   if check_install_dialog; then
     # Dialog-based menu
-    show_dialog_menu("$image_tag")
+    show_dialog_menu "$image_tag"
   else
     # Fall back to original text-based menu
-    show_text_menu("$image_tag")
+    show_text_menu "$image_tag"
   fi
 }
 

@@ -1,18 +1,17 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20240730-230000-DINJ
-# Description: Helper script to check and install dialog package
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240729-101500-B4E1
+# Description: Script to check and install dialog utility
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── check_install_dialog.sh <- THIS FILE
+# ├── buildx/                    <- Buildx directory
+# │   └── scripts/               <- Scripts directory
+# │       └── check_install_dialog.sh  <- THIS FILE
 # └── ...                        <- Other project files
 
-# Function to check if dialog is installed and install if needed
+# Function to check if dialog is installed
 check_install_dialog() {
   if ! command -v dialog &> /dev/null; then
     echo "Dialog package not found. Installing dialog..." >&2
