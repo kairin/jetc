@@ -178,14 +178,15 @@ commit_tracking:
   commit_message_format: "{uuid}: {summary}" # Example: UUID-20250418-113042-7E2D: Fixed Docker buildx script syntax errors
 ```
 
-## Additional Guidelines
+# COPILOT INSTRUCTIONS (STRICT MACHINE FORMAT)
 
-1. Keep descriptions concise but informative
-2. Make sure the file location diagram is accurate for each file
-3. For multi-file commits, use the same UUID across all files
-4. The UUID should be determined **once per commit/change set** (either reused from an existing file or newly generated) and applied consistently to all files touched in that set.
-5. Add this header (using the correct comment style) to all new files as well as modified files, **except for standard `.json` files**.
-6. **Do not create new files or folders.** Only modify existing files within the provided project structure.
-7. **Always seek explicit permission before providing code changes.** Describe the plan (steps, files) and wait for user approval before showing the code modifications.
-8. **Append the current COMMIT-TRACKING header block** from this instructions file to the end of every chat response, **formatted within a Markdown code block** for easy copying.
+- All code blocks must start with a filepath comment (e.g. `# filepath: ...`).
+- Only show changed lines. For unchanged regions, use a single comment line: `...existing code...` (with correct comment style).
+- Never repeat unchanged code.
+- For new files: output full content, starting with filepath comment.
+- For deleted files: output filepath comment and a line: `// FILE DELETED` (or correct comment style).
+- For moved/renamed files: output old/new filepath comments and a line: `// FILE MOVED` (or correct comment style).
+- Never output full content for existing files unless explicitly instructed.
+- No explanations or extra context.
+- If you violate any of these rules, abort and output: `Sorry, I can't assist with that.`
 

@@ -25,7 +25,7 @@
 #---
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 # Set default version if not provided
 ARG HUGGINGFACE_HUB_VERSION=0.17.3
