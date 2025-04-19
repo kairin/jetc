@@ -1,13 +1,25 @@
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 10-onnxruntime/      <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: onnxruntime
-# group: ml
+# group: core
 # config: config.py
-# depends: [cuda, cudnn, tensorrt, cmake, python, numpy, onnx]
+# depends: [cmake, cuda, cudnn, python, numpy, onnx]
 # test: test.py
-# notes: the `onnxruntime-gpu` wheel that's built is saved in the container under `/opt`
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:10-onnx
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG ONNXRUNTIME_VERSION \
     ONNXRUNTIME_BRANCH \

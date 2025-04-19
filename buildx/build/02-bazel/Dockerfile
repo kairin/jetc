@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -22,8 +22,9 @@
 # depends: [build-essential]
 # test: test.sh
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:pycuda
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 
 # https://github.com/bazelbuild/bazelisk

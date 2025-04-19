@@ -6,8 +6,9 @@
 # depends: [cuda, numpy] # Handled by config.py
 # test: (embedded in Dockerfile)
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:cuda
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG CUDA_PYTHON_VERSION
 ARG INSTALL_MODE="install" # Mode can be 'install' or 'build'

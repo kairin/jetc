@@ -6,8 +6,9 @@
 # depends: [build-essential] (implicitly handled by build system based on config)
 # test: (embedded in Dockerfile)
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:01-cuda
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # --- Common ARGs ---
 ARG DEBIAN_FRONTEND=noninteractive

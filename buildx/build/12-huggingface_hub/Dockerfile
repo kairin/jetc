@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -23,8 +23,9 @@
 # test: test.py
 # notes: provides `huggingface-cli` and `huggingface-downloader` tools
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:11-diffusers
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # Set default version if not provided
 ARG HUGGINGFACE_HUB_VERSION=0.17.3

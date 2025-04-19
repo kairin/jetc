@@ -1,13 +1,24 @@
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 10-onnx/             <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: onnx
-# group: ml
-# config: config.py
-# depends: [cmake, python, numpy]
+# group: core
+# depends: [python, protobuf]
 # test: test.py
-# notes: the `protobuf_apt` is added as a dependency on JetPack 4 (newer versions of onnx build it in-tree)
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:09-opencv
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG ONNX_VERSION
 

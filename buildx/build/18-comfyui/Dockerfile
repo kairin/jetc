@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -19,12 +19,16 @@
 #---
 # name: comfyui
 # group: diffusion
-# depends: [pytorch, torchvision, torchaudio, opencv, bitsandbytes, transformers, xformers, torchao, diffusers, huggingface_hub]
-# requires: '>=35.0.0'
+# depends: [pytorch, torchvision, cuda, cudnn, tensorrt, onnxruntime, opencv, cmake, python]
+# requires: '>=35.2.1'
+# test: test.sh
 # docs: docs.md
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:17-stable-diffusion-webui
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ARG COMFYUI_REPO=comfyanonymous/ComfyUI
 
 # Set environment variables for better reproducibility
 ENV COMFYUI_ROOT=/opt/ComfyUI

@@ -7,13 +7,14 @@
 #---
 # name: stable-diffusion-webui
 # group: diffusion
-# depends: [pytorch, torchvision, transformers, xformers, pycuda, opencv, onnxruntime]
-# requires: '>=34.1.0'
+# depends: [pytorch, torchvision, cuda, cudnn, tensorrt, onnxruntime, opencv, cmake, python, rust]
+# requires: '>=35.2.1'
+# test: test.sh
 # docs: docs.md
-# notes: disabled on JetPack 4
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:16-stable-diffusion
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # Determine appropriate branch/tag based on L4T version and install extensions
 RUN set -ex \

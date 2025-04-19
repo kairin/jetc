@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -19,12 +19,14 @@
 #---
 # name: flash-attention
 # group: llm
-# depends: [pytorch]
+# config: config.py
+# depends: [pytorch, cmake]
 # requires: '>=35'
 # test: test.py
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:14-xformers
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # Build Arguments
 ARG MAX_JOBS=6

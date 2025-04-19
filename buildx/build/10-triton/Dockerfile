@@ -8,8 +8,8 @@
 # notes: The OpenAI `triton` (https://github.com/triton-lang/triton) wheel that's built is saved in the container under `/opt`. Based on https://cloud.tencent.com/developer/article/2317398, https://zhuanlan.zhihu.com/p/681714973, https://zhuanlan.zhihu.com/p/673525339
 #---
 
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,8 +21,9 @@
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
 
-# Hardcoded base image from the previous stage
-FROM kairin/001:10-onnxruntime
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG TRITON_VERSION \
     TRITON_BRANCH \

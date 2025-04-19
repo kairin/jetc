@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -28,8 +28,9 @@
 # group: ml
 # depends: [cuda, python]
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:18-comfyui
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # Define arguments with default values
 ARG CUDA_INSTALLED_VERSION=11.8

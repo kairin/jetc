@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -20,13 +20,14 @@
 # name: diffusers
 # group: diffusion
 # config: config.py
-# depends: [pytorch, torchvision, transformers, onnx]
+# depends: [pytorch, huggingface_hub]
 # requires: '>=34.1.0'
 # test: test.py
-# notes: https://github.com/huggingface/diffusers
+# notes: disabled on JetPack 4
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:10-triton
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # Set a default version if not provided
 ARG DIFFUSERS_VERSION=0.24.0

@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -20,12 +20,13 @@
 # name: opencv
 # group: core
 # config: config.py
-# depends: [cuda, cudnn, python, numpy]
+# depends: [build-essential, python, numpy, cmake, cuda, cudnn]
 # test: test.py
 # notes: install or build OpenCV (with CUDA) from Jetson pip server
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:08-protobuf_cpp
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG OPENCV_VERSION \
     OPENCV_PYTHON \

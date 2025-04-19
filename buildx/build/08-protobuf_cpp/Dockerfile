@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line based on previous stage.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -18,15 +18,16 @@
 
 #---
 # name: protobuf:cpp
-# alias: protobuf
 # group: build
 # config: config.py
-# depends: [build-essential, python]
-# test: [test.py, test.sh]
-# notes: install protobuf using pip
+# depends: [build-essential, cmake]
+# test: test.sh
 #---
-# Hardcoded base image from the previous stage
-FROM kairin/001:07-protobuf_apt
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ARG PROTOBUF_VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip
 
