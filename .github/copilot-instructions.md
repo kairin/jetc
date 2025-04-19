@@ -1,3 +1,4 @@
+<!--
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
 # Description: Add clarity about file-specific descriptions in headers
 # Author: Mr K
@@ -8,6 +9,7 @@
 # ├── .github/                   <- GitHub directory
 # │   └── copilot-instructions.md<- THIS FILE
 # └── ...                        <- Other project files
+-->
 
 # LOCAL INSTRUCTIONS - DO NOT COMMIT TO GIT
 
@@ -116,4 +118,7 @@ This allows easy cross-referencing between commits and the files that were modif
 3. For multi-file commits, use the same UUID across all files
 4. The UUID should be determined **once per commit/change set** (either reused from an existing file or newly generated) and applied consistently to all files touched in that set.
 5. Add this header (using the correct comment style) to all new files as well as modified files, **except for standard `.json` files**.
+6. **Do not create new files or folders.** Only modify existing files within the provided project structure.
+7. **Always seek explicit permission before providing code changes.** Describe the plan (steps, files) and wait for user approval before showing the code modifications.
+8. **Append the current COMMIT-TRACKING header block** from this instructions file to the end of every chat response.
 

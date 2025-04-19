@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Refactor conditional tests in build_folder_image using [[ ]].
+# COMMIT-TRACKING: UUID-20240730-110000-RST1
+# Description: Restart Step 1: Refactor conditional tests in build_folder_image using [[ ]].
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
