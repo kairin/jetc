@@ -1,6 +1,6 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Add Docker utility functions for image verification and container builds
-# Author: Mr K
+# Description: Refactor conditional tests in build_folder_image using [[ ]].
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -105,13 +105,15 @@ build_folder_image() {
 
   echo "Generating fixed tag: $fixed_tag"
 
-  if [ ! -f "$folder/Dockerfile" ]; then
+  # Use [[ ]] for file existence check
+  if [[ ! -f "$folder/Dockerfile" ]]; then
     echo "Warning: Dockerfile not found in $folder. Skipping."
     return 1
   fi
 
   local build_args=()
-  if [ -z "$base_tag_arg" ]; then
+  # Use [[ ]] for string comparison (checking if empty)
+  if [[ -z "$base_tag_arg" ]]; then
       base_tag_arg="$default_base_image"
       echo "Using default base image: $default_base_image"
   fi
@@ -129,18 +131,18 @@ build_folder_image() {
   # Base command args
   local cmd_args=("--platform" "$platform" "-t" "$fixed_tag" "${build_args[@]}")
 
-  # Add --no-cache if requested
-  if [ "$use_cache" != "y" ]; then
+  # Add --no-cache if requested - Use [[ ]] for string comparison
+  if [[ "$use_cache" != "y" ]]; then
       cmd_args=("--no-cache" "${cmd_args[@]}")
   fi
-  # Add --squash if requested
-  if [ "$use_squash" == "y" ]; then
+  # Add --squash if requested - Use [[ ]] for string comparison
+  if [[ "$use_squash" == "y" ]]; then
       echo "Attempting build with --squash (experimental)"
       cmd_args=("--squash" "${cmd_args[@]}")
   fi
 
-  # Add --push or --load based on preference
-  if [ "$skip_push_pull" == "y" ]; then
+  # Add --push or --load based on preference - Use [[ ]] for string comparison
+  if [[ "$skip_push_pull" == "y" ]]; then
       echo "Using --load instead of --push"
       cmd_args+=("--load")
   else
@@ -155,20 +157,22 @@ build_folder_image() {
   docker buildx build "${cmd_args[@]}"
   local build_status=$?
 
-  if [ $build_status -ne 0; then
+  # Use [[ ]] for numerical comparison
+  if [[ $build_status -ne 0 ]]; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     echo "Error: Failed to build image for $image_name ($folder)."
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     return 1
   fi
 
-  # Only pull if we pushed
-  if [ "$skip_push_pull" != "y" ]; then
+  # Only pull if we pushed - Use [[ ]] for string comparison
+  if [[ "$skip_push_pull" != "y" ]]; then
       echo "Pulling built image: $fixed_tag"
       docker pull "$fixed_tag"
       local pull_status=$?
 
-      if [ $pull_status -ne 0; then
+      # Use [[ ]] for numerical comparison
+      if [[ $pull_status -ne 0 ]]; then
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           echo "Error: Failed to pull the built image $fixed_tag after push."
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -181,7 +185,8 @@ build_folder_image() {
   echo "Verifying image $fixed_tag exists locally..."
   if ! verify_image_exists "$fixed_tag"; then
       echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      if [ "$skip_push_pull" == "y" ]; then
+      # Use [[ ]] for string comparison
+      if [[ "$skip_push_pull" == "y" ]]; then
           echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker buildx build --load'."
       else
           echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
