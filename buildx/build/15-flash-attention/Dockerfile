@@ -28,7 +28,7 @@ RUN set -ex \
     \
     # Clone specific version \
     && rm -rf /opt/flash-attention \
-    && git clone --depth=1 --branch=v2.7.4.post2 https://github.com/Dao-AILab/flash-attention /opt/flash-attention \
+    && git clone --depth=1 --branch=v2.5.8 https://github.com/Dao-AILab/flash-attention /opt/flash-attention \
     && cd /opt/flash-attention \
     \
     # Apply patch directly instead of using a patch file \
