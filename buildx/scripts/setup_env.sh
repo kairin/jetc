@@ -137,42 +137,43 @@ get_user_preferences() {
   temp_file=$(mktemp)
   temp_file2=$(mktemp) # Second temp file for menu
 
-  # Define default values (convert to dialog format)
-  use_cache_default="off"      # No cache by default
-  use_squash_default="off"     # No squash by default
-  skip_push_pull_default="on"  # Skip intermediate push/pull by default
-  # Note: Removed base_image_action default here, handled by menu
+  # Define default states for checklist
+  # Note: 'on' means checked by default, 'off' means unchecked
+  local cache_default="off"
+  local squash_default="off"
+  local skip_push_pull_default="on"
 
-  # Main dialog to collect build options (cache, squash, skip)
+  # Use --checklist for boolean options
   dialog --backtitle "Docker Build Configuration" \
          --title "Build Preferences" \
-         --form "\nSet your build preferences:" 0 0 0 \
-         "Use existing buildx builder:" 1 1 "yes" 1 30 8 1 \
-         "Build with cache:" 2 1 "$use_cache_default" 2 30 8 1 \
-         "Squash image layers:" 3 1 "$use_squash_default" 3 30 8 1 \
-         "Skip intermediate push/pull:" 4 1 "$skip_push_pull_default" 4 30 8 1 \
+         --checklist "\nSelect build options (use Spacebar to toggle):" 15 70 4 \
+         "cache" "Build with cache (--no-cache if unchecked)" "$cache_default" \
+         "squash" "Squash image layers (--squash)" "$squash_default" \
+         "skip_push_pull" "Skip intermediate push/pull (--load)" "$skip_push_pull_default" \
+         "use_builder" "Use existing buildx builder (jetson-builder)" "on" \
          2>$temp_file
 
-  # Process results for build options
-  if [ $? -ne 0 ]; then
-    echo "Dialog canceled. Using default values for build options." >&2
-    use_cache="n"
-    use_squash="n"
-    skip_intermediate_push_pull="y"
-  else
-    # Convert dialog values to y/n format
-    dialog_results=$(cat $temp_file)
-    use_cache=$(echo "$dialog_results" | sed -n '2p' | tr '[:upper:]' '[:lower:]')
-    use_squash=$(echo "$dialog_results" | sed -n '3p' | tr '[:upper:]' '[:lower:]')
-    skip_intermediate_push_pull=$(echo "$dialog_results" | sed -n '4p' | tr '[:upper:]' '[:lower:]')
+  checklist_exit_status=$?
+  selected_options=$(cat $temp_file)
 
-    # Convert words to y/n format
-    use_cache=$(echo $use_cache | grep -iq "yes\|on\|true" && echo "y" || echo "n")
-    use_squash=$(echo $use_squash | grep -iq "yes\|on\|true" && echo "y" || echo "n")
-    skip_intermediate_push_pull=$(echo $skip_intermediate_push_pull | grep -iq "yes\|on\|true" && echo "y" || echo "n")
+  # Process checklist results
+  if [ $checklist_exit_status -ne 0 ]; then
+    echo "Dialog canceled. Using default values for build options." >&2
+    # Set defaults based on initial 'on'/'off' values
+    use_cache="n" # Default was off
+    use_squash="n" # Default was off
+    skip_intermediate_push_pull="y" # Default was on
+    # Assuming we always use the builder if dialog is used
+  else
+    # Check if tags are present in the output (output is like "tag1" "tag2")
+    [[ "$selected_options" == *'"cache"'* ]] && use_cache="y" || use_cache="n"
+    [[ "$selected_options" == *'"squash"'* ]] && use_squash="y" || use_squash="n"
+    [[ "$selected_options" == *'"skip_push_pull"'* ]] && skip_intermediate_push_pull="y" || skip_intermediate_push_pull="n"
+    # We don't really need the 'use_builder' option here as setup_buildx handles it,
+    # but kept it in checklist for completeness. We assume 'yes'.
   fi
 
-  # Base image selection using --menu
+  # Base image selection using --menu (remains the same)
   dialog --backtitle "Docker Build Configuration" \
          --title "Base Image Selection" \
          --menu "Select base image option:" 15 70 3 \
@@ -242,9 +243,9 @@ get_user_preferences() {
          --title "Build Configuration Summary" \
          --msgbox "Build will proceed with these settings:\n
   • Use existing buildx builder: yes
-  • Build with cache: $use_cache
-  • Squash image layers: $use_squash
-  • Skip intermediate push/pull: $skip_intermediate_push_pull
+  • Build with cache (--no-cache if 'n'): $use_cache
+  • Squash image layers (--squash if 'y'): $use_squash
+  • Skip intermediate push/pull (--load if 'y'): $skip_intermediate_push_pull
   • Base image action: $BASE_IMAGE_ACTION
   • Base image to use: $CURRENT_BASE_IMAGE" 15 70
 
