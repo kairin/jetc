@@ -14,8 +14,8 @@
 # notes: disabled on JetPack 4
 #---
 
-# COMMIT-TRACKING: UUID-20240730-120000-FIX1
-# Description: Replace invalid 'clip==1.0' with 'openai-clip' package.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Remove ARG BASE_IMAGE; FROM line will be set by build script.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -27,7 +27,7 @@
 # │           └── Dockerfile       <- THIS FILE
 # └── ...                        <- Other project files
 
-ARG BASE_IMAGE=kairin/001:15-flash-attention
+# The build script will replace the line below with the correct base image
 FROM ${BASE_IMAGE}
 
 # Install dependencies and set up Stable Diffusion repositories

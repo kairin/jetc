@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-110000-RST1
-# Description: Restart Step 1: Refactor conditional tests in build_folder_image using [[ ]].
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Modify build_folder_image to set FROM line via sed instead of build-arg.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -98,47 +98,75 @@ build_folder_image() {
 
   # Variable to store the tag name
   fixed_tag=""
-  
+
   local image_name
   image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
   fixed_tag=$(echo "${docker_username}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
 
   echo "Generating fixed tag: $fixed_tag"
 
+  local dockerfile_path="$folder/Dockerfile"
+  local backup_path="$folder/Dockerfile.bak"
+
   # Use [[ ]] for file existence check
-  if [[ ! -f "$folder/Dockerfile" ]]; then
+  if [[ ! -f "$dockerfile_path" ]]; then
     echo "Warning: Dockerfile not found in $folder. Skipping."
     return 1
   fi
 
-  local build_args=()
-  # Use [[ ]] for string comparison (checking if empty)
+  # Determine the actual base tag to use
+  local actual_base_tag
   if [[ -z "$base_tag_arg" ]]; then
-      base_tag_arg="$default_base_image"
+      actual_base_tag="$default_base_image"
       echo "Using default base image: $default_base_image"
+  else
+      actual_base_tag="$base_tag_arg"
+      echo "Using base image from previous step: $actual_base_tag"
   fi
-  build_args+=(--build-arg "BASE_IMAGE=$base_tag_arg")
-  echo "Using base image build arg: $base_tag_arg"
+
+  # --- Dockerfile Modification and Restore Logic ---
+  # Setup trap to restore the Dockerfile on exit (success, error, or interrupt)
+  trap 'echo "Restoring Dockerfile $dockerfile_path"; mv "$backup_path" "$dockerfile_path" 2>/dev/null || echo "Restore failed or backup missing for $dockerfile_path"; trap - EXIT' EXIT
+
+  echo "Backing up Dockerfile to $backup_path"
+  cp "$dockerfile_path" "$backup_path"
+  if [[ $? -ne 0 ]]; then
+      echo "Error: Failed to backup Dockerfile $dockerfile_path. Aborting build for this step."
+      trap - EXIT # Clear the trap as the operation failed before build
+      return 1
+  fi
+
+  echo "Modifying $dockerfile_path to use FROM ${actual_base_tag}"
+  # Use a temporary file for sed on systems where in-place editing might be tricky
+  sed "s|^FROM \${BASE_IMAGE}.*|FROM ${actual_base_tag}|" "$backup_path" > "$dockerfile_path"
+  if [[ $? -ne 0 ]]; then
+      echo "Error: Failed to modify Dockerfile $dockerfile_path using sed. Aborting build for this step."
+      # Trap will still attempt restore
+      return 1
+  fi
+  # --- End Dockerfile Modification ---
+
 
   echo "--------------------------------------------------"
   echo "Building image from folder: $folder"
   echo "Image Name: $image_name"
   echo "Platform: $platform"
   echo "Tag: $fixed_tag"
+  echo "Base Image (FROM): $actual_base_tag" # Show the base image being used
   echo "Skip Intermediate Push/Pull: $skip_push_pull"
   echo "--------------------------------------------------"
 
-  # Base command args
-  local cmd_args=("--platform" "$platform" "-t" "$fixed_tag" "${build_args[@]}")
+  # Base command args - REMOVED the build_args array for BASE_IMAGE
+  local cmd_args=("--platform" "$platform" "-t" "$fixed_tag")
 
   # Add --no-cache if requested - Use [[ ]] for string comparison
   if [[ "$use_cache" != "y" ]]; then
-      cmd_args=("--no-cache" "${cmd_args[@]}")
+      cmd_args+=("--no-cache") # Use += to append
   fi
   # Add --squash if requested - Use [[ ]] for string comparison
   if [[ "$use_squash" == "y" ]]; then
       echo "Attempting build with --squash (experimental)"
-      cmd_args=("--squash" "${cmd_args[@]}")
+      cmd_args+=("--squash") # Use += to append
   fi
 
   # Add --push or --load based on preference - Use [[ ]] for string comparison
@@ -157,14 +185,17 @@ build_folder_image() {
   docker buildx build "${cmd_args[@]}"
   local build_status=$?
 
+  # The trap will automatically restore the Dockerfile now
+
   # Use [[ ]] for numerical comparison
   if [[ $build_status -ne 0 ]]; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     echo "Error: Failed to build image for $image_name ($folder)."
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    return 1
+    return 1 # Build failed
   fi
 
+  # --- Post-Build Push/Pull/Verification (remains the same) ---
   # Only pull if we pushed - Use [[ ]] for string comparison
   if [[ "$skip_push_pull" != "y" ]]; then
       echo "Pulling built image: $fixed_tag"
@@ -176,7 +207,7 @@ build_folder_image() {
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
           echo "Error: Failed to pull the built image $fixed_tag after push."
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          return 1
+          return 1 # Pull failed
       fi
   else
       echo "Skipped pulling image $fixed_tag as push was skipped."
@@ -192,10 +223,9 @@ build_folder_image() {
           echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
       fi
       echo "This indicates a potential issue with the Docker daemon or buildx driver."
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      return 1
+      return 1 # Verification failed
   fi
 
   echo "Image $fixed_tag verified locally."
-  return 0
+  return 0 # Success
 }

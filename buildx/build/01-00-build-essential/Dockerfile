@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update commit tracking header UUID for consistency. Embed vercmp/tarpack scripts. Remove default BASE_IMAGE.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Remove ARG BASE_IMAGE; FROM line will be set by build script.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,7 +21,7 @@
 # group: build
 # notes: installs compilers, build tools & configures the default locale
 #---
-ARG BASE_IMAGE
+# The build script will replace the line below with the correct base image
 FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive \

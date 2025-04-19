@@ -8,8 +8,8 @@
 # notes: The OpenAI `triton` (https://github.com/triton-lang/triton) wheel that's built is saved in the container under `/opt`. Based on https://cloud.tencent.com/developer/article/2317398, https://zhuanlan.zhihu.com/p/681714973, https://zhuanlan.zhihu.com/p/673525339
 #---
 
-# COMMIT-TRACKING: UUID-20240730-120000-FIX1 
-# Description: Correct pip install syntax for triton package.
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Remove ARG BASE_IMAGE; FROM line will be set by build script.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,7 +21,7 @@
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
 
-ARG BASE_IMAGE
+# The build script will replace the line below with the correct base image
 FROM ${BASE_IMAGE}
 
 ARG TRITON_VERSION \

@@ -11,7 +11,33 @@
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
 
-ARG BASE_IMAGE
+# COMMIT-TRACKING: UUID-20240730-140000-ARG1
+# Description: Add default value for ARG BASE_IMAGE.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 01-01-numba/       <- Current directory
+# │           └── Dockerfile     <- THIS FILE
+# └── ...                        <- Other project files
+
+# COMMIT-TRACKING: UUID-20240730-150000-SED1
+# Description: Remove ARG BASE_IMAGE; FROM line will be set by build script.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 01-01-numba/       <- Current directory
+# │           └── Dockerfile     <- THIS FILE
+# └── ...                        <- Other project files
+
+# The build script will replace the line below with the correct base image
 FROM ${BASE_IMAGE}
 
 # Install llvm-dev and check version in one layer
