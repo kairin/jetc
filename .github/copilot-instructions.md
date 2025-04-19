@@ -188,5 +188,4 @@ commit_tracking:
 - For moved/renamed files: output old/new filepath comments and a line: `// FILE MOVED` (or correct comment style).
 - Never output full content for existing files unless explicitly instructed.
 - No explanations or extra context.
-- If you violate any of these rules, abort and output: `Sorry, I can't assist with that.`
 
