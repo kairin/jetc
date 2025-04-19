@@ -1,6 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-180000-LNT1
 # COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter. Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
