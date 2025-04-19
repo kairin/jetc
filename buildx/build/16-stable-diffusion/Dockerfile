@@ -70,11 +70,11 @@ RUN set -ex \
         pandas==2.1.1 \
         scipy==1.11.3 \
     \
-    # Clone taming-transformers directly rather than using pip package \
+    # Clone taming-transformers directly instead of pip install \
     && rm -rf /opt/taming-transformers \
     && git clone --depth=1 https://github.com/CompVis/taming-transformers /opt/taming-transformers \
     \
-    # Clean before cloning stable-diffusion \
+    # Clean before cloning \
     && rm -rf /opt/stable-diffusion /opt/stable-diffusion-optimized \
     \
     # Clone repositories \
@@ -83,15 +83,17 @@ RUN set -ex \
     && cp -r /opt/stable-diffusion-optimized/optimizedSD /opt/stable-diffusion/ \
     && rm -rf /opt/stable-diffusion-optimized \
     \
-    # Apply fixes \
-    && sed -i \
-        -e 's|from pytorch_lightning.utilities.distributed|#from pytorch_lightning.utilities.distributed|g' \
-        -e 's|@rank_zero_only||g' \
-        /opt/stable-diffusion/ldm/models/diffusion/ddpm.py \
-    && sed -i \
-        -e 's|from pytorch_lightning.utilities.distributed|#from pytorch_lightning.utilities.distributed|g' \
-        -e 's|@rank_zero_only||g' \
-        /opt/stable-diffusion/optimizedSD/ddpm.py \
+    # Apply fixes with conditional checks \
+    && grep -q "from pytorch_lightning.utilities.distributed" /opt/stable-diffusion/ldm/models/diffusion/ddpm.py && \
+       sed -i \
+           -e 's|from pytorch_lightning.utilities.distributed|#from pytorch_lightning.utilities.distributed|g' \
+           -e 's|@rank_zero_only||g' \
+           /opt/stable-diffusion/ldm/models/diffusion/ddpm.py || true \
+    && grep -q "from pytorch_lightning.utilities.distributed" /opt/stable-diffusion/optimizedSD/ddpm.py && \
+       sed -i \
+           -e 's|from pytorch_lightning.utilities.distributed|#from pytorch_lightning.utilities.distributed|g' \
+           -e 's|@rank_zero_only||g' \
+           /opt/stable-diffusion/optimizedSD/ddpm.py || true \
     \
     # Create directories \
     && mkdir -p /data/models/diffusers \
@@ -101,14 +103,18 @@ RUN set -ex \
     && echo "# Check for Stable Diffusion packages" >> /tmp/sd_checks.sh \
     && echo "check_python_pkg diffusers" >> /tmp/sd_checks.sh \
     && echo "check_dir /opt/stable-diffusion 'Stable Diffusion'" >> /tmp/sd_checks.sh \
+    && echo "check_dir /opt/taming-transformers 'Taming Transformers'" >> /tmp/sd_checks.sh \
     && cat /tmp/sd_checks.sh >> /opt/list_app_checks.sh \
+    \
+    # Verify installation can import taming-transformers \
+    && python3 -c "import sys; sys.path.append('/opt/taming-transformers'); from taming.modules.vqvae.quantize import VectorQuantizer; print('Taming-transformers VectorQuantizer imported successfully')" \
     \
     # Cleanup \
     && rm -rf /root/.cache/pip \
-    && find /opt/stable-diffusion -name ".git" -type d -exec rm -rf {} + \
+    && find /opt/stable-diffusion /opt/taming-transformers -name ".git" -type d -exec rm -rf {} + 2>/dev/null || true \
     && rm -f /tmp/sd_checks.sh
 
-# add module to PYTHONPATH since it's not installable
+# add modules to PYTHONPATH since they're not installable
 ENV PYTHONPATH=${PYTHONPATH}:/opt/stable-diffusion:/opt/taming-transformers \
     DIFFUSERS_CACHE=/data/models/diffusers
 
