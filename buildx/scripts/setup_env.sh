@@ -101,11 +101,24 @@ setup_build_environment() {
 # Returns: 0 if successful, 1 if not
 # =========================================================================
 check_install_dialog() {
-  # Source the dedicated script
-  source "$(dirname "$0")/check_install_dialog.sh"
-  # Call the function from that script
-  check_install_dialog
-  return $?
+  if ! command -v dialog &> /dev/null; then
+    echo "Dialog package not found. Installing dialog..." >&2
+    if command -v apt-get &> /dev/null; then
+      sudo apt-get update -y && sudo apt-get install -y dialog
+    elif command -v yum &> /dev/null; then
+      sudo yum install -y dialog
+    else
+      echo "Could not install dialog: Unsupported package manager." >&2
+      return 1
+    fi
+  fi
+  
+  if ! command -v dialog &> /dev/null; then
+    echo "Failed to install dialog. Falling back to basic prompts." >&2
+    return 1
+  fi
+  
+  return 0
 }
 
 # =========================================================================
