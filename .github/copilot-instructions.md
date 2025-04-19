@@ -1,6 +1,6 @@
 <!--
 # COMMIT-TRACKING: UUID-20240729-101500-B4E1
-# Description: Add machine-readable YAML summary of instructions
+# Description: Ultra-compact, machine-readable minimal-diff instructions for LLM
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -178,14 +178,20 @@ commit_tracking:
   commit_message_format: "{uuid}: {summary}" # Example: UUID-20250418-113042-7E2D: Fixed Docker buildx script syntax errors
 ```
 
-# COPILOT INSTRUCTIONS (STRICT MACHINE FORMAT)
-
-- All code blocks must start with a filepath comment (e.g. `# filepath: ...`).
-- Only show changed lines. For unchanged regions, use a single comment line: `...existing code...` (with correct comment style).
-- Never repeat unchanged code.
-- For new files: output full content, starting with filepath comment.
-- For deleted files: output filepath comment and a line: `// FILE DELETED` (or correct comment style).
-- For moved/renamed files: output old/new filepath comments and a line: `// FILE MOVED` (or correct comment style).
-- Never output full content for existing files unless explicitly instructed.
-- No explanations or extra context.
+copilot_minimal_diff:
+  - "# filepath: <path> required at top of every code block"
+  - "Never repeat unchanged code"
+  - "Use single comment line: ...existing code... (correct comment style) for unchanged regions"
+  - "New file: output full content, start with filepath"
+  - "Deleted file: filepath + // FILE DELETED"
+  - "Moved file: old/new filepath comments + // FILE MOVED"
+  - "Never output full content for existing files unless explicitly instructed"
+  - "No explanations or extra context"
+  - "If any rule is violated: output 'Sorry, I can't assist with that.'"
+  - EXAMPLE:
+      - |
+        # filepath: /path/to/file.py
+        # ...existing code...
+        def new_func(): pass
+        # ...existing code...
 
