@@ -18,7 +18,7 @@
 #---
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 ARG CUDA_URL \
     CUDA_DEB \
