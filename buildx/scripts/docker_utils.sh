@@ -84,6 +84,7 @@ list_installed_apps() {
 # Arguments: $1 = folder path, $2 = use_cache (y/n), $3 = docker_username,
 #            $4 = platform, $5 = use_squash (y/n),
 #            $6 = skip_intermediate_push_pull (y/n)
+#            $7 = base_image_tag (tag to use for FROM ${BASE_IMAGE})
 # Returns: The fixed tag name on success via $fixed_tag, non-zero exit status on failure
 # =========================================================================
 build_folder_image() {
@@ -92,7 +93,8 @@ build_folder_image() {
   local docker_username=$3
   local platform=$4
   local use_squash=$5
-  local skip_push_pull=$6 # Renamed from skip_intermediate_push_pull for clarity
+  local skip_push_pull=$6
+  local base_image_tag=$7 # Added base image tag argument
 
   # Variable to store the tag name
   fixed_tag=""
@@ -112,19 +114,28 @@ build_folder_image() {
     return 1
   fi
 
-  # --- REMOVED: Base tag determination and Dockerfile modification logic ---
+  # Check if base_image_tag is provided
+  if [[ -z "$base_image_tag" ]]; then
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "Error: Base image tag not provided for build of $folder."
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      return 1
+  fi
 
   echo "--------------------------------------------------"
   echo "Building image from folder: $folder"
   echo "Image Name: $image_name"
   echo "Platform: $platform"
   echo "Tag: $fixed_tag"
-  # echo "Base Image (FROM): Hardcoded in Dockerfile" # Updated message
+  echo "Base Image (FROM via ARG): $base_image_tag" # Show the base image being passed
   echo "Skip Intermediate Push/Pull: $skip_push_pull"
   echo "--------------------------------------------------"
 
   # Base command args
   local cmd_args=("--platform" "$platform" "-t" "$fixed_tag")
+
+  # Add the build argument for the base image
+  cmd_args+=("--build-arg" "BASE_IMAGE=$base_image_tag")
 
   # Add --no-cache if requested - Use [[ ]] for string comparison
   if [[ "$use_cache" != "y" ]]; then
@@ -151,8 +162,6 @@ build_folder_image() {
   echo "Running: docker buildx build ${cmd_args[*]}"
   docker buildx build "${cmd_args[@]}"
   local build_status=$?
-
-  # --- REMOVED: Trap logic for restore ---
 
   # Use [[ ]] for numerical comparison
   if [[ $build_status -ne 0 ]]; then

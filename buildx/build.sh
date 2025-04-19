@@ -11,6 +11,17 @@
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Implement dynamic base image tracking and passing via build-arg.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+
 # Import utility scripts
 SCRIPT_DIR="$(dirname "$0")/scripts"
 source "$SCRIPT_DIR/docker_utils.sh"
@@ -44,6 +55,10 @@ get_user_preferences || exit 1
 declare -a BUILT_TAGS=()
 declare -a ATTEMPTED_TAGS=() # Keep this to track attempts for final verification
 
+# Initialize the base image for the first build
+CURRENT_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
+echo "Initial base image set to: $CURRENT_BASE_IMAGE"
+
 # Ensure the build process continues even if individual builds fail
 set +e  # Don't exit on errors during builds
 
@@ -66,26 +81,30 @@ if [[ ${#numbered_dirs[@]} -eq 0 ]]; then
 else
     for dir in "${numbered_dirs[@]}"; do
       echo "Processing numbered directory: $dir"
-      # Call build_folder_image without base tag argument
-      # Note: docker_utils.sh is modified to remove base tag parameter and logic
-      build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull"
+      echo "Using base image: $CURRENT_BASE_IMAGE"
+      # Call build_folder_image WITH the current base tag argument
+      # Note: docker_utils.sh is modified to accept base tag parameter
+      build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE"
       build_status=$?
+
+      # Note: $fixed_tag is set by build_folder_image regardless of success/failure
+      ATTEMPTED_TAGS+=("$fixed_tag") # Add the tag to attempted tags
 
       if [[ $build_status -eq 0 ]]; then
           # Add to BUILT_TAGS array
-          # Note: $fixed_tag is set by build_folder_image on success
           BUILT_TAGS+=("$fixed_tag")
+          # Update CURRENT_BASE_IMAGE to the tag just built for the next iteration
+          CURRENT_BASE_IMAGE="$fixed_tag"
           # Keep track of the last successful tag for the final timestamped tag
           FINAL_FOLDER_TAG="$fixed_tag"
           echo "Successfully built, pushed, and pulled numbered image: $fixed_tag"
+          echo "Next base image will be: $CURRENT_BASE_IMAGE"
       else
           echo "Build, push or pull failed for $dir. Subsequent dependent builds might fail."
           handle_build_error "$dir" $build_status
           BUILD_FAILED=1
+          # Do NOT update CURRENT_BASE_IMAGE on failure
       fi
-      # Add the tag to attempted tags regardless of success for final verification
-      # Note: $fixed_tag is set by build_folder_image even before build starts
-      ATTEMPTED_TAGS+=("$fixed_tag")
     done
 fi
 
@@ -96,25 +115,29 @@ if [[ ${#other_dirs[@]} -eq 0 ]]; then
 elif [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "Skipping other directories due to previous build failures."
 else
-    # Base image is now hardcoded in these Dockerfiles based on the last numbered stage
-    echo "Building non-numbered directories (base image hardcoded in Dockerfiles)"
+    # Use the last successful base image from the numbered sequence
+    echo "Building non-numbered directories using base image: $CURRENT_BASE_IMAGE"
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir"
-      # Call build_folder_image without base tag argument
-      build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull"
+      # Call build_folder_image WITH the current base tag argument
+      build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE"
       build_status=$?
+
+      ATTEMPTED_TAGS+=("$fixed_tag") # Add the tag to attempted tags
+
       if [[ $build_status -eq 0 ]]; then
-          # Note: $fixed_tag is set by build_folder_image on success
           BUILT_TAGS+=("$fixed_tag")
-          FINAL_FOLDER_TAG="$fixed_tag"  # Update the overall last successful folder tag
+          # Update CURRENT_BASE_IMAGE and FINAL_FOLDER_TAG for potential subsequent non-numbered builds
+          CURRENT_BASE_IMAGE="$fixed_tag"
+          FINAL_FOLDER_TAG="$fixed_tag"
           echo "Successfully built, pushed, and pulled other image: $fixed_tag"
+          echo "Next base image (if any) will be: $CURRENT_BASE_IMAGE"
       else
           echo "Build, push or pull failed for $dir."
           handle_build_error "$dir" $build_status
           BUILD_FAILED=1
+          # Do NOT update CURRENT_BASE_IMAGE on failure
       fi
-      # Add the tag to attempted tags regardless of success
-      ATTEMPTED_TAGS+=("$fixed_tag")
     done
 fi
 
@@ -150,7 +173,7 @@ if [[ "$skip_intermediate_push_pull" != "y" ]]; then
             echo "Skipping pre-tagging pull verification due to earlier build failures."
         else
             echo "No images were attempted, skipping pre-tagging pull verification."
-        end
+        fi
     fi
 else
     echo "Skipping pre-tagging pull verification as intermediate push/pull was disabled."

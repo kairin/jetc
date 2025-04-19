@@ -37,8 +37,22 @@
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
 
-# Hardcoded base image from the previous stage
-FROM kairin/001:01-01-arrow
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 01-01-numba/       <- Current directory
+# │           └── Dockerfile     <- THIS FILE
+# └── ...                        <- Other project files
+
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 # Install llvm-dev and check version in one layer
 RUN apt-get update && \

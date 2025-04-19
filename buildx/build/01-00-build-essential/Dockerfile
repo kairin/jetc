@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-150000-SED1
-# Description: Hardcode FROM line with default base image.
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -21,8 +21,9 @@
 # group: build
 # notes: installs compilers, build tools & configures the default locale
 #---
-# Hardcoded base image for the first stage
-FROM kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+# Use ARG for dynamic base image injection
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANGUAGE=en_US:en \

@@ -49,7 +49,7 @@ load_env_variables() {
 # =========================================================================
 # Function: Setup build environment
 # Returns: 0 if successful, 1 if not
-# Sets: CURRENT_DATE_TIME, PLATFORM, ARCH, LOG_DIR
+# Sets: CURRENT_DATE_TIME, PLATFORM, ARCH, LOG_DIR, DEFAULT_BASE_IMAGE
 # =========================================================================
 setup_build_environment() {
   # Get current date/time for timestamped tags
@@ -73,6 +73,9 @@ setup_build_environment() {
   FINAL_FOLDER_TAG=""
   TIMESTAMPED_LATEST_TAG=""
   BUILD_FAILED=0
+
+  # Set default base image for the first build in the sequence
+  DEFAULT_BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu" # Adjust if needed
   
   # Export all variables so they're available to the main script
   export CURRENT_DATE_TIME
@@ -84,6 +87,7 @@ setup_build_environment() {
   export FINAL_FOLDER_TAG
   export TIMESTAMPED_LATEST_TAG
   export BUILD_FAILED
+  export DEFAULT_BASE_IMAGE # Export the default base image
   
   return 0
 }
