@@ -3,6 +3,7 @@
 No full content for existing files unless requested
 - No explanations or extra context
 
+Come back to check this file again before responding to anything.
 
 ## Minimal Diff Rules
 

@@ -1,16 +1,4 @@
-<!--le Header Rules
-# COMMIT-TRACKING: UUID-20240801-155000-RFIR
-# Description: Added request interpretation rules to prevent undesired behaviors
-# Author: GitHub Copilot
-#``yaml
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── copilot-must-follow.md <- THIS FILEone commit
-# └── ...                        <- Other project files
---> - "COMMIT-TRACKING": UUID-YYYYMMDD-HHMMSS-XXXX
+- "COMMIT-TRACKING": UUID-YYYYMMDD-HHMMSS-XXXX
     - "Description": File-specific changes description
 # File Header Rulesr name/identifier 
     - "File location diagram": Project structure showing file location
@@ -36,15 +24,3 @@ commit_tracking: .py, Dockerfile, .yml, .yaml]
 ```── buildx/                    <- Current directory
 # │   └── build.sh               <- THIS FILE
 ## Example Header                <- Other project files
-```
-```sh
-# COMMIT-TRACKING: UUID-20250418-113042-7E2D
-# Description: Fixed Docker buildx script syntax errors
-# Author: Mr K / GitHub Copilot
-#opilot_minimal_diff:
-# File location diagram: at top of every code block
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Current directory
-# │   └── build.sh               <- THIS FILE"
-# └── ...                        <- Other project files
