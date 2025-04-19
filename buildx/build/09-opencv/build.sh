@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Add commit-tracking header for opencv build script
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Main buildx directory
+# │   └── build/                 <- Build directory
+# │       └── 09-opencv/         <- Current directory
+# │           └── build.sh       <- THIS FILE
+# └── ...                        <- Other project files
+
 # =========================================================================
 # IMPORTANT: This build system requires Docker with buildx extension.
 # All builds MUST use Docker buildx to ensure consistent

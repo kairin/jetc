@@ -1,3 +1,18 @@
+<!--
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Add commit-tracking header for protobuf_cpp README
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Main buildx directory
+# │   └── build/                 <- Build directory
+# │       └── 08-protobuf_cpp/   <- Current directory
+# │           └── README.md      <- THIS FILE
+# └── ...                        <- Other project files
+-->
+
 # protobuf_cpp
 
 > [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)

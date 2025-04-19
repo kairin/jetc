@@ -1,3 +1,18 @@
+<!--
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Add commit-tracking header for opencv README
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Main buildx directory
+# │   └── build/                 <- Build directory
+# │       └── 09-opencv/         <- Current directory
+# │           └── README.md      <- THIS FILE
+# └── ...                        <- Other project files
+-->
+
 # opencv
 
 > [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)
