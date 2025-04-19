@@ -132,17 +132,18 @@ get_user_preferences() {
     # Fall back to original prompting method if dialog not available
     return get_user_preferences_basic
   fi
-  
+
   # Create temporary file to store results
   temp_file=$(mktemp)
-  
+  temp_file2=$(mktemp) # Second temp file for menu
+
   # Define default values (convert to dialog format)
   use_cache_default="off"      # No cache by default
   use_squash_default="off"     # No squash by default
   skip_push_pull_default="on"  # Skip intermediate push/pull by default
-  base_image_action="use"      # Default to using current base image
-  
-  # Main dialog to collect all preferences
+  # Note: Removed base_image_action default here, handled by menu
+
+  # Main dialog to collect build options (cache, squash, skip)
   dialog --backtitle "Docker Build Configuration" \
          --title "Build Preferences" \
          --form "\nSet your build preferences:" 0 0 0 \
@@ -151,11 +152,10 @@ get_user_preferences() {
          "Squash image layers:" 3 1 "$use_squash_default" 3 30 8 1 \
          "Skip intermediate push/pull:" 4 1 "$skip_push_pull_default" 4 30 8 1 \
          2>$temp_file
-  
-  # Process results
+
+  # Process results for build options
   if [ $? -ne 0 ]; then
-    echo "Dialog canceled. Using default values." >&2
-    rm -f $temp_file
+    echo "Dialog canceled. Using default values for build options." >&2
     use_cache="n"
     use_squash="n"
     skip_intermediate_push_pull="y"
@@ -165,90 +165,97 @@ get_user_preferences() {
     use_cache=$(echo "$dialog_results" | sed -n '2p' | tr '[:upper:]' '[:lower:]')
     use_squash=$(echo "$dialog_results" | sed -n '3p' | tr '[:upper:]' '[:lower:]')
     skip_intermediate_push_pull=$(echo "$dialog_results" | sed -n '4p' | tr '[:upper:]' '[:lower:]')
-    
+
     # Convert words to y/n format
     use_cache=$(echo $use_cache | grep -iq "yes\|on\|true" && echo "y" || echo "n")
     use_squash=$(echo $use_squash | grep -iq "yes\|on\|true" && echo "y" || echo "n")
     skip_intermediate_push_pull=$(echo $skip_intermediate_push_pull | grep -iq "yes\|on\|true" && echo "y" || echo "n")
   fi
-  
-  # Base image selection
+
+  # Base image selection using --menu
   dialog --backtitle "Docker Build Configuration" \
          --title "Base Image Selection" \
-         --radiolist "Select base image option:" 15 60 3 \
-         "use" "Use current base image: $DEFAULT_BASE_IMAGE" on \
-         "pull" "Pull current base image before building" off \
-         "change" "Specify a different base image" off \
-         2>$temp_file
-  
-  if [ $? -eq 0 ]; then
-    BASE_IMAGE_ACTION=$(cat $temp_file)
-    
+         --menu "Select base image option:" 15 70 3 \
+         "use" "Use current base image: $DEFAULT_BASE_IMAGE" \
+         "pull" "Pull current base image ($DEFAULT_BASE_IMAGE) before building" \
+         "change" "Specify a different base image" \
+         2>$temp_file2 # Use the second temp file
+
+  menu_exit_status=$?
+  BASE_IMAGE_ACTION=$(cat $temp_file2)
+
+  if [ $menu_exit_status -eq 0 ]; then
+    # User made a selection
     if [ "$BASE_IMAGE_ACTION" = "change" ]; then
       # Ask for custom base image
       dialog --backtitle "Docker Build Configuration" \
              --title "Custom Base Image" \
              --inputbox "Enter the full URL/tag of the base image:" 8 60 "$DEFAULT_BASE_IMAGE" \
-             2>$temp_file
-      
+             2>$temp_file # Reuse first temp file
+
       if [ $? -eq 0 ]; then
         CUSTOM_BASE_IMAGE=$(cat $temp_file)
         # Validate that something was entered
         if [ -z "$CUSTOM_BASE_IMAGE" ]; then
           dialog --msgbox "No base image entered. Using default: $DEFAULT_BASE_IMAGE" 8 60
           CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
-          BASE_IMAGE_ACTION="use"
+          BASE_IMAGE_ACTION="use" # Revert action if input is empty
         else
           echo "Using custom base image: $CUSTOM_BASE_IMAGE" >&2
+          # Keep BASE_IMAGE_ACTION as "change" but set the image
         fi
       else
+        # User cancelled inputbox, revert to default
+        dialog --msgbox "Input canceled. Using default: $DEFAULT_BASE_IMAGE" 8 60
         CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
         BASE_IMAGE_ACTION="use"
       fi
-    fi
-    
-    # If pull is selected, do the pull now
-    if [ "$BASE_IMAGE_ACTION" = "pull" ]; then
+    elif [ "$BASE_IMAGE_ACTION" = "pull" ]; then
+      # Pull the default base image
       dialog --infobox "Pulling base image: $DEFAULT_BASE_IMAGE..." 3 60
+      sleep 1 # Give infobox time to display
       if ! docker pull "$DEFAULT_BASE_IMAGE"; then
-        dialog --msgbox "Failed to pull base image: $DEFAULT_BASE_IMAGE" 8 60
+        dialog --msgbox "Failed to pull base image: $DEFAULT_BASE_IMAGE. Build might fail if not available locally." 8 60
       else
         dialog --msgbox "Successfully pulled base image: $DEFAULT_BASE_IMAGE" 8 60
       fi
-      CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
+      CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE" # Set image to default after pull attempt
     elif [ "$BASE_IMAGE_ACTION" = "use" ]; then
+      # Use the default base image without pulling
       CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
     fi
   else
+    # User pressed Cancel or Esc on the menu
+    dialog --msgbox "Base image selection canceled. Using default: $DEFAULT_BASE_IMAGE" 8 60
     BASE_IMAGE_ACTION="use"
     CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
   fi
-  
-  # Clean up temp file
-  rm -f $temp_file
-  
+
+  # Clean up temp files
+  rm -f $temp_file $temp_file2
+
   # Set the current base image to either the default or the custom one
   CURRENT_BASE_IMAGE="$CUSTOM_BASE_IMAGE"
-  
+
   # Display final configuration
   dialog --backtitle "Docker Build Configuration" \
          --title "Build Configuration Summary" \
-         --msgbox "Build will proceed with these settings:
-         
+         --msgbox "Build will proceed with these settings:\n
   • Use existing buildx builder: yes
   • Build with cache: $use_cache
   • Squash image layers: $use_squash
   • Skip intermediate push/pull: $skip_intermediate_push_pull
-  • Base image: $CURRENT_BASE_IMAGE" 15 60
-  
+  • Base image action: $BASE_IMAGE_ACTION
+  • Base image to use: $CURRENT_BASE_IMAGE" 15 70
+
   # Export all variables for use in the main script
   export use_cache
   export use_squash
   export skip_intermediate_push_pull
-  export BASE_IMAGE_ACTION
-  export CUSTOM_BASE_IMAGE
-  export CURRENT_BASE_IMAGE
-  
+  export BASE_IMAGE_ACTION # Keep this for potential future logic if needed
+  export CUSTOM_BASE_IMAGE # Keep this for potential future logic if needed
+  export CURRENT_BASE_IMAGE # This is the primary one used by build.sh
+
   return 0
 }
 
