@@ -13,6 +13,20 @@
 # docs: docs.md
 # notes: disabled on JetPack 4
 #---
+
+# COMMIT-TRACKING: UUID-20240730-120000-FIX1
+# Description: Replace invalid 'clip==1.0' with 'openai-clip' package.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 16-stable-diffusion/ <- Current directory
+# │           └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
+
 ARG BASE_IMAGE=kairin/001:15-flash-attention
 FROM ${BASE_IMAGE}
 
@@ -21,7 +35,7 @@ RUN set -ex \
     # Install Python packages with version pinning \
     && pip3 install --no-cache-dir \
         diffusers==0.24.0 \
-        clip==1.0 \
+        openai-clip \
         kornia==0.7.0 \
         taming-transformers==0.0.1 \
         invisible-watermark==0.2.0 \

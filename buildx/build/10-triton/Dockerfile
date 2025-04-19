@@ -8,6 +8,19 @@
 # notes: The OpenAI `triton` (https://github.com/triton-lang/triton) wheel that's built is saved in the container under `/opt`. Based on https://cloud.tencent.com/developer/article/2317398, https://zhuanlan.zhihu.com/p/681714973, https://zhuanlan.zhihu.com/p/673525339
 #---
 
+# COMMIT-TRACKING: UUID-20240730-120000-FIX1 
+# Description: Correct pip install syntax for triton package.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── build/                 <- Parent directory
+# │       └── 10-triton/         <- Current directory
+# │           └── Dockerfile     <- THIS FILE
+# └── ...                        <- Other project files
+
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
@@ -16,5 +29,9 @@ ARG TRITON_VERSION \
     FORCE_BUILD=off
 
 COPY build.sh install.sh /tmp/triton/
+
+RUN apt-get update && apt-get install -y --no-install-recommends some-dependency && \
+    pip3 install --no-cache-dir triton && \ 
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN /tmp/triton/install.sh || /tmp/triton/build.sh
