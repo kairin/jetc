@@ -24,3 +24,4 @@ qt-online-installer-linux-arm64-4.9.0.run
 
 # Local tracking and instruction files
 *.copilot_instructions
+buildx/.env
