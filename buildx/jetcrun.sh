@@ -1,6 +1,7 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
 # COMMIT-TRACKING: UUID-20240730-101530-B4C2
-# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or prompt.
+# COMMIT-TRACKING: UUID-20240730-110545-C5D3
+# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or prompt. Add X11 forwarding.
 # Author: Mr K
 #
 # File location diagram:
@@ -25,6 +26,15 @@ if [ -z "$IMAGE_NAME" ]; then
   exit 1
 fi
 
-# Run the container with the specified image name
-jetson-containers run --gpus all -v /media/kkk:/workspace -it --rm --user root "$IMAGE_NAME" /bin/bash
+# Run the container with the specified image name and X11 forwarding
+jetson-containers run \
+  --gpus all \
+  -v /media/kkk:/workspace \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -e DISPLAY=$DISPLAY \
+  -it \
+  --rm \
+  --user root \
+  "$IMAGE_NAME" \
+  /bin/bash
 
