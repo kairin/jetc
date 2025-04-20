@@ -2,13 +2,10 @@
 
 # Start page.
 
-![image](https://github.com/user-attachments/assets/af3765f6-3d56-4f9a-9b89-9f4f610377b9)
+![image](https://github.com/user-attachments/assets/d82e58e4-5de3-4f93-a2bf-e57020d9e4ed)
 
-# Dialog.
 
-![image](https://github.com/user-attachments/assets/9609709d-f49e-45cd-b027-895c1c7c83f4)
-
-# Specify your own base image.
+# Dialog. Specify your images.
 
 ![image](https://github.com/user-attachments/assets/44a9b88b-143a-40c4-ae2b-cd7d1a302525)
 
