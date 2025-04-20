@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # COMMIT-TRACKING: UUID-20240802-165200-CONS
-# Description: Consolidated commit tracking headers - includes both removing hardcoded FROM lines 
+# Description: Consolidated commit tracking headers - includes both removing hardcoded FROM lines
 #              and implementing dynamic base image tracking via build-arg
 # Author: Mr K / GitHub Copilot
 #
@@ -180,7 +180,7 @@ else
       if [[ $build_status -eq 0 ]]; then
           BUILT_TAGS+=("$fixed_tag")
           # Update AVAILABLE_IMAGES in .env
-          update_available_images_in_env "$fixed_tag" 
+          update_available_images_in_env "$fixed_tag"
           # Update CURRENT_BASE_IMAGE and FINAL_FOLDER_TAG for potential subsequent non-numbered builds
           CURRENT_BASE_IMAGE="$fixed_tag"
           FINAL_FOLDER_TAG="$fixed_tag"
@@ -220,7 +220,7 @@ if [[ "$skip_intermediate_push_pull" != "y" ]]; then
         if [[ "$PULL_ALL_FAILED" -eq 1 ]]; then
             echo "Error: Failed to pull one or more required images before final tagging. Aborting."
             BUILD_FAILED=1
-        else 
+        else
             echo "All attempted images successfully pulled/refreshed."
         fi
     else
@@ -242,7 +242,7 @@ else
              BUILD_FAILED=1
         else
              echo "Image $FINAL_FOLDER_TAG found locally."
-        fi 
+        fi
     fi
 fi
 echo "--------------------------------------------------"
@@ -379,7 +379,7 @@ if [[ ${#BUILT_TAGS[@]} -gt 0 ]]; then
         # Ensure BUILD_FAILED reflects this verification failure
         if [[ "$BUILD_FAILED" -eq 0 ]]; then
            BUILD_FAILED=1 # Set to 1 if it was previously 0
-           echo "(Marking build as failed due to final verification failure)" 
+           echo "(Marking build as failed due to final verification failure)"
         fi
     else
         echo "All successfully processed images verified successfully locally during final check."
