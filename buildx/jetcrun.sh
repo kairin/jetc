@@ -3,7 +3,8 @@
 # COMMIT-TRACKING: UUID-20240730-110545-C5D3
 # COMMIT-TRACKING: UUID-20240730-111015-D6E4
 # COMMIT-TRACKING: UUID-20240802-171530-E7F5
-# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or dialog prompt. Add X11 forwarding. Run session in dialog.
+# COMMIT-TRACKING: UUID-20240803-180000-DLGX
+# Description: Refactor to use dialog-based form for image name and runtime options, fallback to basic prompt if dialog not available.
 # Author: Mr K
 #
 # File location diagram:
@@ -19,35 +20,73 @@ if ! command -v dialog &> /dev/null; then
     exit 1
 fi
 
-# Check if an image name was provided as an argument
-if [ -z "$1" ]; then
-  # If no argument, prompt the user for the image name using dialog
-  IMAGE_NAME=$(dialog --stdout --title "Container Image" --inputbox "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N):" 8 70)
-  # Check if dialog was cancelled (exit code non-zero) or returned empty
-  if [[ $? -ne 0 ]] || [[ -z "$IMAGE_NAME" ]]; then
-      echo "Operation cancelled or no image name entered. Exiting."
+# Function: Prompt for container run options using dialog or fallback to basic prompt
+get_run_options() {
+  local temp_file=$(mktemp)
+  local IMAGE_NAME=""
+  local ENABLE_X11="on"
+  local ENABLE_GPU="on"
+  local MOUNT_WORKSPACE="on"
+  local USER_ROOT="on"
+
+  if command -v dialog &> /dev/null; then
+    dialog --backtitle "Jetson Container Run" \
+      --title "Container Run Options" \
+      --form "Enter container image and options:" 15 70 6 \
+      "Image Name:" 1 1 "" 1 20 40 0 \
+      2>"$temp_file"
+    if [[ $? -ne 0 ]]; then
+      rm -f "$temp_file"
+      echo "Operation cancelled."
       exit 1
+    fi
+    IMAGE_NAME=$(sed -n 1p "$temp_file")
+    # Checklist for options
+    dialog --backtitle "Jetson Container Run" \
+      --title "Runtime Options" \
+      --checklist "Select runtime options:" 12 60 4 \
+      "X11" "Enable X11 forwarding" $ENABLE_X11 \
+      "GPU" "Enable all GPUs" $ENABLE_GPU \
+      "WORKSPACE" "Mount /media/kkk:/workspace" $MOUNT_WORKSPACE \
+      "ROOT" "Run as root user" $USER_ROOT \
+      2>"$temp_file"
+    local checklist=$(cat "$temp_file")
+    rm -f "$temp_file"
+    [[ "$checklist" == *"X11"* ]] && ENABLE_X11="on" || ENABLE_X11="off"
+    [[ "$checklist" == *"GPU"* ]] && ENABLE_GPU="on" || ENABLE_GPU="off"
+    [[ "$checklist" == *"WORKSPACE"* ]] && MOUNT_WORKSPACE="on" || MOUNT_WORKSPACE="off"
+    [[ "$checklist" == *"ROOT"* ]] && USER_ROOT="on" || USER_ROOT="off"
+  else
+    read -p "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N): " IMAGE_NAME
+    read -p "Enable X11 forwarding? (y/n) [y]: " x11
+    ENABLE_X11=${x11:-y}
+    read -p "Enable all GPUs? (y/n) [y]: " gpu
+    ENABLE_GPU=${gpu:-y}
+    read -p "Mount /media/kkk:/workspace? (y/n) [y]: " ws
+    MOUNT_WORKSPACE=${ws:-y}
+    read -p "Run as root user? (y/n) [y]: " root
+    USER_ROOT=${root:-y}
   fi
-else
-  # Use the provided argument as the image name
-  IMAGE_NAME="$1"
-fi
 
-# Check if an image name was actually provided or entered
-if [ -z "$IMAGE_NAME" ]; then
-  echo "Error: No image name provided. Exiting."
-  exit 1
-fi
+  # Validate image name
+  if [[ -z "$IMAGE_NAME" ]]; then
+    echo "Error: No image name provided. Exiting."
+    exit 1
+  fi
 
-# Run the container with the specified image name and X11 forwarding inside a dialog box
-dialog --title "Container Session: $IMAGE_NAME" --programbox 80 200 "jetson-containers run \
-  --gpus all \
-  -v /media/kkk:/workspace \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -e DISPLAY=$DISPLAY \
-  -it \
-  --rm \
-  --user root \
-  \"$IMAGE_NAME\" \
-  /bin/bash"
+  # Compose run options
+  RUN_OPTS=""
+  [[ "$ENABLE_GPU" == "on" || "$ENABLE_GPU" == "y" ]] && RUN_OPTS+=" --gpus all"
+  [[ "$MOUNT_WORKSPACE" == "on" || "$MOUNT_WORKSPACE" == "y" ]] && RUN_OPTS+=" -v /media/kkk:/workspace"
+  [[ "$ENABLE_X11" == "on" || "$ENABLE_X11" == "y" ]] && RUN_OPTS+=" -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY"
+  [[ "$USER_ROOT" == "on" || "$USER_ROOT" == "y" ]] && RUN_OPTS+=" --user root"
+  RUN_OPTS+=" -it --rm"
+
+  export IMAGE_NAME
+  export RUN_OPTS
+}
+
+get_run_options
+
+jetson-containers run $RUN_OPTS "$IMAGE_NAME" /bin/bash
 
