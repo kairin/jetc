@@ -71,3 +71,17 @@ jetson-containers build rust
 ```
 The dependencies from above will be built into the container, and it'll be tested during.  Run it with [`--help`](/jetson_containers/build.py) for build options.
 </details>
+
+# Rust Dockerfile Optimizations
+
+This README documents the changes made to the Dockerfile in this directory.
+
+## Changes Applied
+
+1. **Updated Commit Tracking:** The `COMMIT-TRACKING` header UUID and description were updated to reflect the current optimization work.
+
+2. **Platform Enforcement:** Added `ARG TARGETPLATFORM=linux/arm64` and modified the `FROM` instruction to `FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}` to explicitly set the build platform.
+
+3. **Base Image Configuration:** Ensured the `BASE_IMAGE` is properly defined via `ARG` with an appropriate default value for the Rust development environment.
+
+4. **Verification Checks:** Added `check_cmd rustc --version` and `check_cmd cargo --version` to `/opt/list_app_checks.sh` to verify the Rust toolchain is properly installed.
