@@ -57,8 +57,8 @@ log_command() {
   set -o pipefail
   # Run the command, showing output on console while also capturing to logs
   # Send stderr to stdout to capture both, tee to main log
-  # Also grep for error/warning patterns and save to error log
-  eval "$command" 2>&1 | tee -a >(grep -i -E 'error|warning|fail|critical' >> "${ERROR_LOG}") "${MAIN_LOG}"
+  # The key improvement here is using process substitution to avoid affecting the main output
+  eval "$command" 2>&1 | tee >(cat >> "${MAIN_LOG}") >(grep -i -E 'error|warning|fail|critical' >> "${ERROR_LOG}") >/dev/null
   local result=$?
   set +o pipefail
   
