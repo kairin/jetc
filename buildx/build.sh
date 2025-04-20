@@ -26,6 +26,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 # =========================================================================
 handle_build_error() {
   local folder=$1
+  # shellcheck disable=SC2034
   local error_code=$2
   echo "Build process for $folder exited with code $error_code"
   echo "Continuing with next build..."
@@ -108,6 +109,7 @@ set +e  # Don't exit on errors during builds
 # =========================================================================
 # Determine Build Order
 # =========================================================================
+
 echo "Determining build order..."
 BUILD_DIR="build"
 mapfile -t numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
@@ -128,6 +130,7 @@ else
       # Call build_folder_image WITH the current base tag argument
       # Note: docker_utils.sh is modified to accept base tag parameter.
       build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE"
+      # shellcheck disable=SC2044
       local build_status=$?
 
       # Note: $fixed_tag is set by build_folder_image regardless of success/failure
@@ -166,6 +169,7 @@ else
       echo "Processing other directory: $dir"
       # Call build_folder_image WITH the current base tag argument
       build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE"
+      # shellcheck disable=SC2044
       local build_status=$?
 
       ATTEMPTED_TAGS+=("$fixed_tag") # Add the tag to attempted tags
@@ -202,6 +206,7 @@ if [[ "$skip_intermediate_push_pull" != "y" ]]; then
         PULL_ALL_FAILED=0
         for tag in "${ATTEMPTED_TAGS[@]}"; do
             echo "Pulling $tag..."
+            # shellcheck disable=SC2044
             docker pull "$tag" || true # Ignore pull errors here, as they might be expected
             if [[ $? -ne 0 ]]; then
                 echo "Error: Failed to pull image $tag during pre-tagging verification."
@@ -261,12 +266,15 @@ if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
         echo "Image $FINAL_FOLDER_TAG found locally. Proceeding with tag."
 
         # Tag the final timestamped image
+        # shellcheck disable=SC2044
         if docker tag "$FINAL_FOLDER_TAG" "$TIMESTAMPED_LATEST_TAG"; then
             echo "Pushing $TIMESTAMPED_LATEST_TAG"
             # Always push the final timestamped tag
+            # shellcheck disable=SC2044
             if docker push "$TIMESTAMPED_LATEST_TAG"; then
                 echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG"
                 # Always pull the final timestamped tag to ensure it's the registry version
+                # shellcheck disable=SC2044
                 docker pull "$TIMESTAMPED_LATEST_TAG"
                 if [[ $? -eq 0 ]]; then
                     # Verify final image exists locally
@@ -352,6 +360,7 @@ if [[ ${#BUILT_TAGS[@]} -gt 0 ]]; then
     echo "Checking ${#BUILT_TAGS[@]} image(s) recorded as successful:"
     for tag in "${BUILT_TAGS[@]}"; do
         echo -n "Verifying $tag... "
+        # shellcheck disable=SC2044
         if docker image inspect "$tag" &>/dev/null; then
             echo "OK"
         else
@@ -417,6 +426,7 @@ else
         if [[ -n "$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT" ]]; then
             if grep -q "^DEFAULT_BASE_IMAGE=" "$ENV_FILE"; then
                 # Replace existing line
+                # shellcheck disable=SC2001
                 sed -i "s|^DEFAULT_BASE_IMAGE=.*|DEFAULT_BASE_IMAGE=$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT|" "$ENV_FILE"
             else
                 # Add new line
