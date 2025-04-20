@@ -49,6 +49,20 @@ get_run_options() {
   MOUNT_WORKSPACE="on"
   USER_ROOT="on"
 
+  # Load previous settings from .env file if available
+  ENV_FILE="$(dirname "$(readlink -f "$0")")/.env"
+  if [ -f "$ENV_FILE" ]; then
+    # Source the .env file to get previous settings
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    # Use the default values from .env if they exist
+    [ -n "$DEFAULT_IMAGE_NAME" ] && IMAGE_NAME="$DEFAULT_IMAGE_NAME"
+    [ -n "$DEFAULT_ENABLE_X11" ] && ENABLE_X11="$DEFAULT_ENABLE_X11"
+    [ -n "$DEFAULT_ENABLE_GPU" ] && ENABLE_GPU="$DEFAULT_ENABLE_GPU"
+    [ -n "$DEFAULT_MOUNT_WORKSPACE" ] && MOUNT_WORKSPACE="$DEFAULT_MOUNT_WORKSPACE"
+    [ -n "$DEFAULT_USER_ROOT" ] && USER_ROOT="$DEFAULT_USER_ROOT"
+  fi
+
   # Try the external function first, fallback to embedded one
   if command -v check_install_dialog >/dev/null 2>&1; then
     DIALOG_AVAILABLE=$(check_install_dialog && echo "yes" || echo "no")
@@ -104,6 +118,29 @@ get_run_options() {
     exit 1
   fi
 
+  # Save image name to .env file for future reference
+  ENV_FILE="$(dirname "$(readlink -f "$0")")/.env"
+  if [ -f "$ENV_FILE" ]; then
+    # Update all settings in .env file
+    for setting in "IMAGE_NAME=$IMAGE_NAME" "ENABLE_X11=$ENABLE_X11" "ENABLE_GPU=$ENABLE_GPU" "MOUNT_WORKSPACE=$MOUNT_WORKSPACE" "USER_ROOT=$USER_ROOT"; do
+      name="${setting%%=*}"
+      value="${setting#*=}"
+      default_name="DEFAULT_$name"
+      
+      if grep -q "^$default_name=" "$ENV_FILE"; then
+        # Replace existing line
+        sed -i "s|^$default_name=.*|$default_name=$value|" "$ENV_FILE"
+      else
+        # Add new line
+        echo "# Last used $name setting" >> "$ENV_FILE"
+        echo "$default_name=$value" >> "$ENV_FILE"
+      fi
+    done
+    echo "Settings saved to .env file for future use."
+  else
+    echo "Warning: .env file not found, cannot save settings for future reference."
+  fi
+
   RUN_OPTS=""
   [ "$ENABLE_GPU" = "on" ] || [ "$ENABLE_GPU" = "y" ] && RUN_OPTS="$RUN_OPTS --gpus all"
   [ "$MOUNT_WORKSPACE" = "on" ] || [ "$MOUNT_WORKSPACE" = "y" ] && RUN_OPTS="$RUN_OPTS -v /media/kkk:/workspace"
@@ -136,13 +173,31 @@ fi
 echo "Running container with image: $IMAGE_NAME"
 echo "Run options: $RUN_OPTS"
 
+# Add confirmation step
+echo ""
+echo "The container will be run with the following options:"
+echo "  - Image: $IMAGE_NAME"
+echo "  - Options: $RUN_OPTS"
+read -p "Do you want to continue with these options? (y/n) [y]: " confirm
+confirm=${confirm:-y}
+if [[ $confirm != [Yy]* ]]; then
+  echo "Operation cancelled."
+  exit 0
+fi
+
 # Check if the image exists locally
 if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
-  echo "Image $IMAGE_NAME not found locally. Pulling..."
-  docker pull "$IMAGE_NAME" || {
-    echo "Error: Failed to pull image $IMAGE_NAME"
+  # Modify image name to add -py3 suffix for pulling
+  PULL_IMAGE="${IMAGE_NAME}-py3"
+  echo "Image $IMAGE_NAME not found locally. Pulling $PULL_IMAGE..."
+  if docker pull "$PULL_IMAGE"; then
+    echo "Pull completed successfully."
+    # Tag the pulled image with the original name for consistency
+    docker tag "$PULL_IMAGE" "$IMAGE_NAME"
+  else
+    echo "Error: Failed to pull image $PULL_IMAGE"
     exit 1
-  }
+  fi
 fi
 
 # Run the container with jetson-containers
