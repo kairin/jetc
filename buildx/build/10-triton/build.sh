@@ -2,15 +2,26 @@
 # triton
 set -ex
 
+# Validate environment variables
+if [ -z "${TRITON_VERSION}" ]; then
+    echo "Error: TRITON_VERSION is not set"
+    exit 1
+fi
+
+if [ -z "${TRITON_BRANCH}" ]; then
+    echo "Error: TRITON_BRANCH is not set"
+    exit 1
+fi
+
 echo "============ Building triton ${TRITON_VERSION} (branch=${TRITON_BRANCH}) ============"
 
 pip3 uninstall -y triton
 
-git clone --branch ${TRITON_BRANCH} --depth=1 --recursive https://github.com/triton-lang/triton /opt/triton
+# Fix git clone command to properly handle branch parameter
+git clone --recursive https://github.com/triton-lang/triton /opt/triton
 cd /opt/triton
-
-#git checkout ${TRITON_BRANCH} 
-#git -C third_party submodule update --init nvidia || git submodule update --init --recursive
+git checkout ${TRITON_BRANCH}
+git submodule update --init --recursive
 
 sed -i \
     -e 's|LLVMAMDGPUCodeGen||g' \

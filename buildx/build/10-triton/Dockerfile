@@ -24,9 +24,14 @@
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
 FROM --platform=linux/arm64 ${BASE_IMAGE}
 
-ARG TRITON_VERSION \
-    TRITON_BRANCH \
-    FORCE_BUILD=off
+ARG TRITON_VERSION="3.3.0"
+ARG TRITON_BRANCH="release/3.3.x"
+ARG FORCE_BUILD=off
+
+# Make ARGs available as environment variables
+ENV TRITON_VERSION=${TRITON_VERSION} \
+    TRITON_BRANCH=${TRITON_BRANCH} \
+    FORCE_BUILD=${FORCE_BUILD}
 
 # Install required build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -42,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy build scripts
 COPY build.sh install.sh /tmp/triton/
 
-# Use a single RUN command for better caching
+# Execute build/install script
 RUN chmod +x /tmp/triton/build.sh /tmp/triton/install.sh && \
     if [ "$FORCE_BUILD" == "on" ]; then \
         echo "Forcing build of triton ${TRITON_VERSION}"; \

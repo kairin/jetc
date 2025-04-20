@@ -26,9 +26,8 @@
 # test: embedded
 #---
 # Use ARG for dynamic base image injection, with a default value
-ARG TARGETPLATFORM=linux/arm64 # Keep ARG for potential external use, but remove from FROM
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE} # Removed --platform=$TARGETPLATFORM
+FROM ${BASE_IMAGE}
 
 ARG PROTOBUF_VERSION
 

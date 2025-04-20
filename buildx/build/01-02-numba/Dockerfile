@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240731-093000-PLATALL
-# Description: Remove target='cuda' from build-time test script to avoid driver errors.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240731-111500-HEREDOCFIX
+# Description: Fix syntax error in RUN command using heredoc for test script.
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -39,7 +39,7 @@ RUN pip3 install --no-cache-dir --break-system-packages numba && \
 # Embed and run test.py logic
 # Note: Embedding the test script avoids needing a separate file and COPY command.
 # Build-time test verifies CPU JIT; CUDA functionality relies on base image + runtime.
-RUN cat <<EOF > /tmp/test_numba.py && \
+RUN cat <<EOF > /tmp/test_numba.py
 #!/usr/bin/env python3
 print('testing numba...')
 

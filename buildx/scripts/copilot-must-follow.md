@@ -1,8 +1,4 @@
 <!--
-# COMMIT-TRACKING: UUID-20240802-160045-CFMT
-# Description: Updated file with instructions to use system time for commit tracking and improved formatting
-# Author: GitHub Copilot
-#
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
@@ -12,7 +8,7 @@
 # └── ...                        <- Other project files
 -->
 
-# File Header Rules
+# File Footer Rules
 
 ## Commit Tracking Format
 
@@ -20,7 +16,7 @@
 commit_tracking:
   uuid_format: "UUID-YYYYMMDD-HHMMSS-XXXX"  # Use current system datetime for YYYYMMDD-HHMMSS
   uuid_rules:
-    - reuse: When editing file with header
+    - reuse: When editing file with footer
     - generate: When creating new file 
     - consistency: Same UUID across all files in one commit
     - datetime: Always use current system time when generating new UUIDs
@@ -33,6 +29,7 @@ commit_tracking:
     - "#": [.sh, .py, Dockerfile, .yml, .yaml]
     - "//": [.js, .ts, .tsx, .jsonc, .c, .cpp, .java, .go]
     - "<!-- -->": [.md, .html, .xml] # Place # style inside for .md
+  placement: At the BOTTOM of each file
   exclusions:
     - ".json": No comments supported
   commit_message: "{uuid}: {summary}"
@@ -50,46 +47,58 @@ deletion_markers:
     # Reason for deletion (e.g., "All content consolidated in ../other-file.md")
     # You do NOT need this file anymore.
     ######################################################################
-  placement: At the top of the file header, before the commit tracking info
+  placement: At the top of the file before any code, even though commit tracking goes at the bottom
   requirements:
     - Clearly state the file can be deleted
     - Specify where content was moved/consolidated
-    - Include normal commit tracking after the deletion marker
+    - Include normal commit tracking at the BOTTOM of the file
   example: |
     ######################################################################
     # THIS FILE CAN BE DELETED
     # All content consolidated in ../parent-directory/main-file.md
     # You do NOT need this file anymore.
     ######################################################################
-    # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
+    
+    # File content (if any)...
+    
+    # File location diagram:
+    # jetc/                          <- Main project folder
+    # ├── README.md                  <- Project documentation
+    # ├── buildx/                    <- Current directory
+    # │   └── deprecated.sh          <- THIS FILE
+    # └── ...                        <- Other project files
+    #
     # Description: Marked for deletion - content moved to main file
     # Author: Your name
-    # ...
+    # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
 ```
 
-## Example Header
+## Example Footer (NEW PLACEMENT AT BOTTOM OF FILE)
 
 ```sh
-# COMMIT-TRACKING: UUID-20250418-113042-7E2D
-# Description: Fixed Docker buildx script syntax errors
-# Author: Mr K / GitHub Copilot
-#
+# Normal file content ends here...
+
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Current directory
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Fixed Docker buildx script syntax errors
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250421-022100-7E2D
 ```
 
 ## Additional Requirements
 
 - Always retrieve the current date and time from the system when creating new commit tracking UUIDs
-- For example, it is April 20th 2025 right now and the time is 09:05 hrs. By the time you are reading this, it has already passed this date and time.
+- For example, it is April 21st 2025 right now and the time is 02:21 AM. By the time you are reading this, it has already passed this date and time.
 - Follow minimal diff rules when modifying files (see copilot-instructions.md)
-- Maintain consistent header structure across all files
-- For new files, create a complete header with all required fields
+- Maintain consistent footer structure across all files
+- For new files, create a complete footer with all required fields at the BOTTOM of the file
 - For edited files, update the description and consolidate the UUIDs if there are multiples.
+- IMPORTANT: **Place commit tracking information at the BOTTOM of all files, not the top**
 
 ## Dockerfile Standards for Jetson Compatibility
 
@@ -112,13 +121,15 @@ dockerfile_standards:
     - Test CUDA operations with small examples before heavy computation
 ```
 
-## Example Dockerfile Header
+## Example Dockerfile with Footer
 
 ```dockerfile
-# COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
-# Description: Description of this Dockerfile
-# Author: Your Name
-#
+ARG TARGETPLATFORM=linux/arm64
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+
+# Rest of Dockerfile...
+
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Build directory
@@ -126,10 +137,12 @@ dockerfile_standards:
 # │       └── component-name/    <- Current directory
 # │           └── Dockerfile     <- THIS FILE
 # └── ...                        <- Other project files
-
-ARG TARGETPLATFORM=linux/arm64
-ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
-
-# Rest of Dockerfile...
+#
+# Description: Description of this Dockerfile
+# Author: Your Name
+# COMMIT-TRACKING: UUID-20250421-022100-XXXX
 ```
+
+# COMMIT-TRACKING: UUID-20250421-022100-CFMT
+# Description: Updated commit tracking format to place headers at bottom of files
+# Author: Mr K / GitHub Copilot

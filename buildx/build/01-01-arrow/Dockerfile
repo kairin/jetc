@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240731-110000-NOORC
+# Description: Disable ARROW_ORC build option due to configuration errors.
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -20,17 +20,14 @@ ARG ARROW_BRANCH
 
 RUN git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow
 
-# Install build dependencies for Arrow, remove system protobuf dev packages, and build Arrow from source
+# Install build dependencies for Arrow and build Arrow from source
+# Removed installation/removal of libprotobuf-dev and protobuf-compiler
+# as Protobuf_SOURCE=BUNDLED is used.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         # ... existing packages ...
-        libprotobuf-dev \
-        protobuf-compiler \
         # ... existing packages ...
     && rm -rf /var/lib/apt/lists/* && \
-    apt-get remove -y libprotobuf-dev protobuf-compiler && \
-    apt-get autoremove -y --purge && \
-    rm -rf /var/lib/apt/lists/* && \
     cd /opt/arrow/cpp && \
     mkdir build && \
     cd build && \
@@ -46,14 +43,14 @@ RUN apt-get update && \
 	 -DARROW_HDFS=ON \
 	 -DARROW_JSON=ON \
 	 -DARROW_PARQUET=ON \
-	 -DARROW_ORC=ON \
+	 -DARROW_ORC=OFF \ # Disabled ORC
 	 -DARROW_WITH_BZ2=ON \
 	 -DARROW_WITH_LZ4=ON \
 	 -DARROW_WITH_SNAPPY=ON \
 	 -DARROW_WITH_ZLIB=ON \
 	 -DARROW_WITH_ZSTD=ON \
 	 ../ && \
-    make -j$(nproc) && \
+    make -j4 && \
     make install
 
 #RUN pip3 install -r /opt/arrow/python/requirements-wheel-build.txt
@@ -62,8 +59,8 @@ RUN export PYARROW_WITH_CUDA=1 && \
     export PYARROW_WITH_HDFS=1 && \
     export PYARROW_WITH_DATASET=1 && \
     export PYARROW_WITH_PARQUET=1 && \
-    export PYARROW_WITH_ORC=1 && \
-    export PYARROW_PARALLEL=$(nproc) && \
+    # export PYARROW_WITH_ORC=1 && \ # Disabled ORC
+    export PYARROW_PARALLEL=4 && \
     #export ARROW_HOME=/usr/local && \
     #export PYARROW_CMAKE_OPTIONS="-DARROW_HOME=/usr/local" && \
     cd /opt/arrow/python && \

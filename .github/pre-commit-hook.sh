@@ -11,7 +11,7 @@
 # │   └── pre-commit-hook.sh     <- THIS FILE
 # └── ...                        <- Other project files
 
-# This script checks that all modified files have consistent COMMIT-TRACKING headers
+# This script checks that all modified files have consistent COMMIT-TRACKING footers
 # To install:
 # 1. Copy this file to .git/hooks/pre-commit
 # 2. Make it executable: chmod +x .git/hooks/pre-commit
@@ -26,7 +26,7 @@ fi
 # Collect all UUIDs and descriptions from modified files
 declare -a uuids
 declare -A descriptions
-declare -a files_to_process # Store files that have a valid header
+declare -a files_to_process # Store files that have a valid footer
 
 for file in $files; do
   # Skip binary files, JSON files (which don't support comments), and other non-text files
@@ -35,12 +35,12 @@ for file in $files; do
     continue
   fi
   
-  # Extract UUID from file if it exists
-  uuid_line=$(grep -E "COMMIT-TRACKING: (UUID-[0-9]{8}-[0-9]{6}-[A-Z0-9]{4})" "$file" | head -1)
+  # Extract UUID from file if it exists (search in the last 30 lines for footer)
+  uuid_line=$(tail -n 30 "$file" | grep -E "COMMIT-TRACKING: (UUID-[0-9]{8}-[0-9]{6}-[A-Z0-9]{4})" | head -n 1)
   uuid=$(echo "$uuid_line" | sed 's/.*COMMIT-TRACKING: \(UUID-[0-9]\{8\}-[0-9]\{6\}-[A-Z0-9]\{4\}\).*/\1/')
   
-  # Extract description from file if it exists
-  description=$(grep -E "Description: " "$file" | head -1 | sed 's/.*Description: \(.*\)/\1/')
+  # Extract description from file if it exists (look near the COMMIT-TRACKING line)
+  description=$(tail -n 30 "$file" | grep -E "Description: " | head -n 1 | sed 's/.*Description: \(.*\)/\1/')
   
   if [ ! -z "$uuid" ]; then
     uuids+=("$uuid")
@@ -48,22 +48,22 @@ for file in $files; do
     descriptions["$file"]="$description"
     files_to_process+=("$file") # Add to list of files to potentially update
   else
-    # Check if the file *should* have a header (e.g., not explicitly excluded)
+    # Check if the file *should* have a footer (e.g., not explicitly excluded)
     # Add more sophisticated checks if needed (e.g., based on file type)
-    if [[ "$file" != *"README.md"* ]] && [[ "$file" != *".gitignore"* ]]; then # Example: Allow README/gitignore without header for now
-        echo "⚠️  Error: File $file is missing a required COMMIT-TRACKING header."
-        echo "    Please add a header using the 'header' snippet and try again."
-        echo "    (Type 'header' and press Tab in VSCode to insert the header)"
+    if [[ "$file" != *"README.md"* ]] && [[ "$file" != *".gitignore"* ]]; then # Example: Allow README/gitignore without footer for now
+        echo "⚠️  Error: File $file is missing a required COMMIT-TRACKING footer."
+        echo "    Please add a footer using the 'footer' snippet and try again."
+        echo "    (Type 'footer' and press Tab in VSCode to insert the footer)"
         exit 1
     else
-         echo "Skipping header check for file: $file"
+         echo "Skipping footer check for file: $file"
     fi
   fi
 done
 
 # Exit if no processable files found
 if [ ${#files_to_process[@]} -eq 0 ]; then
-  echo "No files with COMMIT-TRACKING headers found to process."
+  echo "No files with COMMIT-TRACKING footers found to process."
   exit 0
 fi
 
@@ -74,7 +74,7 @@ fi
 # --- Start Timestamp Update ---
 # Get current timestamp
 current_timestamp=$(date +'%Y%m%d-%H%M%S')
-echo "Updating COMMIT-TRACKING timestamps to: $current_timestamp for all staged files with headers."
+echo "Updating COMMIT-TRACKING timestamps to: $current_timestamp for all staged files with footers."
 
 for file in "${files_to_process[@]}"; do
     # Use sed to replace the timestamp part of the UUID
@@ -150,6 +150,17 @@ fi
 # The logic previously here has been moved to prepare-commit-msg-hook.sh
 
 # Success - Adjust success message
-echo "✅ Timestamps updated for all staged files with COMMIT-TRACKING headers."
+echo "✅ Timestamps updated for all staged files with COMMIT-TRACKING footers."
 echo "   Commit message will be prepared by the prepare-commit-msg hook."
 exit 0
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── .github/                   <- GitHub directory
+# │   └── pre-commit-hook.sh     <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Updated to search for COMMIT-TRACKING in the last 30 lines (footer check)
+# Author: Mr K
+# COMMIT-TRACKING: UUID-20250421-022100-A3B1

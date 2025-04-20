@@ -56,6 +56,8 @@ ARG SCP_UPLOAD_PASS
 
 # === Mode: package ===
 # Install CUDA Toolkit from .deb and run basic tests
+# NOTE: Installation logic is embedded below and does not use external scripts like install.sh.
+# Ensure the build context and Dockerfile path are correctly set to this file's directory.
 RUN if [ "${INSTALL_MODE}" = "package" ]; then \
         set -ex && \
         echo "INSTALL_MODE=package: Installing CUDA Toolkit..." && \
