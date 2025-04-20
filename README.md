@@ -1,7 +1,7 @@
 <!--
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Enhanced acknowledgment of dusty-nv/jetson-containers as the original work
-# Author: Mr K
+# COMMIT-TRACKING: UUID-20240802-153045-RDME
+# Description: Updated README to reflect recent build system improvements
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -35,20 +35,26 @@ If you're new to this project, here's how to get started:
    cd jetc/buildx
    ```
 
-2. **Set up your Docker username**
+2. **Run the pre-run check script** (optional but recommended)
+   ```bash
+   ./scripts/pre-run.sh
+   ```
+   This script will check for prerequisites and create a default `.env` file if needed.
+
+3. **Set up your Docker username** (if not using pre-run script)
    ```bash
    echo "DOCKER_USERNAME=your-dockerhub-username" > .env
    ```
 
-3. **Run the build script**
+4. **Run the build script**
    ```bash
    ./build.sh
    ```
 
-4. **Choose an option when prompted**
+5. **Choose an option when prompted**
    When asked "Do you want to build with cache? (y/n):", type `n` for a clean build or `y` to use cached layers (faster but may use outdated components).
 
-5. **Wait for the build to complete**
+6. **Wait for the build to complete**
    This process will take 1-3 hours depending on your Jetson model.
 
 ## **What to Expect During the Build Process**
