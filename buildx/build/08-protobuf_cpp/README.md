@@ -13,6 +13,29 @@
 # └── ...                        <- Other project files
 -->
 
+<!-- COMMIT-TRACKING: UUID-20240801-164600-OPTIMIZE-README -->
+<!-- Description: Update README to reflect Dockerfile optimizations. -->
+<!-- Author: GitHub Copilot -->
+
+# Protobuf CPP Dockerfile Optimizations
+
+This README documents the changes made to the Dockerfile in this directory.
+
+## Changes Applied
+
+1. **Updated Commit Tracking:** The `COMMIT-TRACKING` header UUID and description were updated to reflect the current optimization work.
+
+2. **Platform Enforcement:** Added `ARG TARGETPLATFORM=linux/arm64` and ensured the `FROM` instruction uses `--platform=$TARGETPLATFORM ${BASE_IMAGE}` to explicitly set the build platform.
+
+3. **Test Script Embedding:** 
+   - Embedded the `test.sh` script directly into the Dockerfile
+   - Embedded the `test.py` script directly into the Dockerfile
+   - Updated the Dockerfile header comment from `# test: test.sh` to `# test: embedded`
+
+4. **Verification Checks:** Added verification checks to `/opt/list_app_checks.sh`:
+   - `check_cmd protoc --version` to verify the protobuf compiler is installed and accessible
+   - `check_python_package protobuf` to verify the Python protobuf package is installed
+
 # protobuf_cpp
 
 > [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)

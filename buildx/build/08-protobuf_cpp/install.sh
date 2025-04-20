@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-
+# COMMIT-TRACKING: UUID-20240802-092500-OPTIMIZE-SCRIPT
+# Description: Add commit tracking header to protobuf installation script
+# Author: GitHub Copilot
+#
 # =========================================================================
 # IMPORTANT: This build system requires Docker with buildx extension.
 # All builds MUST use Docker buildx to ensure consistent
