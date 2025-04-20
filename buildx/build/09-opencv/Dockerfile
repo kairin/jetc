@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240730-170000-DYN1
-# Description: Revert to dynamic BASE_IMAGE ARG.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240801-120000-PLATFORM
+# Description: Consolidate commit-tracking headers and enforce platform in FROM.
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -24,9 +24,10 @@
 # test: test.py
 # notes: install or build OpenCV (with CUDA) from Jetson pip server
 #---
+ARG TARGETPLATFORM=linux/arm64
 # Use ARG for dynamic base image injection, with a default value
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=linux/arm64 ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 ARG OPENCV_VERSION \
     OPENCV_PYTHON \

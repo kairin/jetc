@@ -1,7 +1,7 @@
 <!--
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Add commit-tracking header for opencv README
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240801-120000-PLATFORM
+# Description: Update README to reflect Dockerfile optimizations.
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -10,7 +10,6 @@
 # │   └── build/                 <- Build directory
 # │       └── 09-opencv/         <- Current directory
 # │           └── README.md      <- THIS FILE
-# └── ...                        <- Other project files
 -->
 
 # opencv
@@ -127,3 +126,17 @@ jetson-containers build opencv
 ```
 The dependencies from above will be built into the container, and it'll be tested during.  Run it with [`--help`](/jetson_containers/build.py) for build options.
 </details>
+
+# OpenCV Dockerfile Optimizations
+
+This README documents the changes made to the Dockerfile in this directory.
+
+## Changes Applied
+
+1. **Updated Commit Tracking:** The `COMMIT-TRACKING` header UUID was updated to `UUID-20240801-120000-PLATFORM` and the description was updated to reflect the platform enforcement changes.
+
+2. **Platform Enforcement:** Added `ARG TARGETPLATFORM=linux/arm64` before the FROM instruction and modified the FROM instruction to use this variable: `FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}`.
+
+3. **Verification Checks:** The Dockerfile already includes appropriate checks for the OpenCV installation by adding `check_python_pkg cv2` to `/opt/list_app_checks.sh`.
+
+These changes ensure consistent build platform enforcement across all container builds in the project.
