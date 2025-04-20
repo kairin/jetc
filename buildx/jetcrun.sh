@@ -2,7 +2,8 @@
 # COMMIT-TRACKING: UUID-20240730-101530-B4C2
 # COMMIT-TRACKING: UUID-20240730-110545-C5D3
 # COMMIT-TRACKING: UUID-20240730-111015-D6E4
-# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or prompt. Add X11 forwarding. Run session in dialog.
+# COMMIT-TRACKING: UUID-20240802-171530-E7F5
+# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or dialog prompt. Add X11 forwarding. Run session in dialog.
 # Author: Mr K
 #
 # File location diagram:
@@ -20,8 +21,13 @@ fi
 
 # Check if an image name was provided as an argument
 if [ -z "$1" ]; then
-  # If no argument, prompt the user for the image name
-  read -p "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N): " IMAGE_NAME
+  # If no argument, prompt the user for the image name using dialog
+  IMAGE_NAME=$(dialog --stdout --title "Container Image" --inputbox "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N):" 8 70)
+  # Check if dialog was cancelled (exit code non-zero) or returned empty
+  if [[ $? -ne 0 ]] || [[ -z "$IMAGE_NAME" ]]; then
+      echo "Operation cancelled or no image name entered. Exiting."
+      exit 1
+  fi
 else
   # Use the provided argument as the image name
   IMAGE_NAME="$1"
