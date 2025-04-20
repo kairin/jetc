@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240731-145200-DLGX
-# Description: Implement dialog-based interface for build options
+# COMMIT-TRACKING: UUID-20240803-111500-DLGS # Use current system time
+# Description: Simplified dialog interface for build options with clearer language and consolidated steps.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -131,37 +131,37 @@ check_install_dialog() {
 # =========================================================================
 get_user_preferences() {
   # Try to use dialog interface
-  if ! check_install_dialog; then
+  if (! check_install_dialog); then
     # Fall back to original prompting method if dialog not available
     return get_user_preferences_basic
   fi
 
   # Create temporary files
   temp_options=$(mktemp)
-  temp_menu=$(mktemp)
-  temp_input=$(mktemp)
+  temp_base_choice=$(mktemp)
+  temp_custom_image=$(mktemp)
 
   # Define default states for checklist
-  local cache_default="off" # Default: Use --no-cache
+  local cache_default="off" # Default: Don't use cache (--no-cache)
   local squash_default="off" # Default: Don't use --squash
-  local skip_push_pull_default="on" # Default: Use --load (skip push/pull)
-  local use_builder_default="on" # Default: Use the builder
+  local local_build_default="on" # Default: Build locally only (skip push/pull, use --load)
+  local builder_default="on" # Default: Use the optimized builder
 
   # Dialog dimensions
-  local DIALOG_HEIGHT=22
+  local DIALOG_HEIGHT=25
   local DIALOG_WIDTH=85
-  local CHECKLIST_HEIGHT=5 # Number of options to display
+  local CHECKLIST_HEIGHT=6 # Number of options to display
 
-  # Use --checklist for boolean options with clearer descriptions
+  # --- Step 1: Main Build Options Checklist ---
   dialog --backtitle "Docker Build Configuration" \
-         --title "Build Options" \
-         --ok-label "Next" \
+         --title "Step 1: Build Options" \
+         --ok-label "Next: Base Image" \
          --cancel-label "Exit Build" \
          --checklist "Use Spacebar to toggle options, Enter to confirm:" $DIALOG_HEIGHT $DIALOG_WIDTH $CHECKLIST_HEIGHT \
-         "cache" "Use Docker build cache (faster builds)" "$cache_default" \
-         "squash" "Squash image layers (experimental, smaller final image)" "$squash_default" \
-         "skip_push_pull" "Skip intermediate push/pull (use '--load')" "$skip_push_pull_default" \
-         "use_builder" "Use dedicated 'jetson-builder' (recommended)" "$use_builder_default" \
+         "cache"         "Use Build Cache (Faster, uses previous layers)"        "$cache_default" \
+         "squash"        "Squash Layers (Smaller final image, experimental)"     "$squash_default" \
+         "local_build"   "Build Locally Only (Faster, no registry push/pull)"    "$local_build_default" \
+         "use_builder"   "Use Optimized Jetson Builder (Recommended)"            "$builder_default" \
          2>$temp_options
 
   checklist_exit_status=$?
@@ -170,69 +170,72 @@ get_user_preferences() {
   # Exit on Cancel/Esc in checklist
   if [ $checklist_exit_status -ne 0 ]; then
     echo "Build options selection canceled. Exiting." >&2
-    rm -f $temp_options $temp_menu $temp_input
+    rm -f $temp_options $temp_base_choice $temp_custom_image
     return 1 # Indicate cancellation
   fi
 
   # Parse checklist selections
   [[ "$selected_options" == *'"cache"'* ]] && use_cache="y" || use_cache="n"
   [[ "$selected_options" == *'"squash"'* ]] && use_squash="y" || use_squash="n"
-  [[ "$selected_options" == *'"skip_push_pull"'* ]] && skip_intermediate_push_pull="y" || skip_intermediate_push_pull="n"
+  # Note: 'local_build' marked means skip push/pull
+  [[ "$selected_options" == *'"local_build"'* ]] && skip_intermediate_push_pull="y" || skip_intermediate_push_pull="n"
   # 'use_builder' is assumed yes if dialog is used, but we check anyway
   [[ "$selected_options" == *'"use_builder"'* ]] && use_builder="y" || use_builder="n"
   if [[ "$use_builder" == "n" ]]; then
       dialog --msgbox "Warning: Not using the dedicated 'jetson-builder' might lead to issues with NVIDIA runtime during build." 8 70
   fi
 
-
-  # Base image selection using --menu
+  # --- Step 2: Base Image Selection ---
   local MENU_HEIGHT=4 # Number of menu items
   dialog --backtitle "Docker Build Configuration" \
-         --title "Base Image Selection" \
-         --ok-label "Select" \
+         --title "Step 2: Base Image Selection" \
+         --ok-label "Confirm Choice" \
          --cancel-label "Exit Build" \
-         --menu "Choose the base image for the first build stage:" $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
-         "use_default" "Use Default (if locally available): $DEFAULT_BASE_IMAGE" \
-         "pull_default" "Pull Default Image: $DEFAULT_BASE_IMAGE" \
-         "specify_custom" "Specify Custom Image (will attempt pull)" \
-         2>$temp_menu
+         --radiolist "Choose the base image for the *first* build stage:" $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
+         "use_default"    "Use Default (if locally available): $DEFAULT_BASE_IMAGE"  "on"  # Default selection
+         "pull_default"   "Pull Default Image Now: $DEFAULT_BASE_IMAGE"             "off"
+         "specify_custom" "Specify Custom Image (will attempt pull)"                "off" \
+         2>$temp_base_choice
 
   menu_exit_status=$?
-  BASE_IMAGE_ACTION=$(cat $temp_menu)
+  BASE_IMAGE_ACTION=$(cat $temp_base_choice)
 
   # Exit on Cancel/Esc in menu
   if [ $menu_exit_status -ne 0 ]; then
     echo "Base image selection canceled. Exiting." >&2
-    rm -f $temp_options $temp_menu $temp_input
+    rm -f $temp_options $temp_base_choice $temp_custom_image
     return 1 # Indicate cancellation
   fi
 
-  # Process menu selection
+  # Process base image choice
+  CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE" # Initialize with default
+
   case "$BASE_IMAGE_ACTION" in
     "specify_custom")
       # Ask for custom base image
       dialog --backtitle "Docker Build Configuration" \
-             --title "Custom Base Image" \
+             --title "Step 2a: Custom Base Image" \
              --ok-label "Confirm Image" \
-             --cancel-label "Back" \
+             --cancel-label "Exit Build" \
              --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$DEFAULT_BASE_IMAGE" \
-             2>$temp_input
+             2>$temp_custom_image
       input_exit_status=$?
-      CUSTOM_BASE_IMAGE=$(cat $temp_input)
+      local entered_image=$(cat $temp_custom_image)
 
-      # Handle Cancel/Esc in input box (go back to menu or exit?) - Let's exit for simplicity
+      # Handle Cancel/Esc in input box
       if [ $input_exit_status -ne 0 ]; then
         echo "Custom base image input canceled. Exiting." >&2
-        rm -f $temp_options $temp_menu $temp_input
+        rm -f $temp_options $temp_base_choice $temp_custom_image
         return 1 # Indicate cancellation
       fi
 
       # Validate input
-      if [ -z "$CUSTOM_BASE_IMAGE" ]; then
-        dialog --msgbox "No base image entered. Reverting to default:\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
+      if [ -z "$entered_image" ]; then
+        dialog --msgbox "No custom image entered. Reverting to default:\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
         CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
         BASE_IMAGE_ACTION="use_default" # Revert action
       else
+        CUSTOM_BASE_IMAGE="$entered_image"
         echo "Attempting to use custom base image: $CUSTOM_BASE_IMAGE" >&2
         # Attempt to pull the custom image immediately
         dialog --infobox "Attempting to pull custom base image:\n$CUSTOM_BASE_IMAGE..." 5 $DIALOG_WIDTH
@@ -246,7 +249,7 @@ get_user_preferences() {
              dialog --msgbox "Proceeding with default base image:\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
           else
              echo "User chose to exit after failed custom image pull." >&2
-             rm -f $temp_options $temp_menu $temp_input
+             rm -f $temp_options $temp_base_choice $temp_custom_image
              return 1 # Exit if user selects No
           fi
         else
@@ -266,7 +269,7 @@ get_user_preferences() {
             dialog --msgbox "Warning: Default image not pulled. Build will proceed using local version if available." 8 $DIALOG_WIDTH
          else
             echo "User chose to exit after failed default image pull." >&2
-            rm -f $temp_options $temp_menu $temp_input
+            rm -f $temp_options $temp_base_choice $temp_custom_image
             return 1 # Exit if user selects No
          fi
       else
@@ -279,30 +282,30 @@ get_user_preferences() {
       CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
       dialog --msgbox "Using default base image (will use local version if available):\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
       ;;
-    *) # Should not happen with --menu, but handle defensively
+    *) # Should not happen with --radiolist, but handle defensively
       echo "Invalid base image action selected. Exiting." >&2
-      rm -f $temp_options $temp_menu $temp_input
+      rm -f $temp_options $temp_base_choice $temp_custom_image
       return 1
       ;;
   esac
 
   # Clean up temp files
-  rm -f $temp_options $temp_menu $temp_input
+  rm -f $temp_options $temp_base_choice $temp_custom_image
 
   # Set the final CURRENT_BASE_IMAGE to be used by the build script
   CURRENT_BASE_IMAGE="$CUSTOM_BASE_IMAGE"
 
-  # Format the confirmation message - Improved clarity
+  # --- Step 3: Final Confirmation ---
   local confirmation_message
   confirmation_message="Build Configuration Summary:\n\n"
   confirmation_message+="Build Options:\n"
   confirmation_message+="  - Use Cache:          $( [[ "$use_cache" == "y" ]] && echo "Yes" || echo "No (--no-cache)" )\n"
   confirmation_message+="  - Squash Layers:      $( [[ "$use_squash" == "y" ]] && echo "Yes (--squash)" || echo "No" )\n"
-  confirmation_message+="  - Skip Push/Pull:   $( [[ "$skip_intermediate_push_pull" == "y" ]] && echo "Yes (--load)" || echo "No (--push)" )\n"
+  confirmation_message+="  - Build Locally Only: $( [[ "$skip_intermediate_push_pull" == "y" ]] && echo "Yes (--load)" || echo "No (--push)" )\n" # Renamed for clarity
   confirmation_message+="  - Use Builder:        $( [[ "$use_builder" == "y" ]] && echo "Yes (jetson-builder)" || echo "No (Default Docker)" )\n\n"
   confirmation_message+="Base Image for First Stage:\n"
-  confirmation_message+="  - Action:             $BASE_IMAGE_ACTION\n"
-  confirmation_message+="  - Image Tag:          $CURRENT_BASE_IMAGE"
+  confirmation_message+="  - Action Chosen:      $BASE_IMAGE_ACTION\n"
+  confirmation_message+="  - Image Tag To Use:   $CURRENT_BASE_IMAGE"
 
   # Ask for final confirmation before proceeding
   if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\n\nProceed with build?" 20 $DIALOG_WIDTH; then
@@ -315,7 +318,7 @@ get_user_preferences() {
   export use_squash
   export skip_intermediate_push_pull
   export BASE_IMAGE_ACTION # Reflects user's menu choice
-  export CUSTOM_BASE_IMAGE # Holds the custom image if specified
+  export CUSTOM_BASE_IMAGE # Holds the custom image if specified or default
   export CURRENT_BASE_IMAGE # The actual image tag to use for the build
 
   return 0 # Success
