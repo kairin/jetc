@@ -1,5 +1,7 @@
+#!/bin/bash
 # COMMIT-TRACKING: UUID-20240803-180500-JRUN
-# Description: Use dialog-based prompt and runtime option selection for container run, fallback to basic prompt if dialog not available.
+# COMMIT-TRACKING: UUID-20240804-091500-DLGF
+# Description: Make dialog implementation more robust, fix sourcing issues, and add embedded dialog check.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -9,12 +11,30 @@
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 
-#!/bin/bash
+# Ensure we're running with bash
+if [ -z "$BASH_VERSION" ]; then
+  echo "Error: This script requires bash. Please run with bash ./jetcrun.sh"
+  exit 1
+fi
 
-SCRIPT_DIR="$(dirname "$0")/scripts"
+# Get script directory more robustly
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")/scripts
+
+# Embedded dialog check function in case external file can't be sourced
+check_dialog_installed() {
+  if ! command -v dialog >/dev/null 2>&1; then
+    echo "Dialog not found. Falling back to basic prompts."
+    return 1
+  fi
+  return 0
+}
+
+# Try to source external check_install_dialog.sh, fallback to embedded function
 if [ -f "$SCRIPT_DIR/check_install_dialog.sh" ]; then
-  # shellcheck source=/dev/null
-  . "$SCRIPT_DIR/check_install_dialog.sh"
+  # shellcheck disable=SC1090
+  . "$SCRIPT_DIR/check_install_dialog.sh" || {
+    echo "Warning: Could not source check_install_dialog.sh, using embedded function"
+  }
 fi
 
 get_run_options() {
@@ -26,8 +46,14 @@ get_run_options() {
   local MOUNT_WORKSPACE="on"
   local USER_ROOT="on"
 
-  # Use POSIX-compatible [ ] and command substitution
-  if command -v check_install_dialog >/dev/null 2>&1 && check_install_dialog; then
+  # Try the external function first, fallback to embedded one
+  if command -v check_install_dialog >/dev/null 2>&1; then
+    DIALOG_AVAILABLE=$(check_install_dialog && echo "yes" || echo "no")
+  else
+    DIALOG_AVAILABLE=$(check_dialog_installed && echo "yes" || echo "no")
+  fi
+
+  if [ "$DIALOG_AVAILABLE" = "yes" ]; then
     dialog --backtitle "Jetson Container Run" \
       --title "Container Run Options" \
       --form "Enter container image and options:" 15 70 6 \
