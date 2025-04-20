@@ -35,6 +35,14 @@ RUN /tmp/cuda/install.sh
 ENV CUDA_HOME="/usr/local/cuda"
 ENV NVCC_PATH="$CUDA_HOME/bin/nvcc"
 
+# filepath: /media/kkk/Apps/jetc/buildx/build/01-cuda/Dockerfile
+# ...existing code...
+ENV NVCC_PATH="$CUDA_HOME/bin/nvcc"
+
+# Define LD_LIBRARY_PATH first, inheriting from base or setting default empty
+# This resolves potential linter warnings about using the variable before definition.
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}
+
 ENV NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=all \
     CUDAARCHS=${CUDA_ARCH_LIST} \
@@ -49,8 +57,13 @@ ENV NVIDIA_VISIBLE_DEVICES=all \
     CUDA_BIN_PATH="${CUDA_HOME}/bin" \
     CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}" \
     PATH="$CUDA_HOME/bin:${PATH}" \
-    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}" \
     DEBIAN_FRONTEND=noninteractive
+
+# Prepend CUDA paths to the now-defined LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
+
+# Add verification checks for CUDA
+# ...existing code...
 
 # Add verification checks for CUDA
 RUN echo "# Check for CUDA" >> /tmp/cuda_checks.sh \
