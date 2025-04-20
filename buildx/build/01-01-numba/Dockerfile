@@ -14,7 +14,7 @@
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+FROM ${BASE_IMAGE}
 
 # Install llvm-dev and check version in one layer
 RUN apt-get update && \
@@ -39,56 +39,58 @@ RUN pip3 install --no-cache-dir --break-system-packages numba && \
 # Embed and run test.py logic
 # Note: Embedding the test script avoids needing a separate file and COPY command.
 # Build-time test verifies CPU JIT; CUDA functionality relies on base image + runtime.
-RUN echo '#!/usr/bin/env python3' > /tmp/test_numba.py && \
-    echo "print('testing numba...')" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "import math" >> /tmp/test_numba.py && \
-    echo "import numba" >> /tmp/test_numba.py && \
-    echo "from numba import vectorize, guvectorize, cuda" >> /tmp/test_numba.py && \
-    echo "import numpy as np" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "print('numba version: ' + str(numba.__version__))" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "# test scalar vectorization" >> /tmp/test_numba.py && \
-    echo "print('testing cpu vectorized ufunc...')" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "@vectorize(['float32(float32, float32, float32)'," >> /tmp/test_numba.py && \
-    echo "            'float64(float64, float64, float64)'])" >> /tmp/test_numba.py && \
-    echo "def cpu_discriminant(a, b, c):" >> /tmp/test_numba.py && \
-    echo "    return math.sqrt(b ** 2 - 4 * a * c)" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "N = 10000" >> /tmp/test_numba.py && \
-    echo "dtype = np.float32" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "# prepare the input" >> /tmp/test_numba.py && \
-    echo "A = np.array(np.random.sample(N), dtype=dtype)" >> /tmp/test_numba.py && \
-    echo "B = np.array(np.random.sample(N) + 10, dtype=dtype)" >> /tmp/test_numba.py && \
-    echo "C = np.array(np.random.sample(N), dtype=dtype)" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "D = cpu_discriminant(A, B, C)" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "print('cpu vectorized ufunc result:')" >> /tmp/test_numba.py && \
-    echo "# print(D) # Commented out to avoid excessive output" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "# test array vectorization" >> /tmp/test_numba.py && \
-    echo "print('testing cpu guvectorized ufunc...')" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "@guvectorize(['uint8[:], uint8[:], uint8[:]'," >> /tmp/test_numba.py && \
-    echo "              'float32[:], float32[:], float32[:]'], " >> /tmp/test_numba.py && \
-    echo "              '(n),(n)->(n)')" >> /tmp/test_numba.py && \
-    echo "def cpu_add_arrays(x, y, res):" >> /tmp/test_numba.py && \
-    echo "    for i in range(x.shape[0]):" >> /tmp/test_numba.py && \
-    echo "        res[i] = x[i] + y[i]" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "A = np.full((2,4,3), 1, dtype)" >> /tmp/test_numba.py && \
-    echo "B = np.full(A.shape, 2, dtype)" >> /tmp/test_numba.py && \
-    echo "C = cpu_add_arrays(A, B)" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "print('cpu guvectorized ufunc result:')" >> /tmp/test_numba.py && \
-    echo "# print(C) # Commented out to avoid excessive output" >> /tmp/test_numba.py && \
-    echo "" >> /tmp/test_numba.py && \
-    echo "print('numba OK\\n')" >> /tmp/test_numba.py && \
-    echo "Running embedded numba test script..." && \
+RUN cat <<EOF > /tmp/test_numba.py && \
+#!/usr/bin/env python3
+print('testing numba...')
+
+import math
+import numba
+from numba import vectorize, guvectorize, cuda
+import numpy as np
+
+print('numba version: ' + str(numba.__version__))
+
+# test scalar vectorization
+print('testing cpu vectorized ufunc...')
+
+@vectorize(['float32(float32, float32, float32)',
+            'float64(float64, float64, float64)'])
+def cpu_discriminant(a, b, c):
+    return math.sqrt(b ** 2 - 4 * a * c)
+
+N = 10000
+dtype = np.float32
+
+# prepare the input
+A = np.array(np.random.sample(N), dtype=dtype)
+B = np.array(np.random.sample(N) + 10, dtype=dtype)
+C = np.array(np.random.sample(N), dtype=dtype)
+
+D = cpu_discriminant(A, B, C)
+
+print('cpu vectorized ufunc result:')
+# print(D) # Commented out to avoid excessive output
+
+# test array vectorization
+print('testing cpu guvectorized ufunc...')
+
+@guvectorize(['uint8[:], uint8[:], uint8[:]',
+              'float32[:], float32[:], float32[:]'], 
+              '(n),(n)->(n)')
+def cpu_add_arrays(x, y, res):
+    for i in range(x.shape[0]):
+        res[i] = x[i] + y[i]
+
+A = np.full((2,4,3), 1, dtype)
+B = np.full(A.shape, 2, dtype)
+C = cpu_add_arrays(A, B)
+
+print('cpu guvectorized ufunc result:')
+# print(C) # Commented out to avoid excessive output
+
+print('numba OK\n')
+EOF
+RUN echo "Running embedded numba test script..." && \
     python3 /tmp/test_numba.py && \
     rm /tmp/test_numba.py
 
