@@ -13,6 +13,7 @@ runner
 .polyscope.ini
 .ipynb_checkpoints
 .idea
+.env
 nv_tegra_release
 kokoro-*-*.wav
 audio.wav
