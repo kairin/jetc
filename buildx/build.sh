@@ -22,8 +22,6 @@ source "$SCRIPT_DIR/verification.sh" || { echo "Error sourcing verification.sh";
 set -e # Exit immediately if a command exits with a non-zero status (temporarily disabled during builds)
 
 # =========================================================================
-
-# =========================================================================
 # Function to handle build errors but continue with other builds
 # =========================================================================
 handle_build_error() {
@@ -32,54 +30,6 @@ handle_build_error() {
   local error_code=$2
   echo "Build process for $folder exited with code $error_code"
   echo "Continuing with next build..."
-}
-
-# =========================================================================
-# Function to update AVAILABLE_IMAGES in .env
-# =========================================================================
-update_available_images_in_env() {
-    local new_tag="$1"
-    local env_file="$(dirname "$0")/.env"
-
-    if [ ! -f "$env_file" ]; then
-        echo "Warning: .env file not found at $env_file. Cannot update AVAILABLE_IMAGES."
-        return 1
-    fi
-
-    # Source the .env file safely to get the current list
-    local current_images=""
-    if grep -q "^AVAILABLE_IMAGES=" "$env_file"; then
-        # shellcheck disable=SC1090
-        current_images=$(grep "^AVAILABLE_IMAGES=" "$env_file" | cut -d'=' -f2-)
-    fi
-
-    # Check if the tag already exists
-    if [[ ";$current_images;" == *";$new_tag;"* ]]; then
-        echo "  Tag '$new_tag' already exists in AVAILABLE_IMAGES."
-        return 0
-    fi
-
-    # Append the new tag
-    local updated_images
-    if [ -z "$current_images" ]; then
-        updated_images="$new_tag"
-    else
-        updated_images="$current_images;$new_tag"
-    fi
-
-    # Update the .env file using sed
-    if grep -q "^AVAILABLE_IMAGES=" "$env_file"; then
-        # Use a different delimiter for sed in case tags contain slashes
-        sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$updated_images|" "$env_file"
-    else
-        # If the line doesn't exist, add it
-        echo "" >> "$env_file" # Ensure newline before adding
-        echo "# Available container images (semicolon-separated)" >> "$env_file"
-        echo "AVAILABLE_IMAGES=$updated_images" >> "$env_file"
-    fi
-
-    echo "  Updated AVAILABLE_IMAGES in $env_file with tag '$new_tag'."
-    return 0
 }
 
 # =========================================================================
@@ -96,13 +46,12 @@ setup_build_environment || exit 1
 load_env_variables || exit 1
 
 # Setup builder *before* getting preferences that might depend on it
-# Note: setup_buildx_builder now uses DOCKER_USERNAME from load_env_variables
 setup_buildx_builder || exit 1
 
 # Call the function that shows the dialogs
 # This function MUST now write selected variables to $PREFS_FILE
 echo "Launching user preferences dialog..."
-get_user_preferences # Function is defined in setup_env.sh
+get_user_preferences # Function is defined in build_ui.sh
 prefs_exit_code=$?
 echo "Preferences dialog finished with exit code: $prefs_exit_code"
 
@@ -142,15 +91,7 @@ echo "  use_builder: ${use_builder}" # Added verification
 echo "  SELECTED_FOLDERS_LIST: ${SELECTED_FOLDERS_LIST:-<All>}" # Verify selected folders
 # --- End Verification ---
 
-
-# Arrays to track build status (already declared in setup_env.sh and exported)
-# Re-declare locally if export wasn't used or preferred
-# declare -a BUILT_TAGS=()
-# declare -a ATTEMPTED_TAGS=()
-# BUILD_FAILED=0 # Initialized in setup_env.sh
-
 # Initialize the base image for the first build using the user's selection
-# This now uses the variable sourced from the temp file
 CURRENT_BASE_IMAGE="${SELECTED_BASE_IMAGE}"
 
 # Validate that SELECTED_BASE_IMAGE is now populated
@@ -187,10 +128,6 @@ else
     echo "  No specific stages selected by user. No numbered stages will be built."
     # The map remains empty, so the filtering logic below will result in an empty numbered_dirs array.
 fi
-# --- Debugging Start ---
-echo "DEBUG: selected_folders_map content:"
-declare -p selected_folders_map
-# --- Debugging End ---
 
 # Get all numbered dirs first
 mapfile -t all_numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
@@ -219,7 +156,6 @@ mapfile -t other_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d ! -n
 # =========================================================================
 echo "Starting build process for selected stages..."
 # Convert user preferences ('y'/'n') to build command flags/args as needed
-# Assuming docker_utils.sh expects 'y' or 'n' for boolean flags
 local_use_cache="$use_cache" # Already 'y' or 'n' from prefs
 local_use_squash="$use_squash" # Already 'y' or 'n' from prefs
 local_skip_intermediate="$skip_intermediate_push_pull" # Already 'y' or 'n' from prefs
@@ -239,7 +175,7 @@ else
       echo "Using base image: $CURRENT_BASE_IMAGE"
       # Call build_folder_image WITH the current base tag argument AND sourced preferences
       # Pass DOCKER_REPO_PREFIX and DOCKER_REGISTRY as well
-      build_folder_image "$dir" "$local_use_cache" "$DOCKER_USERNAME" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+      build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
 
       build_status=$?
       # Assuming build_folder_image exports 'fixed_tag' even on failure for logging
@@ -273,7 +209,7 @@ else
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir"
       # Call build_folder_image WITH the current base tag argument AND sourced preferences
-      build_folder_image "$dir" "$local_use_cache" "$DOCKER_USERNAME" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+      build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
 
       build_status=$?
       # shellcheck disable=SC2154 # fixed_tag might be exported by build_folder_image
@@ -299,68 +235,6 @@ echo "--------------------------------------------------"
 echo "Folder build process complete!"
 
 # =========================================================================
-# Pre-Tagging Verification - Pull all attempted images to ensure they exist
-# =========================================================================
-echo "--- Verifying and Pulling All Attempted Images (if needed) ---"
-# Only pull if intermediate push/pull was NOT skipped
-if [[ "$local_skip_intermediate" != "y" ]]; then
-    if [[ "$BUILD_FAILED" -eq 0 ]] && [[ ${#ATTEMPTED_TAGS[@]} -gt 0 ]]; then
-        echo "Pulling ${#ATTEMPTED_TAGS[@]} image(s) before final tagging..."
-        PULL_ALL_FAILED=0
-        for tag in "${ATTEMPTED_TAGS[@]}"; do
-            echo "Pulling $tag..."
-            # Use docker_utils function if available, otherwise direct command
-            if command -v pull_image &> /dev/null; then
-                pull_image "$tag" || PULL_ALL_FAILED=1
-            else
-                docker pull "$tag" || PULL_ALL_FAILED=1 # Basic fallback
-            fi
-            if [[ $PULL_ALL_FAILED -eq 1 ]]; then
-                 echo "Error: Failed to pull image $tag during pre-tagging verification."
-                 # Decide whether to break or continue trying others
-                 # break # Uncomment to stop on first pull failure
-            fi
-        done
-
-        if [[ "$PULL_ALL_FAILED" -eq 1 ]]; then
-            echo "Error: Failed to pull one or more required images before final tagging. Aborting."
-            BUILD_FAILED=1
-        else
-            echo "All attempted images successfully pulled/refreshed."
-        fi
-    else
-        if [[ "$BUILD_FAILED" -ne 0 ]]; then
-            echo "Skipping pre-tagging pull verification due to earlier build failures."
-        else
-            echo "No images were attempted, skipping pre-tagging pull verification."
-        fi
-    fi
-else
-    echo "Skipping pre-tagging pull verification as intermediate push/pull was disabled."
-    # Add a verification step here to ensure the FINAL_FOLDER_TAG exists locally
-    if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
-        echo "Verifying final intermediate image $FINAL_FOLDER_TAG exists locally..."
-        # Use docker_utils function if available
-        local verify_func="verify_image_exists"
-        if ! command -v $verify_func &> /dev/null; then
-            # Fallback using docker image inspect, checking exit code
-             verify_func() { docker image inspect "$1" &>/dev/null; }
-        fi
-
-        if ! $verify_func "$FINAL_FOLDER_TAG"; then
-             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             echo "Error: Image $FINAL_FOLDER_TAG (needed for final tag) not found locally even though push/pull was skipped."
-             echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-             BUILD_FAILED=1
-        else
-             echo "Image $FINAL_FOLDER_TAG found locally."
-        fi
-    fi
-fi
-echo "--------------------------------------------------"
-
-
-# =========================================================================
 # Create Final Timestamped Tag
 # =========================================================================
 echo "--- Creating Final Timestamped Tag ---"
@@ -371,75 +245,30 @@ if [[ -z "$CURRENT_DATE_TIME" ]]; then
 fi
 
 if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
-    # --- Construct the tag dynamically ---
-    # Use sourced DOCKER_USERNAME, DOCKER_REPO_PREFIX, DOCKER_REGISTRY
-    local tag_repo="${DOCKER_USERNAME}/${DOCKER_REPO_PREFIX}"
-    local tag_prefix=""
-    if [[ -n "$DOCKER_REGISTRY" ]]; then
-        tag_prefix="${DOCKER_REGISTRY}/"
-    fi
-    TIMESTAMPED_LATEST_TAG=$(echo "${tag_prefix}${tag_repo}:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
-    # --- End tag construction ---
+    # Generate the timestamped tag
+    generate_timestamped_tag "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY" "$CURRENT_DATE_TIME"
+    TIMESTAMPED_LATEST_TAG="$timestamped_tag" # Use the exported variable from the function call
 
     echo "Attempting to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG"
 
     # Verify base image exists locally before tagging
     echo "Verifying image $FINAL_FOLDER_TAG exists locally before tagging..."
-    local verify_func="verify_image_exists"
-    if ! command -v $verify_func &> /dev/null; then
-        verify_func() { docker image inspect "$1" &>/dev/null; } # Fallback
-    fi
-
-    if $verify_func "$FINAL_FOLDER_TAG"; then
+    if verify_image_exists "$FINAL_FOLDER_TAG"; then
         echo "Image $FINAL_FOLDER_TAG found locally. Proceeding with tag."
 
         # Tag the final timestamped image
         if docker tag "$FINAL_FOLDER_TAG" "$TIMESTAMPED_LATEST_TAG"; then
             echo "Tagged successfully."
-             # Push only if local_skip_intermediate is 'n'
+            # Push only if local_skip_intermediate is 'n'
             if [[ "$local_skip_intermediate" != "y" ]]; then
                 echo "Pushing $TIMESTAMPED_LATEST_TAG"
-                if docker push "$TIMESTAMPED_LATEST_TAG"; then
-                    echo "Pulling final timestamped tag: $TIMESTAMPED_LATEST_TAG"
-                    # Always pull the final timestamped tag to ensure it's the registry version
-                    if docker pull "$TIMESTAMPED_LATEST_TAG"; then
-                        # Verify final image exists locally
-                        echo "Verifying final image $TIMESTAMPED_LATEST_TAG exists locally after pull..."
-                        if $verify_func "$TIMESTAMPED_LATEST_TAG"; then
-                            echo "Final image $TIMESTAMPED_LATEST_TAG verified locally."
-                            BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG")
-                            update_available_images_in_env "$TIMESTAMPED_LATEST_TAG"
-                            echo "Successfully created, pushed, and pulled final timestamped tag."
-                        else
-                            echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                            echo "Error: Final image $TIMESTAMPED_LATEST_TAG NOT found locally after 'docker pull' succeeded."
-                            echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                            BUILD_FAILED=1
-                        fi
-                    else
-                        echo "Error: Failed to pull final timestamped tag $TIMESTAMPED_LATEST_TAG after push."
-                        BUILD_FAILED=1
-                    fi
-                else
-                    echo "Error: Failed to push final timestamped tag $TIMESTAMPED_LATEST_TAG."
-                    BUILD_FAILED=1
-                fi
+                docker push "$TIMESTAMPED_LATEST_TAG"
             else
-                echo "Skipping push/pull for final tag (Build Locally Only selected)."
-                # Image should be available locally due to '--load' or direct build
-                echo "Verifying final image $TIMESTAMPED_LATEST_TAG exists locally..."
-                 if $verify_func "$TIMESTAMPED_LATEST_TAG"; then
-                    echo "Final image $TIMESTAMPED_LATEST_TAG verified locally."
-                    BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG")
-                    update_available_images_in_env "$TIMESTAMPED_LATEST_TAG"
-                    echo "Successfully created and verified final timestamped tag locally."
-                else
-                    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    echo "Error: Final image $TIMESTAMPED_LATEST_TAG NOT found locally after tagging (and push/pull skipped)."
-                    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    BUILD_FAILED=1
-                fi
+                echo "Skipping push for $TIMESTAMPED_LATEST_TAG (local build only)"
             fi
+            # Add the tag to our tracking arrays
+            BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG")
+            update_available_images_in_env "$TIMESTAMPED_LATEST_TAG"
         else
             echo "Error: Failed to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG."
             BUILD_FAILED=1
@@ -469,26 +298,11 @@ echo "--------------------------------------------------"
 # =========================================================================
 # Post-Build Steps - Options for final image
 # =========================================================================
-echo "(Image pulling and verification now happens during build process)"
 
 # Run the very last successfully built & timestamped image (optional)
 if [[ -n "$TIMESTAMPED_LATEST_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
-    # Check if the timestamped tag is in the BUILT_TAGS array (validation)
-    tag_exists=0
-    for t in "${BUILT_TAGS[@]}"; do
-        [[ "$t" == "$TIMESTAMPED_LATEST_TAG" ]] && { tag_exists=1; break; }
-    done
-
-    if [[ "$tag_exists" -eq 1 ]]; then
-        # Ensure show_post_build_menu exists before calling
-        if command -v show_post_build_menu &> /dev/null; then
-            show_post_build_menu "$TIMESTAMPED_LATEST_TAG"
-        else
-            echo "Warning: show_post_build_menu function not found."
-        fi
-    else
-        echo "Skipping post-build options because the final tag was not successfully processed."
-    fi
+    # Show post-build menu for the final image
+    show_post_build_menu "$TIMESTAMPED_LATEST_TAG"
 else
     echo "No final image tag recorded or build failed, skipping further operations."
 fi
@@ -503,14 +317,9 @@ VERIFICATION_FAILED=0
 # Use BUILT_TAGS here
 if [[ ${#BUILT_TAGS[@]} -gt 0 ]]; then
     echo "Checking ${#BUILT_TAGS[@]} image(s) recorded as successful:"
-     local verify_func="verify_image_exists"
-     if ! command -v $verify_func &> /dev/null; then
-        verify_func() { docker image inspect "$1" &>/dev/null; } # Fallback
-     fi
-
     for tag in "${BUILT_TAGS[@]}"; do
         echo -n "Verifying $tag... "
-        if $verify_func "$tag"; then
+        if verify_image_exists "$tag"; then
             echo "OK"
         else
             echo "MISSING!"
@@ -568,27 +377,12 @@ else
         fi
 
         if [[ -n "$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT" ]]; then
-            # Update DEFAULT_BASE_IMAGE
-            if grep -q "^DEFAULT_BASE_IMAGE=" "$ENV_FILE"; then
-                # Use different sed delimiter for safety
-                sed -i "s|^DEFAULT_BASE_IMAGE=.*|DEFAULT_BASE_IMAGE=$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT|" "$ENV_FILE"
-            else
-                echo "" >> "$ENV_FILE"; echo "# Default base image for builds" >> "$ENV_FILE"; echo "DEFAULT_BASE_IMAGE=$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT" >> "$ENV_FILE"
-            fi
-            echo "  Set $LATEST_SUCCESSFUL_TAG_FOR_DEFAULT as the new default base image in $ENV_FILE"
-
-            # Update AVAILABLE_IMAGES (already done during build, but ensure consistency)
-            update_available_images_in_env "$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT"
-
-            # Save Docker user/prefix back to .env defaults (optional, uncomment if desired)
-            # if grep -q "^DOCKER_USERNAME=" "$ENV_FILE"; then sed -i "s|^DOCKER_USERNAME=.*|DOCKER_USERNAME=$DOCKER_USERNAME|" "$ENV_FILE"; else echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> "$ENV_FILE"; fi
-            # if grep -q "^DOCKER_REPO_PREFIX=" "$ENV_FILE"; then sed -i "s|^DOCKER_REPO_PREFIX=.*|DOCKER_REPO_PREFIX=$DOCKER_REPO_PREFIX|" "$ENV_FILE"; else echo "DOCKER_REPO_PREFIX=$DOCKER_REPO_PREFIX" >> "$ENV_FILE"; fi
-            # if grep -q "^DOCKER_REGISTRY=" "$ENV_FILE"; then sed -i "s|^DOCKER_REGISTRY=.*|DOCKER_REGISTRY=$DOCKER_REGISTRY|" "$ENV_FILE"; else echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" >> "$ENV_FILE"; fi
-
+            # Update DEFAULT_BASE_IMAGE in .env file
+            update_env_file "$DOCKER_USERNAME" "$DOCKER_REGISTRY" "$DOCKER_REPO_PREFIX" "$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT"
+            echo "Set $LATEST_SUCCESSFUL_TAG_FOR_DEFAULT as the new default base image in $ENV_FILE"
         else
-             echo "  No successfully processed final tag found to set as default base image."
+            echo "No successfully processed final tag found to set as default base image."
         fi
-        echo "Successfully updated .env with build results."
     else
         echo "Warning: .env file not found, cannot save default base image for future use."
     fi
@@ -597,3 +391,5 @@ else
     echo "--------------------------------------------------"
     exit 0  # Exit with success code
 fi
+
+# COMMIT-TRACKING: UUID-20250421-020700-REFA
