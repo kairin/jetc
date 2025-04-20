@@ -364,7 +364,7 @@ get_run_options() {
 
   RUN_OPTS=""
   [ "$ENABLE_GPU" = "on" ] || [ "$ENABLE_GPU" = "y" ] && RUN_OPTS="$RUN_OPTS --gpus all"
-  [ "$MOUNT_WORKSPACE" = "on" ] || [ "$MOUNT_WORKSPACE" = "y" ] && RUN_OPTS="$RUN_OPTS -v /media/kkk:/workspace"
+  [ "$MOUNT_WORKSPACE" = "on" ] || [ "$MOUNT_WORKSPACE" = "y" ] && RUN_OPTS="$RUN_OPTS -v /media/kkk:/workspace -v /run/jtop.sock:/run/jtop.sock"
   
   # Store X11 preference but don't add to options yet
   X11_ENABLED="false"
@@ -404,7 +404,7 @@ FINAL_RUN_OPTS="$RUN_OPTS"
 if [ "$USE_JETSON_CONTAINERS" = true ]; then
   # When using jetson-containers, don't add X11 arguments as they're handled internally
   echo "Using jetson-containers for container execution"
-  RUN_CMD="jetson-containers run --user kkk /run/jtop.sock:/run/jtop.sock" # change here remove user kkk to get back root
+  RUN_CMD="jetson-containers run --user kkk" # change here remove user kkk to get back root
   
   # Add X11 flag for jetson-containers if needed
   if [ "$X11_ENABLED" = "true" ]; then
