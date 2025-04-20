@@ -1,87 +1,62 @@
-<!--
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update commit tracking header UUID for consistency.
-# Author: Mr K / GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-00-build-essential/ <- Current directory
-# │   │       └── README.md        <- THIS FILE
-# └── ...                        <- Other project files
--->
-# build-essential
-
-> [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)
-
-<details open>
-<summary><b><a id="containers">CONTAINERS</a></b></summary>
-<br>
-
-| **`build-essential`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Builds | [![`build-essential_jp46`](https://img.shields.io/github/actions/workflow/status/dusty-nv/jetson-containers/build-essential_jp46.yml?label=build-essential:jp46)](https://github.com/dusty-nv/jetson-containers/actions/workflows/build-essential_jp46.yml) [![`build-essential_jp51`](https://img.shields.io/github/actions/workflow/status/dusty-nv/jetson-containers/build-essential_jp51.yml?label=build-essential:jp51)](https://github.com/dusty-nv/jetson-containers/actions/workflows/build-essential_jp51.yml) |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['>=32.6']` |
-| &nbsp;&nbsp;&nbsp;Dependants | [`arrow:12.0.1`](/packages/arrow) [`arrow:14.0.1`](/packages/arrow) [`arrow:5.0.0`](/packages/arrow) [`audiocraft`](/packages/audio/audiocraft) [`auto_awq:0.2.4`](/packages/llm/auto_awq) [`auto_gptq:0.7.1`](/packages/llm/auto_gptq) [`awq:0.1.0`](/packages/llm/awq) [`bazel`](/packages/build/bazel) [`bitsandbytes`](/packages/llm/bitsandbytes) [`bitsandbytes:builder`](/packages/llm/bitsandbytes) [`cmake:apt`](/packages/build/cmake/cmake_apt) [`cmake:pip`](/packages/build/cmake/cmake_pip) [`ctranslate2:4.2.0`](/packages/ctranslate2) [`ctranslate2:4.2.0-builder`](/packages/ctranslate2) [`ctranslate2:master`](/packages/ctranslate2) [`ctranslate2:master-builder`](/packages/ctranslate2) [`cuda-python:11.4`](/packages/cuda/cuda-python) [`cuda:11.4`](/packages/cuda/cuda) [`cuda:11.4-samples`](/packages/cuda/cuda) [`cuda:11.8`](/packages/cuda/cuda) [`cuda:11.8-samples`](/packages/cuda/cuda) [`cuda:12.2`](/packages/cuda/cuda) [`cuda:12.2-samples`](/packages/cuda/cuda) [`cuda:12.4`](/packages/cuda/cuda) [`cuda:12.4-samples`](/packages/cuda/cuda) [`cudf:21.10.02`](/packages/rapids/cudf) [`cudf:23.10.03`](/packages/rapids/cudf) [`cudnn`](/packages/cuda/cudnn) [`cudnn:8.9`](/packages/cuda/cudnn) [`cudnn:9.0`](/packages/cuda/cudnn) [`cuml`](/packages/rapids/cuml) [`cupy`](/packages/cuda/cupy) [`deepstream`](/packages/deepstream) [`docker`](/packages/build/docker) [`efficientvit`](/packages/vit/efficientvit) [`exllama:0.0.14`](/packages/llm/exllama) [`exllama:0.0.15`](/packages/llm/exllama) [`faiss:1.7.3`](/packages/vectordb/faiss) [`faiss:1.7.3-builder`](/packages/vectordb/faiss) [`faiss:1.7.4`](/packages/vectordb/faiss) [`faiss:1.7.4-builder`](/packages/vectordb/faiss) [`faiss_lite`](/packages/vectordb/faiss_lite) [`faster-whisper`](/packages/audio/faster-whisper) [`ffmpeg`](/packages/ffmpeg) [`flash-attention:2.5.6`](/packages/llm/flash-attention) [`flash-attention:2.5.6-builder`](/packages/llm/flash-attention) [`flash-attention:2.5.7`](/packages/llm/flash-attention) [`flash-attention:2.5.7-builder`](/packages/llm/flash-attention) [`gptq-for-llama`](/packages/llm/gptq-for-llama) [`gstreamer`](/packages/gstreamer) [`homeassistant-base`](/packages/smart-home/homeassistant-base) [`homeassistant-core:2024.4.2`](/packages/smart-home/homeassistant-core) [`homeassistant-core:latest`](/packages/smart-home/homeassistant-core) [`huggingface_hub`](/packages/llm/huggingface_hub) [`jetson-inference`](/packages/jetson-inference) [`jetson-utils`](/packages/jetson-utils) [`jupyter_clickable_image_widget`](/packages/hardware/jupyter_clickable_image_widget) [`jupyterlab`](/packages/jupyterlab) [`l4t-diffusion`](/packages/l4t/l4t-diffusion) [`l4t-ml`](/packages/l4t/l4t-ml) [`l4t-pytorch`](/packages/l4t/l4t-pytorch) [`l4t-tensorflow:tf1`](/packages/l4t/l4t-tensorflow) [`l4t-tensorflow:tf2`](/packages/l4t/l4t-tensorflow) [`langchain`](/packages/rag/langchain) [`langchain:samples`](/packages/rag/langchain) [`llama-index`](/packages/rag/llama-index) [`llama_cpp:0.2.57`](/packages/llm/llama_cpp) [`llamaspeak`](/packages/llm/llamaspeak) [`llava`](/packages/llm/llava) [`minigpt4`](/packages/llm/minigpt4) [`mlc:0.1.0`](/packages/llm/mlc) [`mlc:0.1.0-builder`](/packages/llm/mlc) [`mlc:0.1.1`](/packages/llm/mlc) [`mlc:0.1.1-builder`](/packages/llm/mlc) [`nanodb`](/packages/vectordb/nanodb) [`nanoowl`](/packages/vit/nanoowl) [`nanosam`](/packages/vit/nanosam) [`nemo`](/packages/nemo) [`nodejs`](/packages/build/nodejs) [`numba`](/packages/numba) [`numpy`](/packages/numpy) [`ollama`](/packages/llm/ollama) [`onnx`](/packages/onnx) [`onnxruntime:1.11`](/packages/onnxruntime) [`onnxruntime:1.11-builder`](/packages/onnxruntime) [`onnxruntime:1.16.3`](/packages/onnxruntime) [`onnxruntime:1.16.3-builder`](/packages/onnxruntime) [`onnxruntime:1.17`](/packages/onnxruntime) [`onnxruntime:1.17-builder`](/packages/onnxruntime) [`onnxruntime:1.19`](/packages/onnxruntime) [`onnxruntime:1.19-builder`](/packages/onnxruntime) [`openai`](/packages/llm/openai) [`openai-triton`](/packages/openai-triton) [`openai-triton:builder`](/packages/openai-triton) [`opencv:4.5.0`](/packages/opencv) [`opencv:4.5.0-builder`](/packages/opencv) [`opencv:4.8.1`](/packages/opencv) [`opencv:4.8.1-builder`](/packages/opencv) [`opencv:4.9.0`](/packages/opencv) [`opencv:4.9.0-builder`](/packages/opencv) [`optimum`](/packages/llm/optimum) [`piper-tts`](/packages/audio/piper-tts) [`protobuf:apt`](/packages/build/protobuf/protobuf_apt) [`protobuf:cpp`](/packages/build/protobuf/protobuf_cpp) [`pycuda`](/packages/cuda/pycuda) [`python:3.10`](/packages/build/python) [`python:3.11`](/packages/build/python) [`python:3.12`](/packages/build/python) [`python:3.6`](/packages/build/python) [`python:3.8`](/packages/build/python) [`pytorch:1.10`](/packages/pytorch) [`pytorch:1.9`](/packages/pytorch) [`pytorch:2.0`](/packages/pytorch) [`pytorch:2.0-builder`](/packages/pytorch) [`pytorch:2.1`](/packages/pytorch) [`pytorch:2.1-builder`](/packages/pytorch) [`pytorch:2.2`](/packages/pytorch) [`pytorch:2.2-builder`](/packages/pytorch) [`pytorch:2.3`](/packages/pytorch) [`pytorch:2.3-builder`](/packages/pytorch) [`raft`](/packages/rapids/raft) [`realsense`](/packages/hardware/realsense) [`riva-client:cpp`](/packages/audio/riva-client) [`riva-client:python`](/packages/audio/riva-client) [`ros:foxy-desktop`](/packages/ros) [`ros:foxy-ros-base`](/packages/ros) [`ros:foxy-ros-core`](/packages/ros) [`ros:galactic-desktop`](/packages/ros) [`ros:galactic-ros-base`](/packages/ros) [`ros:galactic-ros-core`](/packages/ros) [`ros:humble-desktop`](/packages/ros) [`ros:humble-ros-base`](/packages/ros) [`ros:humble-ros-core`](/packages/ros) [`ros:iron-desktop`](/packages/ros) [`ros:iron-ros-base`](/packages/ros) [`ros:iron-ros-core`](/packages/ros) [`ros:melodic-desktop`](/packages/ros) [`ros:melodic-ros-base`](/packages/ros) [`ros:melodic-ros-core`](/packages/ros) [`ros:noetic-desktop`](/packages/ros) [`ros:noetic-ros-base`](/packages/ros) [`ros:noetic-ros-core`](/packages/ros) [`rust`](/packages/build/rust) [`sam`](/packages/vit/sam) [`stable-diffusion`](/packages/diffusion/stable-diffusion) [`stable-diffusion-webui`](/packages/diffusion/stable-diffusion-webui) [`tam`](/packages/vit/tam) [`tensorflow`](/packages/tensorflow) [`tensorflow2`](/packages/tensorflow) [`tensorrt`](/packages/tensorrt) [`tensorrt:10.0`](/packages/tensorrt) [`tensorrt:8.6`](/packages/tensorrt) [`tensorrt_llm:0.10.dev0`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`tensorrt_llm:0.10.dev0-builder`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`tensorrt_llm:0.5`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`tensorrt_llm:0.5-builder`](/packages/llm/tensorrt_optimizer/tensorrt_llm) [`text-generation-inference`](/packages/llm/text-generation-inference) [`text-generation-webui:1.7`](/packages/llm/text-generation-webui) [`text-generation-webui:6a7cd01`](/packages/llm/text-generation-webui) [`text-generation-webui:main`](/packages/llm/text-generation-webui) [`torch2trt`](/packages/pytorch/torch2trt) [`torch_tensorrt`](/packages/pytorch/torch_tensorrt) [`torchaudio:0.10.0`](/packages/pytorch/torchaudio) [`torchaudio:0.10.0-builder`](/packages/pytorch/torchaudio) [`torchaudio:0.9.0`](/packages/pytorch/torchaudio) [`torchaudio:0.9.0-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.0.1`](/packages/pytorch/torchaudio) [`torchaudio:2.0.1-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.1.0`](/packages/pytorch/torchaudio) [`torchaudio:2.1.0-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.2.2`](/packages/pytorch/torchaudio) [`torchaudio:2.2.2-builder`](/packages/pytorch/torchaudio) [`torchaudio:2.3.0`](/packages/pytorch/torchaudio) [`torchaudio:2.3.0-builder`](/packages/pytorch/torchaudio) [`torchvision:0.10.0`](/packages/pytorch/torchvision) [`torchvision:0.11.1`](/packages/pytorch/torchvision) [`torchvision:0.15.1`](/packages/pytorch/torchvision) [`torchvision:0.16.2`](/packages/pytorch/torchvision) [`torchvision:0.17.2`](/packages/pytorch/torchvision) [`torchvision:0.18.0`](/packages/pytorch/torchvision) [`transformers`](/packages/llm/transformers) [`transformers:git`](/packages/llm/transformers) [`transformers:nvgpt`](/packages/llm/transformers) [`tritonserver`](/packages/tritonserver) [`tvm`](/packages/tvm) [`voicecraft`](/packages/audio/voicecraft) [`whisper`](/packages/audio/whisper) [`whisperx`](/packages/audio/whisperx) [`wyoming-assist-microphone:latest`](/packages/smart-home/wyoming/assist-microphone) [`wyoming-openwakeword:latest`](/packages/smart-home/wyoming/openwakeword) [`wyoming-piper:master`](/packages/smart-home/wyoming/piper) [`wyoming-whisper:latest`](/packages/smart-home/wyoming/wyoming-whisper) [`xformers:0.0.26`](/packages/llm/xformers) [`xformers:0.0.26-builder`](/packages/llm/xformers) [`xtts`](/packages/audio/xtts) [`zed`](/packages/hardware/zed) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Images | [`dustynv/build-essential:r32.7.1`](https://hub.docker.com/r/dustynv/build-essential/tags) `(2023-09-07, 0.3GB)`<br>[`dustynv/build-essential:r35.2.1`](https://hub.docker.com/r/dustynv/build-essential/tags) `(2023-09-07, 4.9GB)`<br>[`dustynv/build-essential:r35.3.1`](https://hub.docker.com/r/dustynv/build-essential/tags) `(2023-08-29, 4.9GB)`<br>[`dustynv/build-essential:r35.4.1`](https://hub.docker.com/r/dustynv/build-essential/tags) `(2023-10-07, 4.9GB)` |
-| &nbsp;&nbsp;&nbsp;Notes | installs compilers, build tools & configures the default locale |
-
-</details>
-
-<details open>
-<summary><b><a id="images">CONTAINER IMAGES</a></b></summary>
-<br>
-
-| Repository/Tag | Date | Arch | Size |
-| :-- | :--: | :--: | :--: |
-| &nbsp;&nbsp;[`dustynv/build-essential:r32.7.1`](https://hub.docker.com/r/dustynv/build-essential/tags) | `2023-09-07` | `arm64` | `0.3GB` |
-| &nbsp;&nbsp;[`dustynv/build-essential:r35.2.1`](https://hub.docker.com/r/dustynv/build-essential/tags) | `2023-09-07` | `arm64` | `4.9GB` |
-| &nbsp;&nbsp;[`dustynv/build-essential:r35.3.1`](https://hub.docker.com/r/dustynv/build-essential/tags) | `2023-08-29` | `arm64` | `4.9GB` |
-| &nbsp;&nbsp;[`dustynv/build-essential:r35.4.1`](https://hub.docker.com/r/dustynv/build-essential/tags) | `2023-10-07` | `arm64` | `4.9GB` |
-
-> <sub>Container images are compatible with other minor versions of JetPack/L4T:</sub><br>
-> <sub>&nbsp;&nbsp;&nbsp;&nbsp;• L4T R32.7 containers can run on other versions of L4T R32.7 (JetPack 4.6+)</sub><br>
-> <sub>&nbsp;&nbsp;&nbsp;&nbsp;• L4T R35.x containers can run on other versions of L4T R35.x (JetPack 5.1+)</sub><br>
-</details>
-
-<details open>
-<summary><b><a id="run">RUN CONTAINER</a></b></summary>
-<br>
-
-To start the container, you can use [`jetson-containers run`](/docs/run.md) and [`autotag`](/docs/run.md#autotag), or manually put together a [`docker run`](https://docs.docker.com/engine/reference/commandline/run/) command:
-```bash
-# automatically pull or build a compatible container image
-jetson-containers run $(autotag build-essential)
-
-# or explicitly specify one of the container images above
-jetson-containers run dustynv/build-essential:r35.4.1
-
-# or if using 'docker run' (specify image and mounts/ect)
-sudo docker run --runtime nvidia -it --rm --network=host dustynv/build-essential:r35.4.1
+```log
+Initial base image set to: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Determining build order...
+Starting build process...
+--- Building Numbered Directories ---
+Processing numbered directory: build/01-00-build-essential
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/01-00-build-essential
+Image Name: 01-00-build-essential
+Platform: linux/arm64
+Tag: kairin/001:01-00-build-essential
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:01-00-build-essential --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/01-00-build-essential
+[+] Building 20.6s (12/12) FINISHED                                                                   docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                             0.0s
+ => => transferring dockerfile: 7.82kB                                                                                           0.0s
+ => WARN: RedundantTargetPlatform: Setting platform to predefined $TARGETPLATFORM in FROM is redundant as this is the default b  0.0s
+ => [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                         1.8s
+ => [auth] kairin/001:pull token for registry-1.docker.io                                                                        0.0s
+ => [internal] load .dockerignore                                                                                                0.0s
+ => => transferring context: 2B                                                                                                  0.0s
+ => CACHED [1/6] FROM docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu@sha256:dde556a5bcbffea413d29bca3f0f9c05eb7107c1e6  0.0s
+ => => resolve docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu@sha256:dde556a5bcbffea413d29bca3f0f9c05eb7107c1e6b57dac0  0.0s
+ => [2/6] RUN touch /opt/list_app_checks.sh                                                                                      0.1s
+ => [3/6] RUN set -ex     && apt-get update     && apt-get install -y --no-install-recommends         locales         locales-  10.5s
+ => [4/6] RUN echo '#!/usr/bin/env bash' > /tmp/vercmp &&     echo '#' >> /tmp/vercmp &&     echo '# Backportable version compa  0.1s
+ => [5/6] RUN echo '#!/usr/bin/env bash' > /tmp/tarpack &&     echo 'set -ex' >> /tmp/tarpack &&     echo '' >> /tmp/tarpack &&  0.1s
+ => [6/6] RUN echo "# Check for build tools" >> /tmp/build_checks.sh     && echo "check_cmd gcc 'gcc --version'" >> /tmp/build_  0.2s
+ => exporting to image                                                                                                           7.5s
+ => => exporting layers                                                                                                          0.5s
+ => => exporting manifest sha256:b559fd52c0e99ea4f2412fdc8f406ef357a1070ec29d22e04912bbc830243aaf                                0.0s
+ => => exporting config sha256:2082fc9135a9251a530e7cd54076245122ef791ecda90c609ef8eb35638a6aee                                  0.0s
+ => => exporting attestation manifest sha256:ae9e10ff5108aa45ceb0d1e88b06f24a16ee56e641ff807e909a6bd0001544fb                    0.0s
+ => => exporting manifest list sha256:aafe9bc88238dabfe9d5592079a38aec110d51a052e981cdfb225eb0cd5c7717                           0.0s
+ => => pushing layers                                                                                                            4.3s
+ => => pushing manifest for docker.io/kairin/001:01-00-build-essential@sha256:aafe9bc88238dabfe9d5592079a38aec110d51a052e981cdf  2.7s
+ => [auth] kairin/001:pull,push token for registry-1.docker.io                                                                   0.0s
+Successfully built image: kairin/001:01-00-build-essential
+Pulling image kairin/001:01-00-build-essential to ensure it's available locally...
+01-00-build-essential: Pulling from kairin/001
+14fcbe0c9272: Already exists
+9c92e5240789: Already exists
+0de21df19981: Pull complete
+6dbc88b20006: Pull complete
+34ab0cf6029d: Pull complete
+f04e366e1ed2: Pull complete
+6c480dbc6889: Pull complete
+Digest: sha256:aafe9bc88238dabfe9d5592079a38aec110d51a052e981cdfb225eb0cd5c7717
+Status: Downloaded newer image for kairin/001:01-00-build-essential
+docker.io/kairin/001:01-00-build-essential
+Successfully pulled image kairin/001:01-00-build-essential.
+Image kairin/001:01-00-build-essential verified locally after pull.
+Successfully built, pushed, and pulled numbered image: kairin/001:01-00-build-essential
+Next base image will be: kairin/001:01-00-build-essential
+Processing numbered directory: build/01-01-arrow
+Using base image: kairin/001:01-00-build-essential
 ```
-> <sup>[`jetson-containers run`](/docs/run.md) forwards arguments to [`docker run`](https://docs.docker.com/engine/reference/commandline/run/) with some defaults added (like `--runtime nvidia`, mounts a `/data` cache, and detects devices)</sup><br>
-> <sup>[`autotag`](/docs/run.md#autotag) finds a container image that's compatible with your version of JetPack/L4T - either locally, pulled from a registry, or by building it.</sup>
-
-To mount your own directories into the container, use the [`-v`](https://docs.docker.com/engine/reference/commandline/run/#volume) or [`--volume`](https://docs.docker.com/engine/reference/commandline/run/#volume) flags:
-```bash
-jetson-containers run -v /path/on/host:/path/in/container $(autotag build-essential)
-```
-To launch the container running a command, as opposed to an interactive shell:
-```bash
-jetson-containers run $(autotag build-essential) my_app --abc xyz
-```
-You can pass any options to it that you would to [`docker run`](https://docs.docker.com/engine/reference/commandline/run/), and it'll print out the full command that it constructs before executing it.
-</details>
-<details open>
-<summary><b><a id="build">BUILD CONTAINER</b></summary>
-<br>
-
-If you use [`autotag`](/docs/run.md#autotag) as shown above, it'll ask to build the container for you if needed.  To manually build it, first do the [system setup](/docs/setup.md), then run:
-```bash
-jetson-containers build build-essential
-```
-The dependencies from above will be built into the container, and it'll be tested during.  Run it with [`--help`](/jetson_containers/build.py) for build options.
-</details>
