@@ -1,7 +1,8 @@
 # COMMIT-TRACKING: UUID-20240729-004815-A3B1
 # COMMIT-TRACKING: UUID-20240730-101530-B4C2
 # COMMIT-TRACKING: UUID-20240730-110545-C5D3
-# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or prompt. Add X11 forwarding.
+# COMMIT-TRACKING: UUID-20240730-111015-D6E4
+# Description: Add container run helper script with standard configuration. Make image name dynamic via argument or prompt. Add X11 forwarding. Run session in dialog.
 # Author: Mr K
 #
 # File location diagram:
@@ -10,6 +11,12 @@
 # ├── buildx/                    <- Current directory
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
+
+# Check if dialog is installed
+if ! command -v dialog &> /dev/null; then
+    echo "Error: 'dialog' command not found. Please install it (e.g., sudo apt install dialog)."
+    exit 1
+fi
 
 # Check if an image name was provided as an argument
 if [ -z "$1" ]; then
@@ -26,8 +33,8 @@ if [ -z "$IMAGE_NAME" ]; then
   exit 1
 fi
 
-# Run the container with the specified image name and X11 forwarding
-jetson-containers run \
+# Run the container with the specified image name and X11 forwarding inside a dialog box
+dialog --title "Container Session: $IMAGE_NAME" --programbox 80 200 "jetson-containers run \
   --gpus all \
   -v /media/kkk:/workspace \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
@@ -35,6 +42,6 @@ jetson-containers run \
   -it \
   --rm \
   --user root \
-  "$IMAGE_NAME" \
-  /bin/bash
+  \"$IMAGE_NAME\" \
+  /bin/bash"
 
