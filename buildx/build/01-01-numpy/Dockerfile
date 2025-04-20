@@ -1,5 +1,5 @@
 # COMMIT-TRACKING: UUID-20240730-180000-LNT1
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# Description: Consolidate config.py logic into Dockerfile
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -23,11 +23,16 @@ FROM ${BASE_IMAGE}
 # https://github.com/numpy/numpy/issues/18131#issuecomment-755438271
 ENV OPENBLAS_CORETYPE=ARMV8
 
-# 'numpy<2' (1.26.4) for <= cu126
-# 'numpy' (2.2+) for >= cu128
-ARG NUMPY_PACKAGE="numpy" \
-    NUMPY_VERSION_MAJOR=2
+# ARG to determine CUDA version at build time
+# Set at build time with --build-arg CUDA_VERSION=x.y
+# Default values are set for numpy 2.x (CUDA > 12.6)
+ARG CUDA_VERSION="12.7"
+ARG NUMPY_PACKAGE="numpy"
+ARG NUMPY_VERSION_MAJOR=2
 
+# Logic that would have been in config.py
+# If building with CUDA <= 12.6, builder should pass:
+# --build-arg CUDA_VERSION=12.6 --build-arg NUMPY_PACKAGE="numpy<2" --build-arg NUMPY_VERSION_MAJOR=1
 ENV NUMPY_PACKAGE="$NUMPY_PACKAGE" \
     NUMPY_VERSION_MAJOR="$NUMPY_VERSION_MAJOR"
 
