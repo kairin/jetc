@@ -342,18 +342,24 @@ get_user_preferences() {
              --title "Step 0.5: Select Build Stages" \
              --ok-label "Next: Build Options" \
              --cancel-label "Exit Build" \
-             --checklist "Select the build stages (folders) to include:" $DIALOG_HEIGHT $DIALOG_WIDTH $FOLDER_LIST_HEIGHT \
+             --checklist "Select the build stages (folders) to include (Spacebar to toggle):" $DIALOG_HEIGHT $DIALOG_WIDTH $FOLDER_LIST_HEIGHT \
              "${folder_checklist_items[@]}" \
              2>"$temp_folders"
 
       local folders_exit_status=$?
+      # --- Debugging Start ---
+      echo "DEBUG: Raw checklist output ($(cat "$temp_folders"))"
+      # --- Debugging End ---
       if [ $folders_exit_status -ne 0 ]; then
           echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
           return 1 # Indicate cancellation
       fi
       # Read the selected items (tags) from the temp file, remove quotes, space-separated
       selected_folders_list=$(cat "$temp_folders" | sed 's/"//g')
-      echo "Selected folders: $selected_folders_list" # Debugging
+      # --- Debugging Start ---
+      echo "DEBUG: Parsed selected folders list: '$selected_folders_list'"
+      # --- Debugging End ---
+      # echo "Selected folders: $selected_folders_list" # Original Debugging
   else
       echo "No numbered build folders found in $build_dir. Skipping folder selection."
       # If no folders found, maybe build all? Or exit? For now, proceed, build.sh will find none.
@@ -503,7 +509,7 @@ get_user_preferences() {
   if [[ -n "$selected_folders_list" ]]; then
       confirmation_message+="  - $(echo "$selected_folders_list" | wc -w) stages selected: $selected_folders_list\\n\\n"
   else
-      confirmation_message+="  - No numbered stages selected/found.\\n\\n"
+      confirmation_message+="  - No numbered stages selected (or none found).\\n\\n" # Clarified message
   fi
   confirmation_message+="Build Options:\\n"
   confirmation_message+="  - Use Cache:          $( [[ "$use_cache" == "y" ]] && echo "Yes" || echo "No (--no-cache)" )\\n"
@@ -622,6 +628,9 @@ get_user_preferences_basic() {
           else
               # Parse the input numbers
               local temp_selected=()
+              # --- Debugging Start ---
+              echo "DEBUG: Basic prompt selection input: '$selection_input'"
+              # --- Debugging End ---
               for num in $selection_input; do
                   if [[ "$num" =~ ^[0-9]+$ ]] && (( num >= 1 && num <= folder_count )); then
                       temp_selected+=("${folder_options[$((num-1))]}")
@@ -695,7 +704,7 @@ get_user_preferences_basic() {
   # --- Confirmation ---
   echo "Summary:"
   echo "  Registry: ${DOCKER_REGISTRY:-Docker Hub}, User: $DOCKER_USERNAME, Prefix: $DOCKER_REPO_PREFIX"
-  echo "  Selected Stages: ${selected_folders_list:-None}"
+  echo "  Selected Stages: ${selected_folders_list:-None (will build none)}" # Clarified message
   echo "  Use Cache: $use_cache, Squash: $use_squash, Local Build Only: $skip_intermediate_push_pull, Use Builder: $use_builder"
   echo "  Base Image for First Stage: $SELECTED_IMAGE_TAG"
   read -p "Proceed with build? (y/n) [y]: " confirm_build

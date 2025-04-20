@@ -120,6 +120,9 @@ if [ -f "$PREFS_FILE" ]; then
     source "$PREFS_FILE"
     rm -f "$PREFS_FILE" # Clean up the temp file
     echo "Preferences sourced."
+    # --- Debugging Start ---
+    echo "DEBUG: Sourced SELECTED_FOLDERS_LIST in build.sh: '$SELECTED_FOLDERS_LIST'"
+    # --- Debugging End ---
 else
     echo "Error: Preferences file $PREFS_FILE not found. Cannot proceed."
     exit 1
@@ -180,14 +183,20 @@ if [[ -n "$SELECTED_FOLDERS_LIST" ]]; then
         echo "  Will build stage: $folder_name"
     done
 else
-    echo "  No specific stages selected, will attempt to build all found numbered stages."
-    # If list is empty, map remains empty, effectively selecting none unless logic below changes
+    # If the list is empty, it means the user deselected all items.
+    echo "  No specific stages selected by user. No numbered stages will be built."
+    # The map remains empty, so the filtering logic below will result in an empty numbered_dirs array.
 fi
+# --- Debugging Start ---
+echo "DEBUG: selected_folders_map content:"
+declare -p selected_folders_map
+# --- Debugging End ---
 
 # Get all numbered dirs first
 mapfile -t all_numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
-# Filter numbered dirs based on selection (or build all if SELECTED_FOLDERS_LIST was empty initially)
+# Filter numbered dirs based on selection
 numbered_dirs=()
+# Only filter if the map is not empty (i.e., user selected at least one)
 if [[ ${#selected_folders_map[@]} -gt 0 ]]; then
     for dir in "${all_numbered_dirs[@]}"; do
         basename=$(basename "$dir")
@@ -196,12 +205,9 @@ if [[ ${#selected_folders_map[@]} -gt 0 ]]; then
         fi
     done
     echo "Filtered numbered stages to build: ${#numbered_dirs[@]}"
-elif [[ -z "$SELECTED_FOLDERS_LIST" ]] && [[ ${#all_numbered_dirs[@]} -gt 0 ]]; then
-    # If the selection list was explicitly empty (meaning user selected none), numbered_dirs remains empty.
-    # If the selection list was empty because the user *intended* to build all (e.g., basic prompt default),
-    # then we should populate numbered_dirs here. Let's assume empty list means build all found.
-    echo "Building all found numbered stages as no specific selection was made."
-    numbered_dirs=("${all_numbered_dirs[@]}")
+# If the map is empty (user selected none), numbered_dirs remains empty.
+elif [[ -z "$SELECTED_FOLDERS_LIST" ]]; then
+     echo "No numbered stages were selected, skipping numbered builds."
 fi
 
 
