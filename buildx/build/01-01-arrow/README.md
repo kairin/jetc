@@ -1,15 +1,19 @@
-<!-- COMMIT-TRACKING: UUID-20240730-220000-PLATALL -->
-<!-- Description: Update README to reflect Dockerfile optimizations. -->
+<!-- COMMIT-TRACKING: UUID-20240731-110000-NOORC -->
+<!-- Description: Disable ARROW_ORC build option due to configuration errors. -->
 <!-- Author: GitHub Copilot -->
 
-# Arrow Dockerfile Optimizations
+# Arrow Dockerfile Optimizations and Fixes
 
 This README documents the changes made to the Dockerfile in this directory.
 
-## Changes Applied
+## Changes Applied (Previous - UUID-20240731-103000-MAKEJ4)
 
-1.  **Updated Commit Tracking:** The `COMMIT-TRACKING` header UUID and description were updated in `Dockerfile` and `config.py`.
-2.  **Platform Enforcement:** Added `ARG TARGETPLATFORM=linux/arm64` and modified the `FROM` instruction to `FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}` to explicitly set the build platform for `Dockerfile`.
-3.  **Consolidation:** The test script (`test.py`) logic was embedded directly into the `Dockerfile`.
+1.  **Reduced Make Parallelism:** Changed `make -j$(nproc)` to `make -j4` during the Arrow C++ build to potentially mitigate resource exhaustion issues and get clearer error messages if the build still fails.
+2.  **Updated Commit Tracking:** Updated headers in `Dockerfile`, `config.py`, and this `README.md`.
 
-These changes ensure consistency in commit tracking, enforce the target platform, and consolidate test logic into the Dockerfile.
+## Changes Applied (Current - UUID-20240731-110000-NOORC)
+
+1.  **Disabled ORC Build:** Added `-DARROW_ORC=OFF` to the CMake configuration to disable building the ORC component, which was failing during its configuration step.
+2.  **Updated Commit Tracking:** Updated headers in `Dockerfile`, `config.py`, and this `README.md`.
+
+These changes disable the problematic ORC component build and ensure consistency in commit tracking.

@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240731-100000-PROTOFIX
+# Description: Remove redundant apt install/remove of protobuf-dev packages. Rely on BUNDLED source.
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -29,3 +29,15 @@ package = [
     build_arrow('12.0.1', 'apache-arrow-12.0.1'),
     build_arrow('5.0.0', 'apache-arrow-5.0.0'),
 ]
+
+# COMMIT-TRACKING: UUID-20240731-110000-NOORC
+# Description: Disable ARROW_ORC build option due to configuration errors.
+# Author: GitHub Copilot
+#
+# ...existing code...
+
+# COMMIT-TRACKING: UUID-20240731-103000-MAKEJ4
+# Description: Reduce make parallelism to -j4 to mitigate potential resource exhaustion.
+# Author: GitHub Copilot
+#
+# ...existing code...
