@@ -7,10 +7,6 @@
 
 # Dialog. Specify your images and your options.
 
-![image](https://github.com/user-attachments/assets/44a9b88b-143a-40c4-ae2b-cd7d1a302525)
+![image](https://github.com/user-attachments/assets/841fdabf-c0d1-495b-b460-552fbfe91df9)
 
-# Pull your base image.
-
-![image](https://github.com/user-attachments/assets/55af5c86-222f-415d-aea8-b090dd4d9833)
-
-# And let docker buildx builder do the rest.
+# And it should use [jetson-containers](https://github.com/dusty-nv/jetson-containers/blob/master/docs/run.md) to launch the image with nvidia gpu support.
