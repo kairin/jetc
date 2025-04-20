@@ -250,21 +250,23 @@ get_user_preferences() {
   local PREFS_FILE="/tmp/build_prefs.sh"
 
   # Create temporary files safely for dialog output
-  local temp_options temp_base_choice temp_custom_image temp_docker_info
+  local temp_options temp_base_choice temp_custom_image temp_docker_info temp_folders
   temp_options=$(mktemp) || { echo "Failed to create temp file"; return 1; }
   temp_base_choice=$(mktemp) || { echo "Failed to create temp file"; rm -f "$temp_options"; return 1; }
   temp_custom_image=$(mktemp) || { echo "Failed to create temp file"; rm -f "$temp_options" "$temp_base_choice"; return 1; }
   temp_docker_info=$(mktemp) || { echo "Failed to create temp file"; rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image"; return 1; }
+  temp_folders=$(mktemp) || { echo "Failed to create temp file"; rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info"; return 1; }
 
 
   # Ensure temp files are cleaned up on exit or error within this function
-  trap 'rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$PREFS_FILE"' EXIT TERM INT
+  trap 'rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders" "$PREFS_FILE"' EXIT TERM INT
 
   # Dialog dimensions
   local DIALOG_HEIGHT=25
   local DIALOG_WIDTH=85
   local CHECKLIST_HEIGHT=6
   local FORM_HEIGHT=6 # Number of visible lines in the form
+  local FOLDER_LIST_HEIGHT=10 # Max items visible in folder list
 
   # --- Step 0: Docker Registry/User/Prefix Confirmation ---
   # Use local variables to hold dialog results before overwriting globals
@@ -315,6 +317,49 @@ get_user_preferences() {
       break
     fi
   done
+
+  # --- Step 0.5: Select Build Folders ---
+  local build_dir="$(dirname "$0")/../build"
+  local folder_checklist_items=()
+  local numbered_folders=()
+  local folder_count=0
+
+  # Find numbered directories and prepare checklist items
+  if [ -d "$build_dir" ]; then
+      mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+      for folder_path in "${numbered_folders[@]}"; do
+          folder_name=$(basename "$folder_path")
+          # tag item status (default to on)
+          folder_checklist_items+=("$folder_name" "$folder_name" "on")
+          ((folder_count++))
+      done
+  fi
+
+  local selected_folders_list="" # Will hold space-separated list of selected folder names
+
+  if [[ $folder_count -gt 0 ]]; then
+      dialog --backtitle "Docker Build Configuration" \
+             --title "Step 0.5: Select Build Stages" \
+             --ok-label "Next: Build Options" \
+             --cancel-label "Exit Build" \
+             --checklist "Select the build stages (folders) to include:" $DIALOG_HEIGHT $DIALOG_WIDTH $FOLDER_LIST_HEIGHT \
+             "${folder_checklist_items[@]}" \
+             2>"$temp_folders"
+
+      local folders_exit_status=$?
+      if [ $folders_exit_status -ne 0 ]; then
+          echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
+          return 1 # Indicate cancellation
+      fi
+      # Read the selected items (tags) from the temp file, remove quotes, space-separated
+      selected_folders_list=$(cat "$temp_folders" | sed 's/"//g')
+      echo "Selected folders: $selected_folders_list" # Debugging
+  else
+      echo "No numbered build folders found in $build_dir. Skipping folder selection."
+      # If no folders found, maybe build all? Or exit? For now, proceed, build.sh will find none.
+      selected_folders_list="" # Ensure it's empty
+  fi
+
 
   # --- Step 1: Main Build Options Checklist ---
   # Define default states for checklist (consider loading from .env if needed)
@@ -454,6 +499,12 @@ get_user_preferences() {
   confirmation_message+="  - Registry:         ${DOCKER_REGISTRY:-Docker Hub}\\n"
   confirmation_message+="  - Username:         $DOCKER_USERNAME\\n"
   confirmation_message+="  - Repo Prefix:      $DOCKER_REPO_PREFIX\\n\\n"
+  confirmation_message+="Selected Build Stages:\\n"
+  if [[ -n "$selected_folders_list" ]]; then
+      confirmation_message+="  - $(echo "$selected_folders_list" | wc -w) stages selected: $selected_folders_list\\n\\n"
+  else
+      confirmation_message+="  - No numbered stages selected/found.\\n\\n"
+  fi
   confirmation_message+="Build Options:\\n"
   confirmation_message+="  - Use Cache:          $( [[ "$use_cache" == "y" ]] && echo "Yes" || echo "No (--no-cache)" )\\n"
   confirmation_message+="  - Squash Layers:      $( [[ "$use_squash" == "y" ]] && echo "Yes (--squash)" || echo "No" )\\n"
@@ -463,7 +514,7 @@ get_user_preferences() {
   confirmation_message+="  - Action Chosen:      $BASE_IMAGE_ACTION\\n"
   confirmation_message+="  - Image Tag To Use:   $SELECTED_IMAGE_TAG" # Use the final selected tag
 
-  if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 22 $DIALOG_WIDTH; then # Increased height slightly
+  if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then # Increased height slightly
       echo "Build canceled by user at confirmation screen. Exiting." >&2
       return 1 # Indicate cancellation
   fi
@@ -490,6 +541,7 @@ get_user_preferences() {
     echo "export use_builder=\"${use_builder:-y}\"" # Export the builder choice
     echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\"" # Export the final chosen image tag
     echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\"" # Export platform determined earlier
+    echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Export selected folders
   } > "$PREFS_FILE"
   echo "Preferences exported."
   # --- End of export block ---
@@ -497,7 +549,7 @@ get_user_preferences() {
 
   # Explicitly remove trap and dialog temp files ONLY on success before returning
   trap - EXIT TERM INT # Disable the trap
-  rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info"
+  rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders"
   # DO NOT remove PREFS_FILE here, build.sh needs it
 
   return 0 # Success
@@ -543,6 +595,51 @@ get_user_preferences_basic() {
   DOCKER_REPO_PREFIX="$temp_prefix"
   echo "Using Registry: ${DOCKER_REGISTRY:-Docker Hub}, User: $DOCKER_USERNAME, Prefix: $DOCKER_REPO_PREFIX"
   echo "-------------------------"
+
+  # --- Select Build Folders (Basic Prompt) ---
+  echo "--- Select Build Stages ---"
+  local build_dir="$(dirname "$0")/../build"
+  local numbered_folders=()
+  local selected_folders_list=""
+  local folder_options=()
+  local folder_count=0
+
+  if [ -d "$build_dir" ]; then
+      mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+      if [[ ${#numbered_folders[@]} -gt 0 ]]; then
+          echo "Available build stages (folders):"
+          for i in "${!numbered_folders[@]}"; do
+              folder_name=$(basename "${numbered_folders[$i]}")
+              echo "  $((i+1))) $folder_name"
+              folder_options+=("$folder_name")
+              ((folder_count++))
+          done
+          read -p "Enter numbers of stages to build (e.g., '1 3 4'), or leave empty for ALL: " selection_input
+          if [[ -z "$selection_input" ]]; then
+              # Select all if input is empty
+              selected_folders_list="${folder_options[*]}"
+              echo "Building ALL stages."
+          else
+              # Parse the input numbers
+              local temp_selected=()
+              for num in $selection_input; do
+                  if [[ "$num" =~ ^[0-9]+$ ]] && (( num >= 1 && num <= folder_count )); then
+                      temp_selected+=("${folder_options[$((num-1))]}")
+                  else
+                      echo "Warning: Invalid selection '$num' ignored."
+                  fi
+              done
+              selected_folders_list="${temp_selected[*]}"
+          fi
+      else
+          echo "No numbered build folders found in $build_dir."
+      fi
+  else
+      echo "Build directory $build_dir not found."
+  fi
+  echo "Selected stages: ${selected_folders_list:-None}"
+  echo "-------------------------"
+
 
   # --- Build Options ---
   echo "--- Build Options ---"
@@ -598,6 +695,7 @@ get_user_preferences_basic() {
   # --- Confirmation ---
   echo "Summary:"
   echo "  Registry: ${DOCKER_REGISTRY:-Docker Hub}, User: $DOCKER_USERNAME, Prefix: $DOCKER_REPO_PREFIX"
+  echo "  Selected Stages: ${selected_folders_list:-None}"
   echo "  Use Cache: $use_cache, Squash: $use_squash, Local Build Only: $skip_intermediate_push_pull, Use Builder: $use_builder"
   echo "  Base Image for First Stage: $SELECTED_IMAGE_TAG"
   read -p "Proceed with build? (y/n) [y]: " confirm_build
@@ -627,6 +725,7 @@ get_user_preferences_basic() {
     echo "export use_builder=\"${use_builder:-y}\""
     echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\""
     echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\""
+    echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Export selected folders
   } > "$PREFS_FILE"
   echo "Preferences exported."
   # --- End of export block ---

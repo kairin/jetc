@@ -136,6 +136,7 @@ echo "  skip_intermediate_push_pull: ${skip_intermediate_push_pull}"
 echo "  SELECTED_BASE_IMAGE: ${SELECTED_BASE_IMAGE}"
 echo "  PLATFORM: ${PLATFORM}" # Should be set by setup_build_env or prefs
 echo "  use_builder: ${use_builder}" # Added verification
+echo "  SELECTED_FOLDERS_LIST: ${SELECTED_FOLDERS_LIST:-<All>}" # Verify selected folders
 # --- End Verification ---
 
 
@@ -160,23 +161,57 @@ echo "Initial base image set to: $CURRENT_BASE_IMAGE"
 set +e # Don't exit on errors during builds
 
 # =========================================================================
-# Determine Build Order
+# Determine Build Order and Prepare Selected Folders Map
 # =========================================================================
 
-echo "Determining build order..."
+echo "Determining build order and filtering selected stages..."
 BUILD_DIR="build"
 # Check if BUILD_DIR exists
 if [ ! -d "$BUILD_DIR" ]; then
     echo "Error: Build directory '$BUILD_DIR' not found."
     exit 1
 fi
-mapfile -t numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+
+# Create an associative array for quick lookup of selected folders
+declare -A selected_folders_map
+if [[ -n "$SELECTED_FOLDERS_LIST" ]]; then
+    for folder_name in $SELECTED_FOLDERS_LIST; do
+        selected_folders_map["$folder_name"]=1
+        echo "  Will build stage: $folder_name"
+    done
+else
+    echo "  No specific stages selected, will attempt to build all found numbered stages."
+    # If list is empty, map remains empty, effectively selecting none unless logic below changes
+fi
+
+# Get all numbered dirs first
+mapfile -t all_numbered_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+# Filter numbered dirs based on selection (or build all if SELECTED_FOLDERS_LIST was empty initially)
+numbered_dirs=()
+if [[ ${#selected_folders_map[@]} -gt 0 ]]; then
+    for dir in "${all_numbered_dirs[@]}"; do
+        basename=$(basename "$dir")
+        if [[ -v selected_folders_map[$basename] ]]; then
+            numbered_dirs+=("$dir")
+        fi
+    done
+    echo "Filtered numbered stages to build: ${#numbered_dirs[@]}"
+elif [[ -z "$SELECTED_FOLDERS_LIST" ]] && [[ ${#all_numbered_dirs[@]} -gt 0 ]]; then
+    # If the selection list was explicitly empty (meaning user selected none), numbered_dirs remains empty.
+    # If the selection list was empty because the user *intended* to build all (e.g., basic prompt default),
+    # then we should populate numbered_dirs here. Let's assume empty list means build all found.
+    echo "Building all found numbered stages as no specific selection was made."
+    numbered_dirs=("${all_numbered_dirs[@]}")
+fi
+
+
+# Get other dirs (currently not selectable, build logic remains the same)
 mapfile -t other_dirs < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d ! -name '[0-9]*-*' | sort)
 
 # =========================================================================
-# Build Process - Numbered Directories First
+# Build Process - Selected Numbered Directories First
 # =========================================================================
-echo "Starting build process..."
+echo "Starting build process for selected stages..."
 # Convert user preferences ('y'/'n') to build command flags/args as needed
 # Assuming docker_utils.sh expects 'y' or 'n' for boolean flags
 local_use_cache="$use_cache" # Already 'y' or 'n' from prefs
@@ -187,12 +222,14 @@ local_skip_intermediate="$skip_intermediate_push_pull" # Already 'y' or 'n' from
 local_platform="$PLATFORM"
 
 # 1. Build Numbered Directories in Order (sequential dependencies)
-echo "--- Building Numbered Directories ---"
+echo "--- Building Selected Numbered Directories ---"
 if [[ ${#numbered_dirs[@]} -eq 0 ]]; then
-    echo "No numbered directories found in $BUILD_DIR."
+    echo "No numbered directories selected or found to build in $BUILD_DIR."
 else
     for dir in "${numbered_dirs[@]}"; do
-      echo "Processing numbered directory: $dir"
+      # The loop now only iterates over selected directories
+      local basename=$(basename "$dir")
+      echo "Processing selected numbered directory: $basename ($dir)"
       echo "Using base image: $CURRENT_BASE_IMAGE"
       # Call build_folder_image WITH the current base tag argument AND sourced preferences
       # Pass DOCKER_REPO_PREFIX and DOCKER_REGISTRY as well
