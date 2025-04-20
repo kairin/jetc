@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-160000-HRD1
-# Description: Remove base image parameter and sed logic from build_folder_image.
+# COMMIT-TRACKING: UUID-20240803-103000-ARGS # Replace YYYYMMDD-HHMMSS with current system time
+# Description: Added support for reading Docker build arguments from a .buildargs file.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -80,140 +80,140 @@ list_installed_apps() {
 }
 
 # =========================================================================
-# Function: Build, push, and pull a Docker image from a folder
-# Arguments: $1 = folder path, $2 = use_cache (y/n), $3 = docker_username,
-#            $4 = platform, $5 = use_squash (y/n),
-#            $6 = skip_intermediate_push_pull (y/n)
-#            $7 = base_image_tag (tag to use for FROM ${BASE_IMAGE})
-# Returns: The fixed tag name on success via $fixed_tag, non-zero exit status on failure
+# Build a Docker image from a specific folder
+# =========================================================================
+# Parameters:
+# $1: folder_path - The directory containing the Dockerfile and build context.
+# $2: use_cache - 'y' or 'n' to enable/disable Docker build cache.
+# $3: docker_username - Docker Hub username.
+# $4: platform - Target platform (e.g., linux/arm64).
+# $5: use_squash - 'y' or 'n' to enable/disable image squashing.
+# $6: skip_intermediate_push_pull - 'y' or 'n' to skip push/pull after build.
+# $7: base_image_tag - The base image tag to use (passed as --build-arg BASE_IMAGE).
+# Sets:
+# fixed_tag (global): The generated tag for the built image (e.g., kairin/001:01-01-arrow).
 # =========================================================================
 build_folder_image() {
-  local folder=$1
-  local use_cache=$2
-  local docker_username=$3
-  local platform=$4
-  local use_squash=$5
-  local skip_push_pull=$6
-  local base_image_tag=$7 # Added base image tag argument
+    local folder_path=$1
+    local use_cache=$2
+    local docker_username=$3
+    local platform=$4
+    local use_squash=$5
+    local skip_intermediate_push_pull=$6
+    local base_image_tag=$7 # Base image tag passed from build.sh
 
-  # Variable to store the tag name
-  fixed_tag=""
+    local image_name
+    image_name=$(basename "$folder_path")
+    # Generate the tag based on the folder name and username
+    # Ensure tag is lowercase as required by Docker
+    fixed_tag=$(echo "${docker_username}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
 
-  local image_name
-  image_name=$(basename "$folder" | tr '[:upper:]' '[:lower:]')
-  # Ensure fixed_tag is set early for ATTEMPTED_TAGS in build.sh
-  fixed_tag=$(echo "${docker_username}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
+    echo "--------------------------------------------------"
+    echo "Building image from folder: $folder_path"
+    echo "Image Name: $image_name"
+    echo "Platform: $platform"
+    echo "Tag: $fixed_tag"
+    echo "Base Image (FROM via ARG): $base_image_tag" # Display the base image being used
+    echo "Skip Intermediate Push/Pull: $skip_intermediate_push_pull"
+    echo "--------------------------------------------------"
 
-  echo "Generating fixed tag: $fixed_tag"
+    local build_cmd="docker buildx build --platform $platform -t $fixed_tag"
 
-  local dockerfile_path="$folder/Dockerfile"
+    # --- Add BASE_IMAGE build-arg ---
+    # Always pass the base image tag determined by the main build script
+    build_cmd+=" --build-arg BASE_IMAGE=$base_image_tag"
 
-  # Use [[ ]] for file existence check
-  if [[ ! -f "$dockerfile_path" ]]; then
-    echo "Warning: Dockerfile not found in $folder. Skipping."
-    return 1
-  fi
+    # --- Add build args from .buildargs file ---
+    local build_args_file="$folder_path/.buildargs"
+    if [[ -f "$build_args_file" ]]; then
+        echo "Found .buildargs file: $build_args_file"
+        # Read file line by line, skipping comments and empty lines
+        while IFS='=' read -r key value || [[ -n "$key" ]]; do
+            # Trim leading/trailing whitespace from key and value
+            key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            # Skip empty lines or lines starting with #
+            if [[ -n "$key" && ! "$key" =~ ^# ]]; then
+                # Ensure value is not empty before adding
+                if [[ -n "$value" ]]; then
+                    echo "  Adding build arg: --build-arg $key=\"$value\""
+                    build_cmd+=" --build-arg $key=\"$value\""
+                else
+                    echo "  Skipping build arg '$key': No value provided."
+                fi
+            fi
+        done < "$build_args_file"
+    fi
+    # --- End build args handling ---
 
-  # Check if base_image_tag is provided and attempt to pull if it doesn't exist locally
-  if [[ -z "$base_image_tag" ]]; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      echo "Error: Base image tag not provided for build of $folder."
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      return 1
-  fi
-  
-  # Verify base image exists locally or can be pulled
-  if ! verify_image_exists "$base_image_tag"; then
-      echo "Base image $base_image_tag not found locally. Attempting to pull..."
-      if ! docker pull "$base_image_tag"; then
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          echo "Error: Base image $base_image_tag not found locally and could not be pulled."
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          return 1
-      fi
-      echo "Successfully pulled base image: $base_image_tag"
-  fi
 
-  echo "--------------------------------------------------"
-  echo "Building image from folder: $folder"
-  echo "Image Name: $image_name"
-  echo "Platform: $platform"
-  echo "Tag: $fixed_tag"
-  echo "Base Image (FROM via ARG): $base_image_tag" # Show the base image being passed
-  echo "Skip Intermediate Push/Pull: $skip_push_pull"
-  echo "--------------------------------------------------"
+    # Add cache option
+    if [[ "$use_cache" == "n" ]]; then
+        build_cmd+=" --no-cache"
+        echo "Using --no-cache"
+    fi
 
-  # Base command args
-  local cmd_args=("--platform" "$platform" "-t" "$fixed_tag")
+    # Add squash option
+    if [[ "$use_squash" == "y" ]]; then
+        build_cmd+=" --squash"
+        echo "Using --squash"
+    fi
 
-  # Add the build argument for the base image
-  cmd_args+=("--build-arg" "BASE_IMAGE=$base_image_tag")
+    # Add push option if intermediate push/pull is NOT skipped
+    if [[ "$skip_intermediate_push_pull" != "y" ]]; then
+        build_cmd+=" --push"
+        echo "Using --push"
+    else
+        build_cmd+=" --load" # Load the image into the local Docker daemon if not pushing
+        echo "Using --load (intermediate push skipped)"
+    fi
 
-  # Add --no-cache if requested - Use [[ ]] for string comparison
-  if [[ "$use_cache" != "y" ]]; then
-      cmd_args+=("--no-cache") # Use += to append
-  fi
-  # Add --squash if requested - Use [[ ]] for string comparison
-  if [[ "$use_squash" == "y" ]]; then
-      echo "Attempting build with --squash (experimental)"
-      cmd_args+=("--squash") # Use += to append
-  fi
 
-  # Add --push or --load based on preference - Use [[ ]] for string comparison
-  if [[ "$skip_push_pull" == "y" ]]; then
-      echo "Using --load instead of --push"
-      cmd_args+=("--load")
-  else
-      echo "Using --push"
-      cmd_args+=("--push")
-  fi
+    # Add the build context path at the end
+    build_cmd+=" $folder_path"
 
-  # Add the folder path at the end
-  cmd_args+=("$folder")
+    echo "Running: $build_cmd"
+    if eval "$build_cmd"; then
+        echo "Successfully built image: $fixed_tag"
 
-  echo "Running: docker buildx build ${cmd_args[*]}"
-  docker buildx build "${cmd_args[@]}"
-  local build_status=$?
-
-  # Use [[ ]] for numerical comparison
-  if [[ $build_status -ne 0 ]]; then
-    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "Error: Failed to build image for $image_name ($folder)."
-    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-    return 1 # Build failed
-  fi
-
-  # --- Post-Build Push/Pull/Verification (remains the same) ---
-  # Only pull if we pushed - Use [[ ]] for string comparison
-  if [[ "$skip_push_pull" != "y" ]]; then
-      echo "Pulling built image: $fixed_tag"
-      docker pull "$fixed_tag"
-      local pull_status=$?
-
-      # Use [[ ]] for numerical comparison
-      if [[ $pull_status -ne 0 ]]; then
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          echo "Error: Failed to pull the built image $fixed_tag after push."
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          return 1 # Pull failed
-      fi
-  else
-      echo "Skipped pulling image $fixed_tag as push was skipped."
-  fi
-
-  echo "Verifying image $fixed_tag exists locally..."
-  if ! verify_image_exists "$fixed_tag"; then
-      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-      # Use [[ ]] for string comparison
-      if [[ "$skip_push_pull" == "y" ]]; then
-          echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker buildx build --load'."
-      else
-          echo "Error: Image $fixed_tag NOT found locally immediately after successful 'docker pull'."
-      fi
-      echo "This indicates a potential issue with the Docker daemon or buildx driver."
-      return 1 # Verification failed
-  fi
-
-  echo "Image $fixed_tag verified locally."
-  return 0 # Success
+        # Only pull if push was performed
+        if [[ "$skip_intermediate_push_pull" != "y" ]]; then
+            echo "Pulling image $fixed_tag to ensure it's available locally..."
+            if docker pull "$fixed_tag"; then
+                echo "Successfully pulled image $fixed_tag."
+                # Verify image exists locally after pull
+                if verify_image_exists "$fixed_tag"; then
+                    echo "Image $fixed_tag verified locally after pull."
+                    return 0 # Success
+                else
+                    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                    echo "Error: Image $fixed_tag NOT found locally after 'docker pull' succeeded."
+                    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                    return 1 # Failure
+                fi
+            else
+                echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                echo "Error: Failed to pull image $fixed_tag after successful build and push."
+                echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                return 1 # Failure
+            fi
+        else
+            # If push/pull was skipped, verify the image exists locally (due to --load)
+            echo "Verifying image $fixed_tag exists locally (push/pull skipped)..."
+             if verify_image_exists "$fixed_tag"; then
+                 echo "Image $fixed_tag verified locally."
+                 return 0 # Success
+             else
+                 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                 echo "Error: Image $fixed_tag NOT found locally after build with --load."
+                 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                 return 1 # Failure
+             fi
+        fi
+    else
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        echo "Error: Failed to build image for $image_name ($folder_path)."
+        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        return 1 # Failure
+    fi
 }

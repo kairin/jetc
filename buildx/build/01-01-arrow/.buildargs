@@ -1,0 +1,4 @@
+# Define build arguments specific to the 01-01-arrow Dockerfile
+
+# Specify the Apache Arrow branch to clone
+ARROW_BRANCH=apache-arrow-16.1.0
