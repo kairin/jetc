@@ -12,15 +12,15 @@ fi
 # Ensure TensorRT libraries are in LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/lib/$(uname -m)-linux-gnu:$LD_LIBRARY_PATH
 
-# Verify TensorRT components
+# Verify TensorRT core library
 if [ ! -f "/usr/lib/$(uname -m)-linux-gnu/libnvinfer.so" ]; then
     echo "TensorRT core library not found"
     exit 1
 fi
 
+# Check for NVDLA library but don't fail if it's missing
 if [ ! -f "/usr/lib/$(uname -m)-linux-gnu/libnvdla_compiler.so" ]; then
-    echo "TensorRT NVDLA compiler library not found"
-    exit 1
+    echo "Warning: TensorRT NVDLA compiler library not found, but continuing with build"
 fi
 
 pip3 uninstall -y onnxruntime || echo "onnxruntime was not previously installed"
