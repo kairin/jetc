@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240730-180000-LNT1
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240806-120000-OPTM
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
