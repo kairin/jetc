@@ -10,9 +10,14 @@
 -->
 # JETC: Jetson Containers for Targeted Use Cases
 
-> **IMPORTANT ACKNOWLEDGMENT**: This project is based on the work from [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The primary contribution here is an implementation focused on utilizing Docker's buildx functionality for streamlined container building on Jetson devices. All credit for the original container implementations goes to the [dusty-nv team](https://github.com/dusty-nv/jetson-containers/graphs/contributors).
+> **IMPORTANT ACKNOWLEDGMENT**: This project is based on the work from [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The primary contribution here is an implementation focused on utilizing [Docker](https://www.docker.com/)'s [docker buildx build](https://docs.docker.com/build/builders/#difference-between-docker-build-and-docker-buildx-build) functionality for streamlined container building on Jetson devices.
+>
+> All credit for the original container implementations goes to the [dusty-nv and his team](https://github.com/dusty-nv/jetson-containers/graphs/contributors).
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
+
+![Screenshot from 2025-04-20 14-54-05](https://github.com/user-attachments/assets/bf61e6ab-12f0-45f3-860f-e65ec646871a)
+
 
 ![Jetson Containers](https://img.shields.io/badge/NVIDIA-Jetson-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 
@@ -24,6 +29,7 @@ With JETC, you can:
 - **Use web interfaces** like Stable Diffusion WebUI and ComfyUI for creating AI art
 - **Build optimized containers** with all dependencies pre-configured
 - **Save hours of setup time** by avoiding manual installation of complex AI frameworks
+- Planned [interface here](https://github.com/kairin/jetc/blob/main/proposed-app.md).
 
 ## **Quick Start Guide**
 
