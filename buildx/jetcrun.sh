@@ -404,7 +404,7 @@ FINAL_RUN_OPTS="$RUN_OPTS"
 if [ "$USE_JETSON_CONTAINERS" = true ]; then
   # When using jetson-containers, don't add X11 arguments as they're handled internally
   echo "Using jetson-containers for container execution"
-  RUN_CMD="jetson-containers run --user kkk" # change here remove user kkk to get back root
+  RUN_CMD="jetson-containers run --user kkk /run/jtop.sock:/run/jtop.sock" # change here remove user kkk to get back root
   
   # Add X11 flag for jetson-containers if needed
   if [ "$X11_ENABLED" = "true" ]; then
@@ -453,7 +453,7 @@ fi
 
 # Run the container with the appropriate command
 echo "Starting container..."
-$RUN_CMD $FINAL_RUN_OPTS /run/jtop.sock:/run/jtop.sock "$IMAGE_NAME" /bin/bash
+$RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 
 # COMMIT-TRACKING: UUID-20240803-180500-JRUN
 # COMMIT-TRACKING: UUID-20240804-091500-DLGF
