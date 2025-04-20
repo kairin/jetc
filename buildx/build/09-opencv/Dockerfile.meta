@@ -1,8 +1,26 @@
+# COMMIT-TRACKING: UUID-20240801-140000-PLATFORM
+# Description: Add platform enforcement and update commit tracking header.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Main buildx directory
+# │   └── build/                 <- Build directory
+# │       └── 09-opencv/         <- Current directory
+# │           └── Dockerfile.meta <- THIS FILE
+# =========================================================================
+# IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
+
 #
 # opencv-python meta-package builder that installs opencv-contrib-python
 #
+ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 ARG OPENCV_VERSION
 

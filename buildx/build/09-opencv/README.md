@@ -1,5 +1,5 @@
 <!--
-# COMMIT-TRACKING: UUID-20240801-120000-PLATFORM
+# COMMIT-TRACKING: UUID-20240801-150000-PLATFORM
 # Description: Update README to reflect Dockerfile optimizations.
 # Author: GitHub Copilot
 #
@@ -129,14 +129,28 @@ The dependencies from above will be built into the container, and it'll be teste
 
 # OpenCV Dockerfile Optimizations
 
-This README documents the changes made to the Dockerfile in this directory.
+This README documents the changes made to the Dockerfiles in this directory.
 
 ## Changes Applied
 
-1. **Updated Commit Tracking:** The `COMMIT-TRACKING` header UUID was updated to `UUID-20240801-120000-PLATFORM` and the description was updated to reflect the platform enforcement changes.
+1. **Updated Commit Tracking:** The `COMMIT-TRACKING` headers were updated in both Dockerfile and Dockerfile.meta files.
+   - Main Dockerfile updated to `UUID-20240801-120000-PLATFORM`
+   - Dockerfile.meta updated to `UUID-20240801-140000-PLATFORM`
+   - The descriptions were updated to reflect the platform enforcement changes
 
-2. **Platform Enforcement:** Added `ARG TARGETPLATFORM=linux/arm64` before the FROM instruction and modified the FROM instruction to use this variable: `FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}`.
+2. **Platform Enforcement:** 
+   - Added `ARG TARGETPLATFORM=linux/arm64` before the FROM instructions
+   - Modified the FROM instructions to use `FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}`
+   - This ensures consistent builds across different platforms
 
-3. **Verification Checks:** The Dockerfile already includes appropriate checks for the OpenCV installation by adding `check_python_pkg cv2` to `/opt/list_app_checks.sh`.
+3. **Test Script Consolidation:**
+   - The test.py script has been marked for deletion as its functionality can be embedded directly in the Dockerfile
 
-These changes ensure consistent build platform enforcement across all container builds in the project.
+4. **Verification Checks:** 
+   - The Dockerfile already includes appropriate checks for the OpenCV installation with:
+     ```
+     echo "check_python_pkg onnxruntime" >> /opt/list_app_checks.sh
+     echo "check_python_pkg cv2" >> /opt/list_app_checks.sh
+     ```
+
+These changes ensure consistent build platform enforcement across all container builds in the project, which is critical for maintaining compatibility and build reproducibility, especially in multi-architecture environments.
