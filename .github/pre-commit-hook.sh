@@ -146,57 +146,10 @@ if [ "$generic_descriptions" = true ]; then
   fi
 fi
 
-# --- Prepare Commit Message ---
-echo "Preparing commit message..."
-echo "Current directory: $(pwd)" # Debug: Show current directory
-declare -A unique_uuids # Use associative array for uniqueness
-commit_message_uuids=""
-# Use git var GIT_DIR to get the correct path to the .git directory
-git_dir=$(git var GIT_DIR)
-commit_editmsg_path="$git_dir/COMMIT_EDITMSG" # Define path explicitly using git_dir
+# --- Prepare Commit Message --- Section Removed ---
+# The logic previously here has been moved to prepare-commit-msg-hook.sh
 
-for file in "${files_to_process[@]}"; do
-    # Extract the updated UUID from the file
-    updated_uuid=$(grep -E "COMMIT-TRACKING: (UUID-[0-9]{8}-[0-9]{6}-[A-Z0-9]{4})" "$file" | head -1 | sed 's/.*COMMIT-TRACKING: \(UUID-[0-9]\{8\}-[0-9]\{6\}-[A-Z0-9]\{4\}\).*/\1/')
-    if [ ! -z "$updated_uuid" ]; then
-        unique_uuids["$updated_uuid"]=1 # Add UUID as key for uniqueness
-        echo "Found UUID: $updated_uuid in file $file" # Debug: Show found UUIDs
-    fi
-done
-
-# Build the commit message string from unique UUIDs
-if [ ${#unique_uuids[@]} -gt 0 ]; then
-    echo "Found ${#unique_uuids[@]} unique UUID(s)." # Debug: Show count
-    commit_message_prefix="Refs:"
-    for uuid_key in "${!unique_uuids[@]}"; do
-        commit_message_uuids+=" $uuid_key,"
-    done
-    # Remove trailing comma
-    commit_message_uuids=${commit_message_uuids%,}
-
-    # Construct the full message content with newlines for printf
-    # Use %s for the string and %b for interpreting \n
-    full_message_format="%s%s\n\n# Add commit title/body here\n"
-
-    # Write to COMMIT_EDITMSG using printf
-    printf "$full_message_format" "$commit_message_prefix" "$commit_message_uuids" > "$commit_editmsg_path"
-
-    # Debug: Check if file write was successful and show content
-    if [ $? -eq 0 ]; then
-        echo "Successfully wrote to $commit_editmsg_path"
-        echo "--- Content written to $commit_editmsg_path ---"
-        cat "$commit_editmsg_path" # Debug: Show content written
-        echo "--- End Content ---"
-    else
-        echo "⚠️ Error writing to $commit_editmsg_path"
-    fi
-    echo "Commit message template prepared in $commit_editmsg_path"
-else
-    echo "No UUIDs found to add to commit message."
-fi
-# --- End Prepare Commit Message ---
-
-# Success - Adjust success message as UUIDs might not be consistent
+# Success - Adjust success message
 echo "✅ Timestamps updated for all staged files with COMMIT-TRACKING headers."
-echo "   Commit message template prepared with references."
+echo "   Commit message will be prepared by the prepare-commit-msg hook."
 exit 0

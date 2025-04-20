@@ -17,10 +17,14 @@ echo "Installing Git hooks for COMMIT-TRACKING system..."
 mkdir -p .git/hooks
 
 # Copy pre-commit hook
+echo "Installing pre-commit hook..."
 cp .github/pre-commit-hook.sh .git/hooks/pre-commit
-
-# Make the hook executable
 chmod +x .git/hooks/pre-commit
 
-echo "✅ Pre-commit hook installed!"
-echo "The hook will now validate your commit headers automatically."
+# Copy prepare-commit-msg hook
+echo "Installing prepare-commit-msg hook..."
+cp .github/prepare-commit-msg-hook.sh .git/hooks/prepare-commit-msg
+chmod +x .git/hooks/prepare-commit-msg
+
+echo "✅ Pre-commit and prepare-commit-msg hooks installed!"
+echo "The hooks will now validate headers, update timestamps, and prepare commit messages."
