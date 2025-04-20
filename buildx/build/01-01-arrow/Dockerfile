@@ -14,17 +14,29 @@
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+FROM ${BASE_IMAGE}
 
 ARG ARROW_BRANCH
 
 RUN git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow
-    
-RUN cd /opt/arrow/cpp && \
+
+# Install build dependencies for Arrow, remove system protobuf dev packages, and build Arrow from source
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # ... existing packages ...
+        libprotobuf-dev \
+        protobuf-compiler \
+        # ... existing packages ...
+    && rm -rf /var/lib/apt/lists/* && \
+    apt-get remove -y libprotobuf-dev protobuf-compiler && \
+    apt-get autoremove -y --purge && \
+    rm -rf /var/lib/apt/lists/* && \
+    cd /opt/arrow/cpp && \
     mkdir build && \
     cd build && \
     cmake \
       -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DProtobuf_SOURCE=BUNDLED \
 	 -DARROW_CUDA=ON \
 	 -DARROW_PYTHON=ON \
 	 -DARROW_COMPUTE=ON \
@@ -43,7 +55,7 @@ RUN cd /opt/arrow/cpp && \
 	 ../ && \
     make -j$(nproc) && \
     make install
-    
+
 #RUN pip3 install -r /opt/arrow/python/requirements-wheel-build.txt
 
 RUN export PYARROW_WITH_CUDA=1 && \
