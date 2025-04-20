@@ -1,3 +1,7 @@
+<!-- COMMIT-TRACKING: UUID-20231215-123456-OPTIMIZE-DOCKERFILE -->
+<!-- Description: Update README to reflect Dockerfile optimizations. -->
+<!-- Author: GitHub Copilot -->
+
 # rust
 
 > [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)

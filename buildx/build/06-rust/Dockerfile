@@ -1,6 +1,6 @@
-# COMMIT-TRACKING: UUID-20240730-180000-LNT1
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240731-142500-OPTIMIZE-DOCKERFILE
+# Description: Consolidate commit-tracking headers, enforce platform with TARGETPLATFORM variable, and add verification checks
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -23,10 +23,13 @@
 # test: test.sh
 #---
 # Use ARG for dynamic base image injection, with a default value
+ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=linux/arm64 ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN rustc --version && \
-    pip3 install setuptools-rust
+    pip3 install setuptools-rust && \
+    echo "check_cmd rustc --version" >> /opt/list_app_checks.sh && \
+    echo "check_cmd cargo --version" >> /opt/list_app_checks.sh
