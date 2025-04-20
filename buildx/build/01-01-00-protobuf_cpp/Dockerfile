@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240801-164500-OPTIMIZE-DOCKERFILE
-# Description: Consolidate commit-tracking headers, enforce platform with TARGETPLATFORM variable, embed test scripts, and add verification checks
+# COMMIT-TRACKING: UUID-20240802-101500-FIX-PROTOBUF-CPP-BUILD
+# Description: Use install.sh to build protobuf with C++ implementation instead of pip install. Remove redundant TARGETPLATFORM and pip install step.
 # Author: GitHub Copilot
 #
 # File location diagram:
@@ -7,8 +7,10 @@
 # ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Buildx directory
 # │   ├── build/                   <- Build stages directory
-# │   │   └── 08-protobuf_cpp/     <- Current directory
-# │   │       └── Dockerfile       <- THIS FILE
+# │   │   └── 01-01-00-protobuf_cpp/ <- Current directory (renamed from 08-protobuf_cpp)
+# │   │       ├── Dockerfile       <- THIS FILE
+# │   │       ├── install.sh       <- Installation script
+# │   │       └── config.py        <- Configuration script
 # └── ...                        <- Other project files
 # =========================================================================
 # IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
@@ -20,21 +22,24 @@
 # name: protobuf:cpp
 # group: build
 # config: config.py
-# depends: [build-essential, cmake]
+# depends: [build-essential, cmake] # Dependencies handled by install.sh now
 # test: embedded
 #---
 # Use ARG for dynamic base image injection, with a default value
-ARG TARGETPLATFORM=linux/arm64
+ARG TARGETPLATFORM=linux/arm64 # Keep ARG for potential external use, but remove from FROM
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} # Removed --platform=$TARGETPLATFORM
 
 ARG PROTOBUF_VERSION
 
-RUN apt-get update && apt-get install -y --no-install-recommends python3-pip
+# Copy and run the installation script
+COPY install.sh /tmp/install.sh
+RUN chmod +x /tmp/install.sh && \
+    /tmp/install.sh && \
+    rm /tmp/install.sh
 
-# Install the latest protobuf using pip
-RUN pip install --upgrade protobuf && \
-    echo "check_cmd protoc --version" >> /opt/list_app_checks.sh && \
+# Add verification checks
+RUN echo "check_cmd protoc --version" >> /opt/list_app_checks.sh && \
     echo "check_python_package protobuf" >> /opt/list_app_checks.sh
 
 # Embed test.sh script
