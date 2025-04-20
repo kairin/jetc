@@ -197,7 +197,7 @@ get_run_options() {
           # Add to image array if not already there
           if ! [[ " ${image_array[*]} " =~ " ${IMAGE_NAME} " ]]; then
             image_array+=("$IMAGE_NAME")
-          }
+          fi
         fi
       elif [[ "$img_choice" =~ ^[0-9]+$ ]] && [ "$img_choice" -ge 1 ] && [ "$img_choice" -le ${#image_array[@]} ]; then
         IMAGE_NAME="${image_array[$((img_choice-1))]}"
