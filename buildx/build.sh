@@ -18,8 +18,14 @@ source "$SCRIPT_DIR/utils.sh" || { echo "Error sourcing utils.sh"; exit 1; }
 source "$SCRIPT_DIR/docker_helpers.sh" || { echo "Error sourcing docker_helpers.sh"; exit 1; }
 source "$SCRIPT_DIR/build_ui.sh" || { echo "Error sourcing build_ui.sh"; exit 1; }
 source "$SCRIPT_DIR/verification.sh" || { echo "Error sourcing verification.sh"; exit 1; }
+source "$SCRIPT_DIR/logging.sh" || { echo "Error sourcing logging.sh"; exit 1; }
 
 set -e # Exit immediately if a command exits with a non-zero status (temporarily disabled during builds)
+
+# Initialize logging
+BUILD_ID=$(date +"%Y%m%d-%H%M%S")
+LOGS_DIR="$(dirname "$0")/logs"
+init_logging "$LOGS_DIR" "$BUILD_ID"
 
 # =========================================================================
 # Function to handle build errors but continue with other builds
@@ -28,8 +34,8 @@ handle_build_error() {
   local folder=$1
   # shellcheck disable=SC2034
   local error_code=$2
-  echo "Build process for $folder exited with code $error_code"
-  echo "Continuing with next build..."
+  echo "Build process for $folder exited with code $error_code" | tee -a "${ERROR_LOG}"
+  echo "Continuing with next build..." | tee -a "${MAIN_LOG}"
 }
 
 # =========================================================================
@@ -171,11 +177,12 @@ else
     for dir in "${numbered_dirs[@]}"; do
       # The loop now only iterates over selected directories
       local basename=$(basename "$dir")
+      set_stage "$basename"
       echo "Processing selected numbered directory: $basename ($dir)"
       echo "Using base image: $CURRENT_BASE_IMAGE"
       # Call build_folder_image WITH the current base tag argument AND sourced preferences
       # Pass DOCKER_REPO_PREFIX and DOCKER_REGISTRY as well
-      build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+      log_command build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
 
       build_status=$?
       # Assuming build_folder_image exports 'fixed_tag' even on failure for logging
@@ -209,7 +216,7 @@ else
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir"
       # Call build_folder_image WITH the current base tag argument AND sourced preferences
-      build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+      log_command build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
 
       build_status=$?
       # shellcheck disable=SC2154 # fixed_tag might be exported by build_folder_image
@@ -393,3 +400,4 @@ else
 fi
 
 # COMMIT-TRACKING: UUID-20250421-020700-REFA
+generate_error_summary
