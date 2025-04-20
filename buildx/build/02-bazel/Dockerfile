@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240731-100000-bazel
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM. Embed test.sh. Add verification check.
+# COMMIT-TRACKING: UUID-20240731-100500-bazel-fix
+# Description: Install build-essential instead of g++ to potentially resolve dependency issues.
 # Author: GitHub Copilot
 # Base image: jetc-base:latest
 # Build args: BASE_IMAGE=jetc-base:latest
@@ -36,7 +36,7 @@ ARG BAZEL_SHA256="511a7f6a4a8a3f3d7792a426c0b7581a141a5137444e11311851d7841141d0
 
 # Install Bazel
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        g++ \
+        build-essential \
         unzip \
         zip \
         zlib1g-dev \
