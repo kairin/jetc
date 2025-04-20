@@ -1,9 +1,4 @@
 #!/bin/bash
-
-# COMMIT-TRACKING: UUID-20240802-165200-CONS
-# Description: Consolidated commit tracking headers - includes both removing hardcoded FROM lines
-#              and implementing dynamic base image tracking via build-arg
-# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -11,17 +6,22 @@
 # ├── buildx/                    <- Current directory
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Consolidated commit tracking headers - includes both removing hardcoded FROM lines
+# and implementing dynamic base image tracking via build-arg
+# Author: Mr K / GitHub Copilot
 
 # Import utility scripts
 SCRIPT_DIR="$(dirname "$0")/scripts"
 # Source scripts individually with error checking
-source "$SCRIPT_DIR/setup_env.sh" || { echo "Error sourcing setup_env.sh"; exit 1; }
-source "$SCRIPT_DIR/docker_utils.sh" || { echo "Error sourcing docker_utils.sh"; exit 1; }
-source "$SCRIPT_DIR/setup_buildx.sh" || { echo "Error sourcing setup_buildx.sh"; exit 1; }
-source "$SCRIPT_DIR/post_build_menu.sh" || { echo "Error sourcing post_build_menu.sh"; exit 1; }
-
+source "$SCRIPT_DIR/utils.sh" || { echo "Error sourcing utils.sh"; exit 1; }
+source "$SCRIPT_DIR/docker_helpers.sh" || { echo "Error sourcing docker_helpers.sh"; exit 1; }
+source "$SCRIPT_DIR/build_ui.sh" || { echo "Error sourcing build_ui.sh"; exit 1; }
+source "$SCRIPT_DIR/verification.sh" || { echo "Error sourcing verification.sh"; exit 1; }
 
 set -e # Exit immediately if a command exits with a non-zero status (temporarily disabled during builds)
+
+# =========================================================================
 
 # =========================================================================
 # Function to handle build errors but continue with other builds

@@ -1,10 +1,4 @@
 #!/bin/bash
-# COMMIT-TRACKING: UUID-20240803-180500-JRUN
-# COMMIT-TRACKING: UUID-20240804-091500-DLGF
-# COMMIT-TRACKING: UUID-20240804-175200-IMGV
-# COMMIT-TRACKING: UUID-20240804-182500-X11F
-# Description: Fix duplicate X11 mount points when running with jetson-containers.
-# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -12,6 +6,9 @@
 # ├── buildx/                    <- Current directory
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Fix duplicate X11 mount points when running with jetson-containers.
+# Author: Mr K / GitHub Copilot
 
 # Ensure we're running with bash
 if [ -z "$BASH_VERSION" ]; then
@@ -457,3 +454,9 @@ fi
 # Run the container with the appropriate command
 echo "Starting container..."
 $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
+
+# COMMIT-TRACKING: UUID-20240803-180500-JRUN
+# COMMIT-TRACKING: UUID-20240804-091500-DLGF
+# COMMIT-TRACKING: UUID-20240804-175200-IMGV
+# COMMIT-TRACKING: UUID-20240804-182500-X11F
+# COMMIT-TRACKING: UUID-20250421-020700-REFA
