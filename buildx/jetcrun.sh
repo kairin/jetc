@@ -139,10 +139,12 @@ echo "Run options: $RUN_OPTS"
 # Check if the image exists locally
 if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
   echo "Image $IMAGE_NAME not found locally. Pulling..."
-  jetson-containers pull "$IMAGE_NAME" || {
+  docker pull "$IMAGE_NAME" || {
     echo "Error: Failed to pull image $IMAGE_NAME"
     exit 1
   }
 fi
 
+# Run the container with jetson-containers
+echo "Starting container with jetson-containers run..."
 jetson-containers run $RUN_OPTS "$IMAGE_NAME" /bin/bash
