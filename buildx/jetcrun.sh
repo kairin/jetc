@@ -41,11 +41,13 @@ fi
 get_run_options() {
   local temp_file
   temp_file=$(mktemp)
-  local IMAGE_NAME=""
-  local ENABLE_X11="on"
-  local ENABLE_GPU="on"
-  local MOUNT_WORKSPACE="on"
-  local USER_ROOT="on"
+  
+  # Initialize variables with default values
+  IMAGE_NAME=""
+  ENABLE_X11="on"
+  ENABLE_GPU="on"
+  MOUNT_WORKSPACE="on"
+  USER_ROOT="on"
 
   # Try the external function first, fallback to embedded one
   if command -v check_install_dialog >/dev/null 2>&1; then
@@ -65,7 +67,7 @@ get_run_options() {
       echo "Operation cancelled."
       exit 1
     fi
-    IMAGE_NAME=$(sed -n 1p "$temp_file")
+    IMAGE_NAME=$(cat "$temp_file" | tr -d '\n')
     # Add debug output to help troubleshoot
     echo "Image name from dialog: '$IMAGE_NAME'"
     dialog --backtitle "Jetson Container Run" \
@@ -109,11 +111,21 @@ get_run_options() {
   [ "$USER_ROOT" = "on" ] || [ "$USER_ROOT" = "y" ] && RUN_OPTS="$RUN_OPTS --user root"
   RUN_OPTS="$RUN_OPTS -it --rm"
 
+  # Make sure to capture the image name in the main script context
+  echo "IMAGE_NAME=$IMAGE_NAME" > /tmp/jetcrun_vars.sh
+  echo "RUN_OPTS=$RUN_OPTS" >> /tmp/jetcrun_vars.sh
+
   export IMAGE_NAME
   export RUN_OPTS
 }
 
 get_run_options
+
+# Source the variables to ensure they're available in main script context
+[ -f /tmp/jetcrun_vars.sh ] && source /tmp/jetcrun_vars.sh && rm -f /tmp/jetcrun_vars.sh
+
+# Add debug line
+echo "After function, image name is: '$IMAGE_NAME'"
 
 # Verify IMAGE_NAME is set before running container
 if [ -z "$IMAGE_NAME" ] || [ "$IMAGE_NAME" = '""' ] || [ "$IMAGE_NAME" = "''" ]; then
