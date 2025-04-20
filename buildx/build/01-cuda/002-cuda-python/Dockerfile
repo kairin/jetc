@@ -83,7 +83,7 @@ RUN set -ex && \
     fi
 
 # --- Test Execution ---
-COPY cuda-python/utils.py cuda-python/test_driver.py cuda-python/test_runtime.py /tmp/cuda-python/
+COPY utils.py test_driver.py test_runtime.py /tmp/cuda-python/
 RUN echo "Running cuda-python tests..." && \
     python3 /tmp/cuda-python/test_runtime.py && \
     python3 /tmp/cuda-python/test_driver.py && \

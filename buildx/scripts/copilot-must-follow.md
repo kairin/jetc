@@ -38,6 +38,35 @@ commit_tracking:
   commit_message: "{uuid}: {summary}"
 ```
 
+## File Deletion/Consolidation Markers
+
+When a file has been consolidated or incorporated elsewhere and should be deleted:
+
+```yaml
+deletion_markers:
+  format: |
+    ######################################################################
+    # THIS FILE CAN BE DELETED
+    # Reason for deletion (e.g., "All content consolidated in ../other-file.md")
+    # You do NOT need this file anymore.
+    ######################################################################
+  placement: At the top of the file header, before the commit tracking info
+  requirements:
+    - Clearly state the file can be deleted
+    - Specify where content was moved/consolidated
+    - Include normal commit tracking after the deletion marker
+  example: |
+    ######################################################################
+    # THIS FILE CAN BE DELETED
+    # All content consolidated in ../parent-directory/main-file.md
+    # You do NOT need this file anymore.
+    ######################################################################
+    # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-XXXX
+    # Description: Marked for deletion - content moved to main file
+    # Author: Your name
+    # ...
+```
+
 ## Example Header
 
 ```sh
