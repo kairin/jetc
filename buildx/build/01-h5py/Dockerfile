@@ -5,18 +5,51 @@
 # Build args: BASE_IMAGE=jetc-base:latest
 # Test: Embedded test script.
 
-# ...existing code...
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-h5py/             <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
+# =========================================================================
+# IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
+
+#---
+# name: h5py
+# group: core
+# depends: [python, numpy]
+# test: Embedded test script
+#---
 
 ARG BASE_IMAGE=jetc-base:latest
 ARG TARGETPLATFORM=linux/arm64
 
 FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
-# ...existing code...
-
-# Install h5py
-RUN python3 -m pip install --no-cache-dir h5py==${H5PY_VERSION} \
-    && echo "check_python_package h5py ${H5PY_VERSION}" >> /opt/list_app_checks.sh
+# Install h5py with dependencies and version check
+RUN set -ex && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libhdf5-serial-dev \
+        hdf5-tools \
+        libhdf5-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    if python3 -c "import sys; exit(0 if sys.version_info < (3,9) else 1)"; then \
+        echo "Python < 3.9 => installing h5py<3.12" && \
+        H5PY_SETUP_REQUIRES=0 pip3 install "h5py<3.12"; \
+        H5PY_VERSION=$(pip3 show h5py | grep ^Version | cut -d' ' -f2); \
+    else \
+        echo "Python >= 3.9 => installing h5py>=3.12" && \
+        H5PY_SETUP_REQUIRES=0 pip3 install "h5py>=3.12"; \
+        H5PY_VERSION=$(pip3 show h5py | grep ^Version | cut -d' ' -f2); \
+    fi && \
+    echo "check_python_package h5py ${H5PY_VERSION}" >> /opt/list_app_checks.sh
 
 # Test h5py installation by embedding test.py
 RUN <<EOF > /tmp/test_h5py.py
@@ -74,5 +107,3 @@ finally:
 
 EOF
 RUN python3 /tmp/test_h5py.py && rm /tmp/test_h5py.py
-
-# ...existing code...
