@@ -33,15 +33,17 @@ request_interpretation:
 
 ## Coding Standards
 
-The coding standards and header rules for this project are defined in:
+The coding standards and footer rules for this project are defined in:
 `/home/ks/apps/jetc/buildx/scripts/copilot-must-follow.md`
 
 Please refer to that file for:
 - Commit tracking format
-- Required file headers
+- Required file footers (placed at BOTTOM of files)
 - Comment style guidelines
 - Minimal diff rules
 
-When making changes, always follow these rules to maintain consistency across the project.
-```
+When making changes, always follow these rules to maintain consistency across the project:
+- Place commit tracking information at the BOTTOM of all files, not the top
+- Use current date and time for new commit tracking UUIDs
+- Maintain consistent footer structure across all files
 

@@ -67,11 +67,11 @@ validate_commit_uuid() {
 }
 
 # =========================================================================
-# Function: Generate header for a file with commit tracking (commit block at bottom)
+# Function: Generate footer for a file with commit tracking
 # Arguments: $1 = file path, $2 = description, $3 = author, $4 = identifier (optional)
-# Returns: Generated header string
+# Returns: Generated footer string
 # =========================================================================
-generate_file_header() {
+generate_file_footer() {
   local file_path=$1
   local description=$2
   local author=$3
@@ -120,16 +120,22 @@ generate_file_header() {
   fi
   location_diagram+="${comment_start} └── ...                        <- Other project files"
 
-  # Generate the header with commit block at the bottom
-  local header=""
-  header+="${comment_start}\n"
-  header+="${comment_start} File location diagram:\n"
-  header+="${location_diagram}\n" # Already includes comment starts
-  header+="${comment_start}\n"
-  header+="${comment_start} Description: ${description}\n"
-  header+="${comment_start} Author: ${author}\n"
-  header+="${comment_start} COMMIT-TRACKING: ${uuid}\n"
-  header+="${comment_start}${comment_end}"
+  # Generate the footer 
+  local footer=""
+  footer+="\n\n${comment_start}\n"  # Add extra newlines before footer
+  footer+="${comment_start} File location diagram:\n"
+  footer+="${location_diagram}\n" # Already includes comment starts
+  footer+="${comment_start}\n"
+  footer+="${comment_start} Description: ${description}\n"
+  footer+="${comment_start} Author: ${author}\n"
+  footer+="${comment_start} COMMIT-TRACKING: ${uuid}\n"
+  footer+="${comment_start}${comment_end}"
 
-  echo -e "$header"
+  echo -e "$footer"
+}
+
+# For backward compatibility, rename and alias the old function
+generate_file_header() {
+  echo "Warning: generate_file_header is deprecated. Use generate_file_footer instead." >&2
+  generate_file_footer "$@"
 }

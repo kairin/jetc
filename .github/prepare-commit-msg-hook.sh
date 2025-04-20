@@ -67,8 +67,9 @@ for file in $files; do
     continue
   fi
 
-  # Extract UUID (assuming timestamp was updated by pre-commit)
-  updated_uuid=$(grep -E "COMMIT-TRACKING: (UUID-[0-9]{8}-[0-9]{6}-[A-Z0-9]{4})" "$file" | head -1 | sed 's/.*COMMIT-TRACKING: \(UUID-[0-9]\{8\}-[0-9]\{6\}-[A-Z0-9]\{4\}\).*/\1/')
+  # Extract UUID from footer (look in the last 30 lines)
+  updated_uuid=$(tail -n 30 "$file" | grep -E "COMMIT-TRACKING: (UUID-[0-9]{8}-[0-9]{6}-[A-Z0-9]{4})" | head -1 | sed 's/.*COMMIT-TRACKING: \(UUID-[0-9]\{8\}-[0-9]\{6\}-[A-Z0-9]\{4\}\).*/\1/')
+  
   if [ ! -z "$updated_uuid" ]; then
       unique_uuids["$updated_uuid"]=1
       echo "DEBUG: Found UUID $updated_uuid in $file" # Debug
@@ -110,3 +111,13 @@ fi
 
 echo "DEBUG: prepare-commit-msg hook FINISHED"
 exit 0
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── .github/                   <- GitHub directory
+# │   └── prepare-commit-msg-hook.sh <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Updated to search for COMMIT-TRACKING in the last 30 lines (footer check)
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250421-022100-PREP
