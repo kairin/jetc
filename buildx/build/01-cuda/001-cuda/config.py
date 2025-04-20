@@ -1,3 +1,16 @@
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 01-cuda/             <- CUDA directory
+# │   │       └── 001-cuda/        <- Current directory
+# │   │           └── config.py    <- THIS FILE
+# └── ...                        <- Other project files
 import os
 try:
     from packaging.version import Version

@@ -17,8 +17,9 @@
 # # test: test.py # Removed as test is now embedded
 #---
 # Use ARG for dynamic base image injection, with a default value
+ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 # https://github.com/numpy/numpy/issues/18131#issuecomment-755438271
 ENV OPENBLAS_CORETYPE=ARMV8

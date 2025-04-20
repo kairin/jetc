@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-100000-B4D1
-# Description: Add header, confirm test key removal (implicitly done by structure).
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:

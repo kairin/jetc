@@ -1,5 +1,4 @@
-
-from jetson_containers import PYTHON_VERSION
+from jetson_containers import PYTHON_VERSION, package
 from packaging.version import Version
 
 def python(version, requires=None) -> list:

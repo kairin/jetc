@@ -23,7 +23,7 @@
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 # --- Common ARGs ---
 ARG DEBIAN_FRONTEND=noninteractive

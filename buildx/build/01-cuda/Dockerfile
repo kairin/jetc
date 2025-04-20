@@ -19,7 +19,7 @@
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 ARG CUDA_URL \
     CUDA_DEB \
@@ -36,7 +36,6 @@ ENV CUDA_HOME="/usr/local/cuda"
 ENV NVCC_PATH="$CUDA_HOME/bin/nvcc"
 
 # filepath: /media/kkk/Apps/jetc/buildx/build/01-cuda/Dockerfile
-# ...existing code...
 ENV NVCC_PATH="$CUDA_HOME/bin/nvcc"
 
 # Define LD_LIBRARY_PATH first, inheriting from base or setting default empty
@@ -61,9 +60,6 @@ ENV NVIDIA_VISIBLE_DEVICES=all \
 
 # Prepend CUDA paths to the now-defined LD_LIBRARY_PATH
 ENV LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
-
-# Add verification checks for CUDA
-# ...existing code...
 
 # Add verification checks for CUDA
 RUN echo "# Check for CUDA" >> /tmp/cuda_checks.sh \

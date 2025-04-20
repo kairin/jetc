@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-100000-B4D1
-# Description: Update cuda_python function for unified Dockerfile and embedded tests.
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate cuda-python files into a single Dockerfile
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:

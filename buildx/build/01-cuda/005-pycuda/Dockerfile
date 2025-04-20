@@ -53,7 +53,7 @@ RUN set -ex && \
     rm -f /opt/pycuda*.whl
 
 # Test PyCUDA
-COPY pycuda/test.py /tmp/pycuda/
+COPY test.py /tmp/pycuda/
 RUN echo "Running PyCUDA test..." && \
     python3 /tmp/pycuda/test.py && \
     pip3 show pycuda && \

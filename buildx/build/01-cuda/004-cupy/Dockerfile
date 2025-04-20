@@ -74,7 +74,7 @@ RUN set -ex && \
     fi
 
 # --- Test Execution ---
-COPY cupy/test.py /tmp/cupy/
+COPY test.py /tmp/cupy/
 RUN echo "Running CuPy test..." && \
     python3 /tmp/cupy/test.py && \
     pip3 show cupy && \

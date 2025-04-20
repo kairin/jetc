@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# COMMIT-TRACKING: UUID-20240802-160500-PYCT
-# Description: Add PyCUDA test script
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: GitHub Copilot
 #
 # File location diagram:

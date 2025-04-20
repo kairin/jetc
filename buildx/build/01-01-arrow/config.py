@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update commit tracking header UUID for consistency.
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:

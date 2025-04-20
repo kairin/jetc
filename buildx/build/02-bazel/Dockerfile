@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240730-180000-LNT1
-# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -23,8 +23,9 @@
 # test: test.sh
 #---
 # Use ARG for dynamic base image injection, with a default value
+ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM ${BASE_IMAGE}
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 
 # https://github.com/bazelbuild/bazelisk
