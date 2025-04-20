@@ -1,7 +1,8 @@
 #!/bin/bash
 # COMMIT-TRACKING: UUID-20240803-180500-JRUN
 # COMMIT-TRACKING: UUID-20240804-091500-DLGF
-# Description: Make dialog implementation more robust, fix sourcing issues, and add embedded dialog check.
+# COMMIT-TRACKING: UUID-20240804-175200-IMGV
+# Description: Fix image name validation to prevent empty image name being passed to container run command.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -65,6 +66,8 @@ get_run_options() {
       exit 1
     fi
     IMAGE_NAME=$(sed -n 1p "$temp_file")
+    # Add debug output to help troubleshoot
+    echo "Image name from dialog: '$IMAGE_NAME'"
     dialog --backtitle "Jetson Container Run" \
       --title "Runtime Options" \
       --checklist "Select runtime options:" 12 60 4 \
@@ -82,6 +85,7 @@ get_run_options() {
     case "$checklist" in *"ROOT"*) USER_ROOT="on";; *) USER_ROOT="off";; esac
   else
     read -r -p "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N): " IMAGE_NAME
+    echo "Image name from prompt: '$IMAGE_NAME'"
     read -r -p "Enable X11 forwarding? (y/n) [y]: " x11
     ENABLE_X11=${x11:-y}
     read -r -p "Enable all GPUs? (y/n) [y]: " gpu
@@ -92,8 +96,9 @@ get_run_options() {
     USER_ROOT=${root:-y}
   fi
 
-  if [ -z "$IMAGE_NAME" ]; then
-    echo "Error: No image name provided. Exiting."
+  # Strengthen validation with better error message
+  if [ -z "$IMAGE_NAME" ] || [ "$IMAGE_NAME" = '""' ] || [ "$IMAGE_NAME" = "''" ]; then
+    echo "Error: No valid image name provided or empty name was entered. Exiting."
     exit 1
   fi
 
@@ -109,5 +114,14 @@ get_run_options() {
 }
 
 get_run_options
+
+# Verify IMAGE_NAME is set before running container
+if [ -z "$IMAGE_NAME" ] || [ "$IMAGE_NAME" = '""' ] || [ "$IMAGE_NAME" = "''" ]; then
+  echo "Error: Something went wrong - image name is empty. Cannot run container."
+  exit 1
+fi
+
+echo "Running container with image: $IMAGE_NAME"
+echo "Run options: $RUN_OPTS"
 
 jetson-containers run $RUN_OPTS "$IMAGE_NAME" /bin/bash
