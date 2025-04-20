@@ -87,14 +87,19 @@ update_available_images_in_env() {
 setup_build_environment || exit 1 # Note: DEFAULT_BASE_IMAGE and LATEST_SUCCESSFUL_NUMBERED_TAG removed from setup_env.sh
 load_env_variables || exit 1
 setup_buildx_builder || exit 1
-get_user_preferences || exit 1
+get_user_preferences || exit 1 # This function should export the chosen base image tag, e.g., as SELECTED_BASE_IMAGE
 
 # Arrays to track build status
 declare -a BUILT_TAGS=()
 declare -a ATTEMPTED_TAGS=() # Keep this to track attempts for final verification
 
-# Initialize the base image for the first build
-CURRENT_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
+# Initialize the base image for the first build using the user's selection
+# Ensure the variable name matches the one exported by get_user_preferences
+CURRENT_BASE_IMAGE="${SELECTED_BASE_IMAGE}"
+if [[ -z "$CURRENT_BASE_IMAGE" ]]; then
+    echo "Error: No base image was selected or determined (SELECTED_BASE_IMAGE is empty). Exiting."
+    exit 1
+fi
 echo "Initial base image set to: $CURRENT_BASE_IMAGE"
 
 # Ensure the build process continues even if individual builds fail
@@ -121,9 +126,9 @@ else
       echo "Processing numbered directory: $dir"
       echo "Using base image: $CURRENT_BASE_IMAGE"
       # Call build_folder_image WITH the current base tag argument
-      # Note: docker_utils.sh is modified to accept base tag parameter
+      # Note: docker_utils.sh is modified to accept base tag parameter.
       build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE"
-      build_status=$?
+      local build_status=$?
 
       # Note: $fixed_tag is set by build_folder_image regardless of success/failure
       ATTEMPTED_TAGS+=("$fixed_tag") # Add the tag to attempted tags
@@ -161,14 +166,14 @@ else
       echo "Processing other directory: $dir"
       # Call build_folder_image WITH the current base tag argument
       build_folder_image "$dir" "$use_cache" "$DOCKER_USERNAME" "$PLATFORM" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE"
-      build_status=$?
+      local build_status=$?
 
       ATTEMPTED_TAGS+=("$fixed_tag") # Add the tag to attempted tags
 
       if [[ $build_status -eq 0 ]]; then
           BUILT_TAGS+=("$fixed_tag")
           # Update AVAILABLE_IMAGES in .env
-          update_available_images_in_env "$fixed_tag"
+          update_available_images_in_env "$fixed_tag" 
           # Update CURRENT_BASE_IMAGE and FINAL_FOLDER_TAG for potential subsequent non-numbered builds
           CURRENT_BASE_IMAGE="$fixed_tag"
           FINAL_FOLDER_TAG="$fixed_tag"
@@ -197,7 +202,7 @@ if [[ "$skip_intermediate_push_pull" != "y" ]]; then
         PULL_ALL_FAILED=0
         for tag in "${ATTEMPTED_TAGS[@]}"; do
             echo "Pulling $tag..."
-            docker pull "$tag"
+            docker pull "$tag" || true # Ignore pull errors here, as they might be expected
             if [[ $? -ne 0 ]]; then
                 echo "Error: Failed to pull image $tag during pre-tagging verification."
                 PULL_ALL_FAILED=1
@@ -207,7 +212,7 @@ if [[ "$skip_intermediate_push_pull" != "y" ]]; then
         if [[ "$PULL_ALL_FAILED" -eq 1 ]]; then
             echo "Error: Failed to pull one or more required images before final tagging. Aborting."
             BUILD_FAILED=1
-        else
+        else 
             echo "All attempted images successfully pulled/refreshed."
         fi
     else
@@ -229,7 +234,7 @@ else
              BUILD_FAILED=1
         else
              echo "Image $FINAL_FOLDER_TAG found locally."
-        fi
+        fi 
     fi
 fi
 echo "--------------------------------------------------"
@@ -361,8 +366,8 @@ if [[ ${#BUILT_TAGS[@]} -gt 0 ]]; then
         echo "Error: One or more successfully processed images were missing locally during final check."
         # Ensure BUILD_FAILED reflects this verification failure
         if [[ "$BUILD_FAILED" -eq 0 ]]; then
-           BUILD_FAILED=1
-           echo "(Marking build as failed due to final verification failure)"
+           BUILD_FAILED=1 # Set to 1 if it was previously 0
+           echo "(Marking build as failed due to final verification failure)" 
         fi
     else
         echo "All successfully processed images verified successfully locally during final check."
