@@ -59,7 +59,7 @@ RUN export PYARROW_WITH_CUDA=1 && \
     export PYARROW_WITH_HDFS=1 && \
     export PYARROW_WITH_DATASET=1 && \
     export PYARROW_WITH_PARQUET=1 && \
-    export PYARROW_WITH_ORC=1 && \
+    # export PYARROW_WITH_ORC=1 && \ # Disabled ORC
     export PYARROW_PARALLEL=4 && \
     #export ARROW_HOME=/usr/local && \
     #export PYARROW_CMAKE_OPTIONS="-DARROW_HOME=/usr/local" && \
