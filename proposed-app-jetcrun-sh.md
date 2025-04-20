@@ -5,7 +5,7 @@
 ![image](https://github.com/user-attachments/assets/d82e58e4-5de3-4f93-a2bf-e57020d9e4ed)
 
 
-# Dialog. Specify your images.
+# Dialog. Specify your images and your options.
 
 ![image](https://github.com/user-attachments/assets/44a9b88b-143a-40c4-ae2b-cd7d1a302525)
 
