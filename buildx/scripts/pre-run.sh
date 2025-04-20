@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20240730-230000-DINJ
-# Description: Preparation script to check dependencies before running build
+# COMMIT-TRACKING: UUID-20240803-130000-ENVOPT
+# Description: Removed automatic .env creation, user will always be prompted for Docker info.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -41,17 +41,13 @@ chmod +x buildx/build.sh
 chmod +x buildx/scripts/*.sh
 chmod +x buildx/jetcrun.sh
 
-# Create .env file if it doesn't exist
+# Check for .env file (optional)
 if [ ! -f buildx/.env ]; then
-    echo "Creating default .env file..."
-    cat > buildx/.env << EOL
-# Docker registry username
-DOCKER_USERNAME=kairin
-
-# Default base image
-DEFAULT_BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
-EOL
-    echo "Created default .env file. Please edit with your settings."
+    echo "INFO: Optional 'buildx/.env' file not found."
+    echo "      You will be prompted to enter Docker Registry, Username, and Repo Prefix during the build."
+    echo "      You can create 'buildx/.env' manually to provide defaults for these prompts."
+else
+    echo "INFO: Found 'buildx/.env'. Values will be used as defaults during prompts."
 fi
 
 # Check dialog package

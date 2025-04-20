@@ -187,7 +187,15 @@ echo "--------------------------------------------------"
 # =========================================================================
 echo "--- Creating Final Timestamped Tag ---"
 if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
-    TIMESTAMPED_LATEST_TAG=$(echo "${DOCKER_USERNAME}/001:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
+    # --- Construct the tag dynamically ---
+    local tag_repo="${DOCKER_USERNAME}/${DOCKER_REPO_PREFIX}"
+    local tag_prefix=""
+    if [[ -n "$DOCKER_REGISTRY" ]]; then
+        tag_prefix="${DOCKER_REGISTRY}/"
+    fi
+    TIMESTAMPED_LATEST_TAG=$(echo "${tag_prefix}${tag_repo}:latest-${CURRENT_DATE_TIME}-1" | tr '[:upper:]' '[:lower:]')
+    # --- End tag construction ---
+
     echo "Attempting to tag $FINAL_FOLDER_TAG as $TIMESTAMPED_LATEST_TAG"
 
     # Verify base image exists locally before tagging (redundant if pre-tagging verification passed, but safe)

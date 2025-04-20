@@ -85,18 +85,20 @@ list_installed_apps() {
 # Parameters:
 # $1: folder_path - The directory containing the Dockerfile and build context.
 # $2: use_cache - 'y' or 'n' to enable/disable Docker build cache.
-# $3: docker_username - Docker Hub username.
+# $3: docker_username - Docker Hub username (now loaded from env).
 # $4: platform - Target platform (e.g., linux/arm64).
 # $5: use_squash - 'y' or 'n' to enable/disable image squashing.
 # $6: skip_intermediate_push_pull - 'y' or 'n' to skip push/pull after build.
 # $7: base_image_tag - The base image tag to use (passed as --build-arg BASE_IMAGE).
+# Uses Environment Variables:
+# DOCKER_REGISTRY, DOCKER_USERNAME, DOCKER_REPO_PREFIX
 # Sets:
-# fixed_tag (global): The generated tag for the built image (e.g., kairin/001:01-01-arrow).
+# fixed_tag (global): The generated tag for the built image (e.g., [registry/]kairin/001:01-01-arrow).
 # =========================================================================
 build_folder_image() {
     local folder_path=$1
     local use_cache=$2
-    local docker_username=$3
+    # $3 (docker_username) is now primarily loaded from env, but keep arg for potential override? No, rely on env.
     local platform=$4
     local use_squash=$5
     local skip_intermediate_push_pull=$6
@@ -104,9 +106,16 @@ build_folder_image() {
 
     local image_name
     image_name=$(basename "$folder_path")
-    # Generate the tag based on the folder name and username
+
+    # --- Construct the tag dynamically ---
+    local tag_repo="${DOCKER_USERNAME}/${DOCKER_REPO_PREFIX}"
+    local tag_prefix=""
+    if [[ -n "$DOCKER_REGISTRY" ]]; then
+        tag_prefix="${DOCKER_REGISTRY}/"
+    fi
     # Ensure tag is lowercase as required by Docker
-    fixed_tag=$(echo "${docker_username}/001:${image_name}" | tr '[:upper:]' '[:lower:]')
+    fixed_tag=$(echo "${tag_prefix}${tag_repo}:${image_name}" | tr '[:upper:]' '[:lower:]')
+    # --- End tag construction ---
 
     echo "--------------------------------------------------"
     echo "Building image from folder: $folder_path"

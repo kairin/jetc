@@ -1,7 +1,7 @@
 <!--
-# COMMIT-TRACKING: UUID-20240802-153045-RDME
-# Description: Updated README to reflect recent build system improvements
-# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20240803-133000-RDME # Replace YYYYMMDD-HHMMSS with current system time
+# Description: Updated README with current build flow including interactive setup and optional .env.
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -45,11 +45,16 @@ If you're new to this project, here's how to get started:
    ```bash
    ./scripts/pre-run.sh
    ```
-   This script will check for prerequisites and create a default `.env` file if needed.
+   This script checks for prerequisites like Docker, buildx, and the `dialog` package (used for interactive menus). It *does not* create an `.env` file anymore.
 
-3. **Set up your Docker username** (if not using pre-run script)
+3. **(Optional) Create `.env` for Defaults**
+   You can optionally create a `buildx/.env` file to provide default values for Docker details. The script will always prompt you to confirm or edit these.
    ```bash
-   echo "DOCKER_USERNAME=your-dockerhub-username" > .env
+   # Example buildx/.env content:
+   # DOCKER_REGISTRY=myregistry.example.com # Optional, leave empty for Docker Hub
+   # DOCKER_USERNAME=your-dockerhub-username
+   # DOCKER_REPO_PREFIX=001
+   # DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3 # Example
    ```
 
 4. **Run the build script**
@@ -57,11 +62,16 @@ If you're new to this project, here's how to get started:
    ./build.sh
    ```
 
-5. **Choose an option when prompted**
-   When asked "Do you want to build with cache? (y/n):", type `n` for a clean build or `y` to use cached layers (faster but may use outdated components).
+5. **Follow the Interactive Setup**:
+   *   **Step 0: Docker Information**: You'll be prompted (using a dialog menu if `dialog` is installed, otherwise text prompts) to confirm or enter your Docker Registry (optional), Username (required), and Repository Prefix (required). Defaults from `.env` will be shown if available.
+   *   **Step 1: Build Options**: Select options like using cache, squashing layers, building locally only (`--load` vs `--push`), and using the optimized builder.
+   *   **Step 2: Base Image**: Choose the base image for the *first* build stage (use default, pull default, or specify a custom one).
+   *   **Step 3: Confirmation**: Review all settings and confirm to start the build.
 
 6. **Wait for the build to complete**
-   This process will take 1-3 hours depending on your Jetson model.
+   This process will build the container stages sequentially. It may take 1-3 hours.
+
+7. **Post-Build Options**: If the build completes successfully, you'll get another menu asking if you want to run the final image, verify it, or skip.
 
 ## **What to Expect During the Build Process**
 
@@ -191,53 +201,50 @@ For complex components with multiple sub-components (like CUDA):
 The modularized build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process follows these steps:
 
 1. **Initialization and Environment Setup**:
-   - The main `build.sh` script sources modular components from `scripts/`
-   - `setup_env.sh` loads environment variables and initializes tracking
-   - `setup_buildx.sh` sets up the Docker buildx builder
+   - The main `build.sh` script sources modular components from `scripts/`.
+   - `setup_env.sh` initializes build variables (timestamp, platform, etc.) and optionally loads defaults from `buildx/.env` (Registry, Username, Prefix, Default Base Image).
+   - `setup_buildx.sh` ensures the `jetson-builder` buildx instance is ready.
 
-2. **User Input**:
-   - The script prompts the user to decide whether to build with or without cache
+2. **Interactive User Configuration**:
+   - `setup_env.sh` (via `get_user_preferences`) prompts the user through a series of steps (using `dialog` or text prompts):
+     - **Confirm/Enter Docker Details**: Registry, Username (required), Prefix (required).
+     - **Select Build Options**: Cache, Squash, Local Build (`--load` vs `--push`), Use Builder.
+     - **Choose Initial Base Image**: Use default, pull default, or specify custom.
+     - **Final Confirmation**: Review settings before starting.
+   - All confirmed settings are exported as environment variables.
 
 3. **Build Process**:
-   - Processes **numbered directories** in ascending order (01-build-essential, 02-bazel, etc.)
-   - Each step uses utility functions from `docker_utils.sh`
-   - Continues the build process even if individual components fail
+   - `build.sh` determines the build order (numbered directories first, then others).
+   - It iterates through the build directories (`build/01-*`, `build/02-*`, etc.).
+   - For each stage, it calls `build_folder_image` (`docker_utils.sh`), passing the tag of the *previous successful stage* as the `BASE_IMAGE` build argument.
+   - `build_folder_image` constructs the appropriate `docker buildx build` command based on user preferences (cache, squash, push/load) and executes it.
+   - It verifies the image exists locally after each successful build (either via `docker pull` if pushed, or directly if loaded).
+   - The script continues to the next stage even if one fails, marking the overall build as failed.
 
 4. **Verification and Tagging**:
-   - Creates a timestamped `latest` tag for the final built image
-   - Verifies all images are accessible locally
+   - After attempting all stages, if the build was successful so far, it verifies all intermediate images are available locally.
+   - It creates a final timestamped tag (e.g., `your-registry/your-user/your-prefix:latest-YYYYMMDD-HHMMSS-1`) based on the last successfully built image.
+   - This final tag is pushed to the registry, pulled back, and verified locally.
 
 5. **Post-Build Options**:
-   - Uses `post_build_menu.sh` to provide interactive options
-   - Options include interactive shell, verification, and app listing
+   - If the final tag was created successfully, `post_build_menu.sh` presents an interactive menu (dialog or text).
+   - Options include starting a shell in the final container, running verification scripts (`quick` or `full`), listing installed apps, or skipping.
+
+6. **Final Checks & Exit**:
+   - The script performs a final check to ensure all images recorded as successfully built/tagged are present locally.
+   - Exits with status 0 for success or 1 for any failure during the process.
 
 ## **Recent Improvements**
 
 Recent updates to the build system include:
 
-1.  **Modular Script Structure**:
-    *   The build script has been split into modular components for better maintainability
-    *   Each script handles a specific aspect of the build process
-    *   Scripts can be updated independently without affecting the entire system
-
-2.  **Enhanced Error Handling**:
-    *   The build process continues even when individual components fail
-    *   Failures are clearly reported, allowing the script to attempt building subsequent components
-
-3.  **Native Docker Buildx Output**:
-    *   The build script runs `docker buildx build` directly, without any interference
-    *   This ensures you see the **full, native buildx progress**, colors, and interactive output directly in your terminal
-
-4.  **Better Tag Handling & Verification**:
-    *   Improved tracking and verification of image tags throughout the build process
-
-5.  **Standardized Headers**:
-    *   All scripts include a consistent header for tracking changes (UUID, description, author, location)
-
-**Why these changes were made:**
-*   To provide a more maintainable and modular codebase
-*   To make it easier to understand and modify specific parts of the build process
-*   To provide the most intuitive build experience by showing the **native `docker buildx` output**
+1.  **Interactive Setup**:
+    *   The script now always prompts the user to confirm or enter essential Docker information (Registry, Username, Prefix) and build options at the start.
+    *   Uses the `dialog` utility for a graphical menu experience if available, falling back to text prompts otherwise.
+2.  **Optional `.env` File**:
+    *   The `buildx/.env` file is now optional and only used to provide *default* values for the initial interactive prompts. The script no longer fails if it's missing.
+3.  **Modular Script Structure**:
+    *   The build logic is split into well-defined scripts in `buildx/scripts/` for better maintainability.
 
 ## **Container Verification System**
 
@@ -333,23 +340,24 @@ For the most comprehensive and up-to-date Jetson container implementations, plea
    cd jetc/buildx
    ```
 
-2. **Set Up Environment Variables**:
-   - Create a `.env` file and set the `DOCKER_USERNAME` variable:
+2. **(Optional) Create `.env` for Defaults**:
+   - You can create `buildx/.env` to pre-fill prompts:
      ```bash
-     echo "DOCKER_USERNAME=your-dockerhub-username" > .env
+     # Example buildx/.env
+     # DOCKER_USERNAME=your-user
+     # DOCKER_REPO_PREFIX=001
      ```
 
 3. **Run the Build Script**:
-   - To build all components:
-     ```bash
-     ./build.sh
-     ```
-   - You will see the native `docker buildx` output directly in your terminal.
-   - The script will continue building components even if some fail.
+   ```bash
+   ./build.sh
+   ```
+   - Follow the interactive prompts to configure Docker details, build options, and the base image.
+   - Confirm the settings to start the build. You will see native `docker buildx` output.
 
 4. **View Build Output / Optional Logging**:
-    *   The primary build output is shown directly in the console.
-    *   If you need a log file, run the script like this:
+    *   Build progress is shown directly in the console.
+    *   To save a log file:
         ```bash
         ./build.sh | tee build_$(date +"%Y%m%d-%H%M%S").log
         ```
