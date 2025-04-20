@@ -96,10 +96,13 @@ declare -a ATTEMPTED_TAGS=() # Keep this to track attempts for final verificatio
 
 # Initialize the base image for the first build using the user's selection
 # Ensure the variable name matches the one exported by get_user_preferences
-CURRENT_BASE_IMAGE="${CURRENT_BASE_IMAGE}" # Use the variable exported by get_user_preferences
-if [[ -z "$CURRENT_BASE_IMAGE" ]]; then
-    echo "Error: No base image was selected or determined (CURRENT_BASE_IMAGE is empty). Exiting."
-    exit 1
+CURRENT_BASE_IMAGE="${SELECTED_BASE_IMAGE}"
+if [[ -z "$SELECTED_BASE_IMAGE" ]]; then
+    SELECTED_BASE_IMAGE="$CURRENT_BASE_IMAGE"
+    if [[ -z "$SELECTED_BASE_IMAGE" ]]; then
+        echo "Error: No base image was selected or determined (SELECTED_BASE_IMAGE is empty). Exiting."
+        exit 1
+    fi
 fi
 echo "Initial base image set to: $CURRENT_BASE_IMAGE"
 
