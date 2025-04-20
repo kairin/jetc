@@ -23,7 +23,7 @@
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64
 ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+FROM ${BASE_IMAGE}
 
 # --- Common ARGs ---
 ARG DEBIAN_FRONTEND=noninteractive
@@ -235,16 +235,16 @@ RUN if [ "${INSTALL_MODE}" = "pip" ]; then \
         echo "INSTALL_MODE=${INSTALL_MODE}: Skipping pip cache environment variable setup."; \
     fi
 
-# Set ENV vars from the RUN commands above so they persist
+# Set ENV vars from the RUN commands above so they persist - except credentials
 ENV TAR_INDEX_URL=${TAR_INDEX_URL} \
     PIP_INDEX_URL=${PIP_INDEX_REPO} \
     PIP_TRUSTED_HOST=${PIP_TRUSTED_HOSTS} \
     TWINE_REPOSITORY_URL=${PIP_UPLOAD_REPO} \
     TWINE_USERNAME=${PIP_UPLOAD_USER} \
-    TWINE_PASSWORD=${PIP_UPLOAD_PASS} \
+    # TWINE_PASSWORD removed - use secrets at runtime instead \
     SCP_UPLOAD_URL=${SCP_UPLOAD_URL} \
     SCP_UPLOAD_USER=${SCP_UPLOAD_USER} \
-    SCP_UPLOAD_PASS=${SCP_UPLOAD_PASS} \
+    # SCP_UPLOAD_PASS removed - use secrets at runtime instead \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=all \
     CUDAARCHS=${CUDA_ARCH_LIST} \
@@ -258,7 +258,7 @@ ENV TAR_INDEX_URL=${TAR_INDEX_URL} \
     CUDA_BIN_PATH="${CUDA_HOME}/bin" \
     CUDA_TOOLKIT_ROOT_DIR="${CUDA_HOME}" \
     PATH="$CUDA_HOME/bin:${PATH}" \
-    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}" \
+    LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /

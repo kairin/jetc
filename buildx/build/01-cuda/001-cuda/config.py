@@ -1,5 +1,12 @@
 import os
-from packaging.version import Version
+try:
+    from packaging.version import Version
+except ImportError:
+    import subprocess
+    import sys
+    print("Installing missing 'packaging' module...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "packaging"])
+    from packaging.version import Version
 
 from jetson_containers import (
     L4T_VERSION, JETPACK_VERSION, CUDA_VERSION,
