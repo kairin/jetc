@@ -1,4 +1,4 @@
-![Screenshot from 2025-04-20 14-54-05](https://github.com/user-attachments/assets/aa9080d3-a6c9-441b-9a7f-44649ad5d3f8)
+![image](https://github.com/user-attachments/assets/9c1da346-16f1-4cdf-8c27-40b72a0b703a)
 
 # Start page.
 
