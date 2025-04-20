@@ -52,34 +52,72 @@ get_run_options() {
   
   # Load previous settings and available images from .env file
   ENV_FILE="$(dirname "$(readlink -f "$0")")/.env"
-  AVAILABLE_IMAGES=""
+  AVAILABLE_IMAGES_STR="" # Renamed to avoid conflict with array name
+  DEFAULT_BASE_IMAGE="" # Ensure it's initialized
+  DEFAULT_IMAGE_NAME="" # Ensure it's initialized
+  
   if [ -f "$ENV_FILE" ]; then
-    # Source the .env file to get previous settings
+    echo "Loading settings from $ENV_FILE..."
+    # Source the .env file to get previous settings and available images
+    # Use grep and eval for safer sourcing of specific variables if needed,
+    # or ensure .env content is trusted. For simplicity, using source.
+    set -a # Automatically export variables
     # shellcheck disable=SC1090
     source "$ENV_FILE"
-    # Use the default values from .env if they exist
-    [ -n "$DEFAULT_IMAGE_NAME" ] && IMAGE_NAME="$DEFAULT_IMAGE_NAME"
-    [ -n "$DEFAULT_ENABLE_X11" ] && ENABLE_X11="$DEFAULT_ENABLE_X11"
-    [ -n "$DEFAULT_ENABLE_GPU" ] && ENABLE_GPU="$DEFAULT_ENABLE_GPU"
-    [ -n "$DEFAULT_MOUNT_WORKSPACE" ] && MOUNT_WORKSPACE="$DEFAULT_MOUNT_WORKSPACE"
-    [ -n "$DEFAULT_USER_ROOT" ] && USER_ROOT="$DEFAULT_USER_ROOT"
+    set +a # Stop exporting
     
-    # Load available images from .env
-    AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-$DEFAULT_IMAGE_NAME}" # Start with at least the default image
+    # Use the default values from .env if they exist
+    IMAGE_NAME="${DEFAULT_IMAGE_NAME:-}" # Use last used image as initial selection
+    ENABLE_X11="${DEFAULT_ENABLE_X11:-on}"
+    ENABLE_GPU="${DEFAULT_ENABLE_GPU:-on}"
+    MOUNT_WORKSPACE="${DEFAULT_MOUNT_WORKSPACE:-on}"
+    USER_ROOT="${DEFAULT_USER_ROOT:-on}"
+    
+    # Load available images string from .env
+    AVAILABLE_IMAGES_STR="${AVAILABLE_IMAGES:-}" # Load the semicolon-separated string
+    echo "  Loaded AVAILABLE_IMAGES: $AVAILABLE_IMAGES_STR"
+    echo "  Loaded DEFAULT_IMAGE_NAME: $DEFAULT_IMAGE_NAME"
+    echo "  Loaded DEFAULT_BASE_IMAGE: $DEFAULT_BASE_IMAGE"
+  else
+    echo "Warning: .env file not found at $ENV_FILE. Cannot load previous settings or available images."
   fi
   
-  # Convert semicolon-separated AVAILABLE_IMAGES to array
-  IFS=';' read -r -a image_array <<< "$AVAILABLE_IMAGES"
+  # Convert semicolon-separated AVAILABLE_IMAGES_STR to array, removing duplicates and empty entries
+  declare -A seen_images # Use associative array for quick duplicate check
+  declare -a image_array=() # Final array of unique images
   
-  # Add default base image if not already in the list
-  if [ -n "$DEFAULT_BASE_IMAGE" ] && ! [[ "$AVAILABLE_IMAGES" == *"$DEFAULT_BASE_IMAGE"* ]]; then
-    image_array+=("$DEFAULT_BASE_IMAGE")
+  # Add DEFAULT_BASE_IMAGE first if it exists and is not empty
+  if [[ -n "$DEFAULT_BASE_IMAGE" ]] && [[ ! ${seen_images["$DEFAULT_BASE_IMAGE"]} ]]; then
+      image_array+=("$DEFAULT_BASE_IMAGE")
+      seen_images["$DEFAULT_BASE_IMAGE"]=1
+      echo "  Added DEFAULT_BASE_IMAGE to list: $DEFAULT_BASE_IMAGE"
   fi
   
-  # Add the current default image if not already in the list
-  if [ -n "$DEFAULT_IMAGE_NAME" ] && ! [[ "$AVAILABLE_IMAGES" == *"$DEFAULT_IMAGE_NAME"* ]]; then
-    image_array+=("$DEFAULT_IMAGE_NAME")
+  # Add DEFAULT_IMAGE_NAME (last used) if it exists, is not empty, and not already added
+  if [[ -n "$DEFAULT_IMAGE_NAME" ]] && [[ ! ${seen_images["$DEFAULT_IMAGE_NAME"]} ]]; then
+      image_array+=("$DEFAULT_IMAGE_NAME")
+      seen_images["$DEFAULT_IMAGE_NAME"]=1
+      echo "  Added DEFAULT_IMAGE_NAME to list: $DEFAULT_IMAGE_NAME"
   fi
+  
+  # Process AVAILABLE_IMAGES_STR from .env
+  IFS=';' read -r -a env_images <<< "$AVAILABLE_IMAGES_STR"
+  for img in "${env_images[@]}"; do
+      if [[ -n "$img" ]] && [[ ! ${seen_images["$img"]} ]]; then
+          image_array+=("$img")
+          seen_images["$img"]=1
+          echo "  Added image from AVAILABLE_IMAGES: $img"
+      fi
+  done
+  
+  # Ensure the currently selected IMAGE_NAME (likely DEFAULT_IMAGE_NAME) is in the list
+  if [[ -n "$IMAGE_NAME" ]] && [[ ! ${seen_images["$IMAGE_NAME"]} ]]; then
+      image_array+=("$IMAGE_NAME")
+      seen_images["$IMAGE_NAME"]=1
+      echo "  Added current IMAGE_NAME to list: $IMAGE_NAME"
+  fi
+
+  echo "Final unique image list for selection: ${image_array[*]}"
 
   # Try the external function first, fallback to embedded one
   if command -v check_install_dialog >/dev/null 2>&1; then
@@ -96,59 +134,85 @@ get_run_options() {
     if [ ${#image_array[@]} -gt 0 ]; then
       # Build menu items for dialog
       menu_items=()
+      default_selected=0
       for ((i=0; i<${#image_array[@]}; i++)); do
-        # Set the current default image as selected
+        # Set the current IMAGE_NAME as selected by default
         status="off"
         if [ "${image_array[$i]}" = "$IMAGE_NAME" ]; then
           status="on"
+          default_selected=1
         fi
-        menu_items+=("${image_array[$i]}" "Use this image" "$status")
+        # Use index+1 as tag, image name as item, status as state
+        menu_items+=("$((i+1))" "${image_array[$i]}" "$status")
       done
+
+      # If IMAGE_NAME wasn't in the list initially, ensure something is selected
+      # Or, if IMAGE_NAME was empty, select the first item.
+      if [[ "$default_selected" -eq 0 ]] && [[ ${#menu_items[@]} -gt 0 ]]; then
+          # Select the first item if nothing else matched
+          menu_items[2]="on" # Set status of the first item to 'on'
+          IMAGE_NAME="${menu_items[1]}" # Update IMAGE_NAME to the first item's name
+          echo "  Defaulting selection to first image: $IMAGE_NAME"
+      fi
       
       # Add option for custom image
       menu_items+=("custom" "Enter a custom image name" "off")
       
-      # Show image selection dialog
+      # Show image selection dialog using radiolist with tags
       dialog --backtitle "Jetson Container Run" \
         --title "Select Container Image" \
-        --radiolist "Choose an image or enter a custom one:" 20 80 10 \
+        --radiolist "Choose an image or enter a custom one (use Space to select):" 20 80 ${#image_array[@]} \
         "${menu_items[@]}" 2>"$menu_file"
       
-      if [ $? -eq 0 ]; then
-        selection=$(cat "$menu_file")
-        if [ "$selection" = "custom" ]; then
+      exit_status=$?
+      selection_tag=$(cat "$menu_file")
+      rm -f "$menu_file"
+
+      if [ $exit_status -eq 0 ]; then
+        if [ "$selection_tag" = "custom" ]; then
           # User selected custom image option, prompt for image name
           dialog --backtitle "Jetson Container Run" \
             --title "Custom Container Image" \
             --inputbox "Enter container image name:" 8 60 \
             2>"$menu_file"
           
-          if [ $? -eq 0 ]; then
-            IMAGE_NAME=$(cat "$menu_file")
+          exit_status=$?
+          custom_image_name=$(cat "$menu_file")
+          rm -f "$menu_file"
+
+          if [ $exit_status -eq 0 ]; then
+            IMAGE_NAME="$custom_image_name"
             # Check if we should add this to available images
             dialog --backtitle "Jetson Container Run" \
               --title "Save Custom Image" \
-              --yesno "Add this image to your saved images list?" 6 60
+              --yesno "Add '$IMAGE_NAME' to your saved images list?" 6 60
             if [ $? -eq 0 ]; then
               # Add to image array if not already there
               if ! [[ " ${image_array[*]} " =~ " ${IMAGE_NAME} " ]]; then
                 image_array+=("$IMAGE_NAME")
+                echo "  Added custom image to list: $IMAGE_NAME"
               fi
             fi
           else
-            rm -f "$menu_file"
             echo "Operation cancelled."
             exit 1
           fi
         else
-          IMAGE_NAME="$selection"
+          # User selected an existing image via its tag (index+1)
+          # Find the image name corresponding to the selected tag
+          selected_index=$((selection_tag - 1))
+          if [[ "$selected_index" -ge 0 ]] && [[ "$selected_index" -lt ${#image_array[@]} ]]; then
+              IMAGE_NAME="${image_array[$selected_index]}"
+              echo "  Selected image: $IMAGE_NAME"
+          else
+              echo "Error: Invalid selection tag '$selection_tag'. Exiting."
+              exit 1
+          fi
         fi
       else
-        rm -f "$menu_file"
         echo "Operation cancelled."
         exit 1
       fi
-      rm -f "$menu_file"
     else
       # No available images, directly prompt for image name
       dialog --backtitle "Jetson Container Run" \
@@ -188,25 +252,50 @@ get_run_options() {
       done
       echo "[c] Enter a custom image name"
       
-      read -r -p "Select an option [1-${#image_array[@]}/c]: " img_choice
+      # Default to the index of the current IMAGE_NAME if found, otherwise 'c' or 1
+      default_choice="c"
+      for ((i=0; i<${#image_array[@]}; i++)); do
+          if [[ "${image_array[$i]}" == "$IMAGE_NAME" ]]; then
+              default_choice="$((i+1))"
+              break
+          fi
+      done
+      if [[ "$default_choice" == "c" ]] && [[ ${#image_array[@]} -gt 0 ]]; then
+          default_choice="1" # Default to first item if current IMAGE_NAME not found
+      fi
+
+      read -r -p "Select an option [1-${#image_array[@]}/c] (default: $default_choice): " img_choice
+      img_choice=${img_choice:-$default_choice} # Use default if empty
       
       if [[ "$img_choice" == "c" ]]; then
-        read -r -p "Enter the container image name: " IMAGE_NAME
-        read -r -p "Add this image to your saved images list? (y/n) [n]: " save_img
+        read -r -p "Enter the container image name: " custom_image_name
+        # Basic validation for custom name
+        if [[ -z "$custom_image_name" ]]; then
+            echo "Error: Custom image name cannot be empty."
+            exit 1
+        fi
+        IMAGE_NAME="$custom_image_name"
+        read -r -p "Add '$IMAGE_NAME' to your saved images list? (y/n) [n]: " save_img
         if [[ "${save_img:-n}" == "y" ]]; then
           # Add to image array if not already there
           if ! [[ " ${image_array[*]} " =~ " ${IMAGE_NAME} " ]]; then
             image_array+=("$IMAGE_NAME")
+            echo "  Added custom image to list: $IMAGE_NAME"
           fi
         fi
       elif [[ "$img_choice" =~ ^[0-9]+$ ]] && [ "$img_choice" -ge 1 ] && [ "$img_choice" -le ${#image_array[@]} ]; then
         IMAGE_NAME="${image_array[$((img_choice-1))]}"
+        echo "  Selected image: $IMAGE_NAME"
       else
-        echo "Invalid selection. Using default or prompting for manual entry."
-        read -r -p "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N): " IMAGE_NAME
+        echo "Invalid selection '$img_choice'. Exiting."
+        exit 1
+        # Fallback removed, force valid selection or exit
+        # echo "Invalid selection. Using default or prompting for manual entry."
+        # read -r -p "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N): " IMAGE_NAME
       fi
     else
-      read -r -p "Enter the container image name (e.g., kairin/001:latest-YYYYMMDD-HHMMSS-N): " IMAGE_NAME
+      # No images in list, prompt directly
+      read -r -p "No saved images found. Enter the container image name: " IMAGE_NAME
     fi
     
     echo "Image name from prompt: '$IMAGE_NAME'"
@@ -227,7 +316,6 @@ get_run_options() {
   fi
 
   # Save image name and available images to .env file for future reference
-  ENV_FILE="$(dirname "$(readlink -f "$0")")/.env"
   if [ -f "$ENV_FILE" ]; then
     # Update all settings in .env file
     for setting in "IMAGE_NAME=$IMAGE_NAME" "ENABLE_X11=$ENABLE_X11" "ENABLE_GPU=$ENABLE_GPU" "MOUNT_WORKSPACE=$MOUNT_WORKSPACE" "USER_ROOT=$USER_ROOT"; do
@@ -251,18 +339,28 @@ get_run_options() {
       echo "DEFAULT_BASE_IMAGE=$IMAGE_NAME" >> "$ENV_FILE"
     fi
     
-    # Update AVAILABLE_IMAGES
-    AVAILABLE_IMAGES=$(IFS=';'; echo "${image_array[*]}")
+    # Update AVAILABLE_IMAGES - ensure unique and non-empty
+    declare -A final_seen_images
+    declare -a final_image_array=()
+    for img in "${image_array[@]}"; do
+        if [[ -n "$img" ]] && [[ ! ${final_seen_images["$img"]} ]]; then
+            final_image_array+=("$img")
+            final_seen_images["$img"]=1
+        fi
+    done
+    AVAILABLE_IMAGES_SAVE_STR=$(IFS=';'; echo "${final_image_array[*]}") # Use the cleaned array
+
     if grep -q "^AVAILABLE_IMAGES=" "$ENV_FILE"; then
-      # Replace existing line
-      sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$AVAILABLE_IMAGES|" "$ENV_FILE"
+      # Replace existing line, use different sed delimiter
+      sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$AVAILABLE_IMAGES_SAVE_STR|" "$ENV_FILE"
     else
       # Add new line
+      echo "" >> "$ENV_FILE" # Ensure newline
       echo "# Available container images (semicolon-separated)" >> "$ENV_FILE"
-      echo "AVAILABLE_IMAGES=$AVAILABLE_IMAGES" >> "$ENV_FILE"
+      echo "AVAILABLE_IMAGES=$AVAILABLE_IMAGES_SAVE_STR" >> "$ENV_FILE"
     fi
     
-    echo "Settings saved to .env file for future use."
+    echo "Settings saved to $ENV_FILE for future use."
   else
     echo "Warning: .env file not found, cannot save settings for future reference."
   fi

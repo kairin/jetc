@@ -1,6 +1,7 @@
 <!--
 # COMMIT-TRACKING: UUID-20240803-133000-RDME # Replace YYYYMMDD-HHMMSS with current system time
-# Description: Updated README with current build flow including interactive setup and optional .env.
+# COMMIT-TRACKING: UUID-20240805-190000-RDME # Replace YYYYMMDD-HHMMSS with current system time
+# Description: Updated README to reflect .env usage for AVAILABLE_IMAGES.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -48,19 +49,32 @@ If you're new to this project, here's how to get started:
    This script checks for prerequisites like Docker, buildx, and the `dialog` package (used for interactive menus). It *does not* create an `.env` file anymore.
 
 3. **(Optional) Create `.env` for Defaults**
-   You can optionally create a `buildx/.env` file to provide default values for Docker details. The script will always prompt you to confirm or edit these.
+   You can optionally create a `buildx/.env` file to provide default values for Docker details and runtime options. The scripts will always prompt you to confirm or edit these. The `.env` file is also used to store information about successfully built images.
    ```bash
    # Example buildx/.env content:
    # DOCKER_REGISTRY=myregistry.example.com # Optional, leave empty for Docker Hub
-   # DOCKER_USERNAME=your-dockerhub-username
-   # DOCKER_REPO_PREFIX=001
-   # DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3 # Example
+   DOCKER_USERNAME=your-dockerhub-username
+   DOCKER_REPO_PREFIX=001
+   DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3 # Example, updated by build.sh
+   
+   # --- Automatically managed by scripts ---
+   # List of successfully built images (semicolon-separated)
+   AVAILABLE_IMAGES=your-user/001:01-stage:tag;your-user/001:latest-timestamp-tag
+   # Last used settings by jetcrun.sh
+   DEFAULT_IMAGE_NAME=your-user/001:latest-timestamp-tag
+   DEFAULT_ENABLE_X11=on
+   DEFAULT_ENABLE_GPU=on
+   DEFAULT_MOUNT_WORKSPACE=on
+   DEFAULT_USER_ROOT=on
    ```
 
 4. **Run the build script**
    ```bash
    ./build.sh
    ```
+   - This script builds the container stages sequentially.
+   - **New:** Upon successful build of each stage (and the final timestamped image), the script automatically adds the image tag to the `AVAILABLE_IMAGES` list in your `buildx/.env` file.
+   - It also updates `DEFAULT_BASE_IMAGE` in `.env` with the tag of the latest successfully built image.
 
 5. **Follow the Interactive Setup**:
    *   **Step 0: Docker Information**: You'll be prompted (using a dialog menu if `dialog` is installed, otherwise text prompts) to confirm or enter your Docker Registry (optional), Username (required), and Repository Prefix (required). Defaults from `.env` will be shown if available.
@@ -72,6 +86,14 @@ If you're new to this project, here's how to get started:
    This process will build the container stages sequentially. It may take 1-3 hours.
 
 7. **Post-Build Options**: If the build completes successfully, you'll get another menu asking if you want to run the final image, verify it, or skip.
+
+8. **Run a Container**:
+   ```bash
+   ./jetcrun.sh
+   ```
+   - **New:** This script now reads the `AVAILABLE_IMAGES` list from `buildx/.env`.
+   - It presents an interactive menu (dialog or text) allowing you to select from previously built images or enter a custom image name.
+   - Your selections for image name and runtime options (X11, GPU, etc.) are saved back to `.env` as defaults for the next run.
 
 ## **What to Expect During the Build Process**
 
@@ -86,25 +108,27 @@ As a beginner, here's what you'll see during the build:
 
 ## **After the Build: Using Your AI Applications**
 
-When the build completes successfully, you can:
+When the build completes successfully, you can run your containers easily:
 
-1. **Run Stable Diffusion WebUI**
+1. **Use the `jetcrun.sh` script (Recommended)**:
    ```bash
-   # Replace with your actual tag from the build
-   # Format: your-dockerhub-username/001:latest-YYYYMMDD-HHMMSS-1
-   docker run -it --rm -p 7860:7860 your-dockerhub-username/001:latest-20250418-123456-1 bash
-   cd /opt/stable-diffusion-webui
-   python launch.py --listen --port 7860
+   ./jetcrun.sh
    ```
-   Then open `http://your-jetson-ip:7860` in your browser
+   - Select the desired image from the menu (which includes images automatically added during the build).
+   - Choose runtime options (X11, GPU, Workspace Mount, Root User).
+   - The script handles constructing the `docker run` or `jetson-containers run` command.
 
-2. **Use ComfyUI**
+2. **Manual `docker run` (Example)**:
+   If you prefer manual control, you can still use `docker run`. Find the exact tag in your `buildx/.env` file under `AVAILABLE_IMAGES` or `DEFAULT_IMAGE_NAME`.
    ```bash
-   docker run -it --rm -p 8188:8188 your-dockerhub-username/001:latest-20250418-123456-1 bash
-   cd /opt/ComfyUI
-   python main.py --listen 0.0.0.0 --port 8188
+   # Example for Stable Diffusion WebUI
+   # Get the tag from .env (e.g., kairin/jetc:latest-YYYYMMDD-HHMMSS-1)
+   IMAGE_TAG="kairin/jetc:latest-..." 
+   docker run -it --rm --gpus all -p 7860:7860 -v /media/kkk:/workspace "$IMAGE_TAG" bash
+   # Inside container:
+   # cd /opt/stable-diffusion-webui
+   # python launch.py --listen --port 7860
    ```
-   Then open `http://your-jetson-ip:8188` in your browser
 
 ## **Repository Structure**
 
@@ -219,12 +243,15 @@ The modularized build system in this repository uses Docker's `buildx` to manage
    - For each stage, it calls `build_folder_image` (`docker_utils.sh`), passing the tag of the *previous successful stage* as the `BASE_IMAGE` build argument.
    - `build_folder_image` constructs the appropriate `docker buildx build` command based on user preferences (cache, squash, push/load) and executes it.
    - It verifies the image exists locally after each successful build (either via `docker pull` if pushed, or directly if loaded).
+   - **New:** If a build stage is successful, `build.sh` calls `update_available_images_in_env` to add the new tag to the `AVAILABLE_IMAGES` list in `buildx/.env`.
    - The script continues to the next stage even if one fails, marking the overall build as failed.
 
 4. **Verification and Tagging**:
    - After attempting all stages, if the build was successful so far, it verifies all intermediate images are available locally.
    - It creates a final timestamped tag (e.g., `your-registry/your-user/your-prefix:latest-YYYYMMDD-HHMMSS-1`) based on the last successfully built image.
    - This final tag is pushed to the registry, pulled back, and verified locally.
+   - **New:** The final timestamped tag is also added to `AVAILABLE_IMAGES` in `.env`.
+   - **New:** The `DEFAULT_BASE_IMAGE` in `.env` is updated to this final successful tag.
 
 5. **Post-Build Options**:
    - If the final tag was created successfully, `post_build_menu.sh` presents an interactive menu (dialog or text).
@@ -245,6 +272,11 @@ Recent updates to the build system include:
     *   The `buildx/.env` file is now optional and only used to provide *default* values for the initial interactive prompts. The script no longer fails if it's missing.
 3.  **Modular Script Structure**:
     *   The build logic is split into well-defined scripts in `buildx/scripts/` for better maintainability.
+4.  **Automatic Image Tracking**:
+    *   `build.sh` now automatically records successfully built image tags in the `AVAILABLE_IMAGES` variable within `buildx/.env`.
+5.  **Enhanced Run Script**:
+    *   `jetcrun.sh` reads the `AVAILABLE_IMAGES` from `.env` to provide a convenient selection menu for running containers.
+    *   Runtime options chosen in `jetcrun.sh` are saved back to `.env` as defaults.
 
 ## **Container Verification System**
 

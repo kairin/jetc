@@ -32,6 +32,54 @@ handle_build_error() {
 }
 
 # =========================================================================
+# Function to update AVAILABLE_IMAGES in .env
+# =========================================================================
+update_available_images_in_env() {
+    local new_tag="$1"
+    local env_file="$(dirname "$0")/.env"
+
+    if [ ! -f "$env_file" ]; then
+        echo "Warning: .env file not found at $env_file. Cannot update AVAILABLE_IMAGES."
+        return 1
+    fi
+
+    # Source the .env file safely to get the current list
+    local current_images=""
+    if grep -q "^AVAILABLE_IMAGES=" "$env_file"; then
+        # shellcheck disable=SC1090
+        current_images=$(grep "^AVAILABLE_IMAGES=" "$env_file" | cut -d'=' -f2-)
+    fi
+
+    # Check if the tag already exists
+    if [[ ";$current_images;" == *";$new_tag;"* ]]; then
+        echo "  Tag '$new_tag' already exists in AVAILABLE_IMAGES."
+        return 0
+    fi
+
+    # Append the new tag
+    local updated_images
+    if [ -z "$current_images" ]; then
+        updated_images="$new_tag"
+    else
+        updated_images="$current_images;$new_tag"
+    fi
+
+    # Update the .env file using sed
+    if grep -q "^AVAILABLE_IMAGES=" "$env_file"; then
+        # Use a different delimiter for sed in case tags contain slashes
+        sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$updated_images|" "$env_file"
+    else
+        # If the line doesn't exist, add it
+        echo "" >> "$env_file" # Ensure newline before adding
+        echo "# Available container images (semicolon-separated)" >> "$env_file"
+        echo "AVAILABLE_IMAGES=$updated_images" >> "$env_file"
+    fi
+
+    echo "  Updated AVAILABLE_IMAGES in $env_file with tag '$new_tag'."
+    return 0
+}
+
+# =========================================================================
 # Main Build Process
 # =========================================================================
 
@@ -83,6 +131,8 @@ else
       if [[ $build_status -eq 0 ]]; then
           # Add to BUILT_TAGS array
           BUILT_TAGS+=("$fixed_tag")
+          # Update AVAILABLE_IMAGES in .env
+          update_available_images_in_env "$fixed_tag"
           # Update CURRENT_BASE_IMAGE to the tag just built for the next iteration
           CURRENT_BASE_IMAGE="$fixed_tag"
           # Keep track of the last successful tag for the final timestamped tag
@@ -117,6 +167,8 @@ else
 
       if [[ $build_status -eq 0 ]]; then
           BUILT_TAGS+=("$fixed_tag")
+          # Update AVAILABLE_IMAGES in .env
+          update_available_images_in_env "$fixed_tag"
           # Update CURRENT_BASE_IMAGE and FINAL_FOLDER_TAG for potential subsequent non-numbered builds
           CURRENT_BASE_IMAGE="$fixed_tag"
           FINAL_FOLDER_TAG="$fixed_tag"
@@ -217,6 +269,8 @@ if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
                     if verify_image_exists "$TIMESTAMPED_LATEST_TAG"; then
                         echo "Final image $TIMESTAMPED_LATEST_TAG verified locally."
                         BUILT_TAGS+=("$TIMESTAMPED_LATEST_TAG")
+                        # Update AVAILABLE_IMAGES in .env for the final timestamped tag
+                        update_available_images_in_env "$TIMESTAMPED_LATEST_TAG"
                         echo "Successfully created, pushed, and pulled final timestamped tag."
                     else
                         echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -327,61 +381,54 @@ if [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "--------------------------------------------------"
     exit 1  # Exit with failure code
 else
-    # Update .env with successfully built images
-    echo "Updating .env with successfully built images..."
+    # Update .env with the latest successful build as the new default base image
+    # The AVAILABLE_IMAGES update is now handled within the build loops and final tagging
+    echo "Updating .env with latest successful build..."
     ENV_FILE="$(dirname "$0")/.env"
-    
+
     if [ -f "$ENV_FILE" ]; then
-        # Load existing AVAILABLE_IMAGES from .env
-        AVAILABLE_IMAGES=""
-        # shellcheck disable=SC1090
-        source "$ENV_FILE"
-        
-        # Convert to array (if exists)
-        IMAGES_ARRAY=()
-        if [ -n "$AVAILABLE_IMAGES" ]; then
-            IFS=';' read -r -a IMAGES_ARRAY <<< "$AVAILABLE_IMAGES"
-        fi
-        
-        # Add all built tags to array if not already there
-        for tag in "${BUILT_TAGS[@]}"; do
-            if ! [[ " ${IMAGES_ARRAY[*]} " =~ " ${tag} " ]]; then
-                IMAGES_ARRAY+=("$tag")
-                echo "  Added $tag to available images list"
-            fi
-        done
-        
-        # Convert back to semicolon-separated string
-        UPDATED_IMAGES=$(IFS=';'; echo "${IMAGES_ARRAY[*]}")
-        
-        # Update .env file
-        if grep -q "^AVAILABLE_IMAGES=" "$ENV_FILE"; then
-            # Replace existing line
-            sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$UPDATED_IMAGES|" "$ENV_FILE"
-        else
-            # Add new line
-            echo "# Available container images (semicolon-separated)" >> "$ENV_FILE"
-            echo "AVAILABLE_IMAGES=$UPDATED_IMAGES" >> "$ENV_FILE"
-        fi
-        
-        # Set the latest successful build as the new default base image
+        # Set the latest successful build (timestamped tag if available, otherwise last folder tag) as the new default base image
+        LATEST_SUCCESSFUL_TAG_FOR_DEFAULT=""
         if [[ -n "$TIMESTAMPED_LATEST_TAG" ]]; then
+             # Check if timestamped tag is in BUILT_TAGS (meaning it was successfully processed)
+             tag_exists=0
+             for t in "${BUILT_TAGS[@]}"; do
+                 [[ "$t" == "$TIMESTAMPED_LATEST_TAG" ]] && { tag_exists=1; break; }
+             done
+             if [[ "$tag_exists" -eq 1 ]]; then
+                 LATEST_SUCCESSFUL_TAG_FOR_DEFAULT="$TIMESTAMPED_LATEST_TAG"
+             fi
+        elif [[ -n "$FINAL_FOLDER_TAG" ]]; then
+             # Fallback to the last folder tag if timestamped tag wasn't created or failed
+             tag_exists=0
+             for t in "${BUILT_TAGS[@]}"; do
+                 [[ "$t" == "$FINAL_FOLDER_TAG" ]] && { tag_exists=1; break; }
+             done
+             if [[ "$tag_exists" -eq 1 ]]; then
+                 LATEST_SUCCESSFUL_TAG_FOR_DEFAULT="$FINAL_FOLDER_TAG"
+             fi
+        fi
+
+        if [[ -n "$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT" ]]; then
             if grep -q "^DEFAULT_BASE_IMAGE=" "$ENV_FILE"; then
                 # Replace existing line
-                sed -i "s|^DEFAULT_BASE_IMAGE=.*|DEFAULT_BASE_IMAGE=$TIMESTAMPED_LATEST_TAG|" "$ENV_FILE"
+                sed -i "s|^DEFAULT_BASE_IMAGE=.*|DEFAULT_BASE_IMAGE=$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT|" "$ENV_FILE"
             else
                 # Add new line
+                echo "" >> "$ENV_FILE" # Ensure newline
                 echo "# Default base image for builds" >> "$ENV_FILE"
-                echo "DEFAULT_BASE_IMAGE=$TIMESTAMPED_LATEST_TAG" >> "$ENV_FILE"
+                echo "DEFAULT_BASE_IMAGE=$LATEST_SUCCESSFUL_TAG_FOR_DEFAULT" >> "$ENV_FILE"
             fi
-            echo "  Set $TIMESTAMPED_LATEST_TAG as the new default base image"
+            echo "  Set $LATEST_SUCCESSFUL_TAG_FOR_DEFAULT as the new default base image in $ENV_FILE"
+        else
+             echo "  No successfully processed final tag found to set as default base image."
         fi
-        
-        echo "Successfully updated .env with build results"
+
+        echo "Successfully updated .env with build results (AVAILABLE_IMAGES updated during build)."
     else
-        echo "Warning: .env file not found, cannot save built images for future use."
+        echo "Warning: .env file not found, cannot save default base image for future use."
     fi
-    
+
     echo "Build, push, pull, tag, verification, and run processes completed successfully!"
     echo "--------------------------------------------------"
     exit 0  # Exit with success code
