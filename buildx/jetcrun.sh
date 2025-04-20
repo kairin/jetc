@@ -1,11 +1,6 @@
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# COMMIT-TRACKING: UUID-20240730-101530-B4C2
-# COMMIT-TRACKING: UUID-20240730-110545-C5D3
-# COMMIT-TRACKING: UUID-20240730-111015-D6E4
-# COMMIT-TRACKING: UUID-20240802-171530-E7F5
-# COMMIT-TRACKING: UUID-20240803-180000-DLGX
-# Description: Refactor to use dialog-based form for image name and runtime options, fallback to basic prompt if dialog not available.
-# Author: Mr K
+# COMMIT-TRACKING: UUID-20240803-180500-JRUN
+# Description: Use dialog-based prompt and runtime option selection for container run, fallback to basic prompt if dialog not available.
+# Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -14,13 +9,13 @@
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 
-# Check if dialog is installed
-if ! command -v dialog &> /dev/null; then
-    echo "Error: 'dialog' command not found. Please install it (e.g., sudo apt install dialog)."
-    exit 1
+#!/bin/bash
+
+SCRIPT_DIR="$(dirname "$0")/scripts"
+if [[ -f "$SCRIPT_DIR/check_install_dialog.sh" ]]; then
+  source "$SCRIPT_DIR/check_install_dialog.sh"
 fi
 
-# Function: Prompt for container run options using dialog or fallback to basic prompt
 get_run_options() {
   local temp_file=$(mktemp)
   local IMAGE_NAME=""
@@ -29,7 +24,7 @@ get_run_options() {
   local MOUNT_WORKSPACE="on"
   local USER_ROOT="on"
 
-  if command -v dialog &> /dev/null; then
+  if check_install_dialog; then
     dialog --backtitle "Jetson Container Run" \
       --title "Container Run Options" \
       --form "Enter container image and options:" 15 70 6 \
@@ -41,7 +36,6 @@ get_run_options() {
       exit 1
     fi
     IMAGE_NAME=$(sed -n 1p "$temp_file")
-    # Checklist for options
     dialog --backtitle "Jetson Container Run" \
       --title "Runtime Options" \
       --checklist "Select runtime options:" 12 60 4 \
@@ -68,13 +62,11 @@ get_run_options() {
     USER_ROOT=${root:-y}
   fi
 
-  # Validate image name
   if [[ -z "$IMAGE_NAME" ]]; then
     echo "Error: No image name provided. Exiting."
     exit 1
   fi
 
-  # Compose run options
   RUN_OPTS=""
   [[ "$ENABLE_GPU" == "on" || "$ENABLE_GPU" == "y" ]] && RUN_OPTS+=" --gpus all"
   [[ "$MOUNT_WORKSPACE" == "on" || "$MOUNT_WORKSPACE" == "y" ]] && RUN_OPTS+=" -v /media/kkk:/workspace"
@@ -89,4 +81,3 @@ get_run_options() {
 get_run_options
 
 jetson-containers run $RUN_OPTS "$IMAGE_NAME" /bin/bash
-
