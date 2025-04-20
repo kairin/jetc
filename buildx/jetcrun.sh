@@ -453,7 +453,7 @@ fi
 
 # Run the container with the appropriate command
 echo "Starting container..."
-$RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
+$RUN_CMD $FINAL_RUN_OPTS /run/jtop.sock:/run/jtop.sock "$IMAGE_NAME" /bin/bash
 
 # COMMIT-TRACKING: UUID-20240803-180500-JRUN
 # COMMIT-TRACKING: UUID-20240804-091500-DLGF
