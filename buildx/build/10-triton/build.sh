@@ -2,6 +2,17 @@
 # triton
 set -ex
 
+# Validate environment variables
+if [ -z "${TRITON_VERSION}" ]; then
+    echo "Error: TRITON_VERSION is not set"
+    exit 1
+fi
+
+if [ -z "${TRITON_BRANCH}" ]; then
+    echo "Error: TRITON_BRANCH is not set"
+    exit 1
+fi
+
 echo "============ Building triton ${TRITON_VERSION} (branch=${TRITON_BRANCH}) ============"
 
 pip3 uninstall -y triton
