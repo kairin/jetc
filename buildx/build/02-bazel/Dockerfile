@@ -1,7 +1,10 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
-#
+# COMMIT-TRACKING: UUID-20240731-100000-bazel
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM. Embed test.sh. Add verification check.
+# Author: GitHub Copilot
+# Base image: jetc-base:latest
+# Build args: BASE_IMAGE=jetc-base:latest
+# Test: Embedded test script.
+
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
@@ -23,26 +26,35 @@
 # test: test.sh
 #---
 # Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE=jetc-base:latest
 ARG TARGETPLATFORM=linux/arm64
-ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+
 FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
+ARG BAZEL_VERSION="7.2.1"
+ARG BAZEL_SHA256="511a7f6a4a8a3f3d7792a426c0b7581a141a5137444e11311851d7841141d055"
 
-# https://github.com/bazelbuild/bazelisk
-RUN BAZELISK_RELEASE=$(wget -qO- https://api.github.com/repos/bazelbuild/bazelisk/releases/latest | grep -Po '"tag_name": "\K.*?(?=")') && \
-    BAZELISK_URL="https://github.com/bazelbuild/bazelisk/releases/download/$BAZELISK_RELEASE/bazelisk-linux-arm64" && \
-    echo "BAZELISK_RELEASE=$BAZELISK_RELEASE" && echo "BAZELISK_URL=$BAZELISK_URL" && \
-    wget --quiet --show-progress --progress=bar:force:noscroll --no-check-certificate $BAZELISK_URL -O /usr/local/bin/bazel && \
-    chmod +x /usr/local/bin/bazel
+# Install Bazel
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        g++ \
+        unzip \
+        zip \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fSL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-$(dpkg --print-architecture).sh -o bazel-installer.sh \
+    && echo "${BAZEL_SHA256}  bazel-installer.sh" | sha256sum -c - \
+    && bash bazel-installer.sh \
+    && rm bazel-installer.sh \
+    && echo "check_cmd bazel --version" >> /opt/list_app_checks.sh
 
-# have bazelisk download latest bazel
-RUN bazel --version
+# Test Bazel installation by embedding test.sh logic
+RUN <<'EOF' > /tmp/test_bazel.sh
+#!/usr/bin/env bash
+set -e
+echo "testing bazel..."
+bazel --version
+echo "bazel OK"
+EOF
+RUN bash /tmp/test_bazel.sh && rm /tmp/test_bazel.sh
 
-# from source method
-#ARG BAZEL_VERSION
-
-#RUN mkdir bazel && \
-#    cd bazel && \
-#    curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-dist.zip && \
-#    unzip bazel-$BAZEL_VERSION-dist.zip && \
-#    bash ./compile.sh
+WORKDIR /
