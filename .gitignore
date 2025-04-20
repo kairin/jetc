@@ -4,12 +4,11 @@ __pycache__
 *.so
 *.deb
 data/*
-# logs
 test/data
 runner
 *.minus-github-api
 .DS_Store
-.vscode
+# .vscode
 .ninja_log
 .polyscope.ini
 .ipynb_checkpoints

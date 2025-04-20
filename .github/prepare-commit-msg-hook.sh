@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # COMMIT-TRACKING: UUID-YYYYMMDD-HHMMSS-PREP # Replace with actual timestamp and suffix
-# Description: Prepare commit message with Refs: UUIDs using prepare-commit-msg hook.
+# Description: Restore conditions and use sed to insert Refs line in prepare-commit-msg.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -10,19 +10,44 @@
 # │   └── prepare-commit-msg-hook.sh <- THIS FILE
 # └── ...                        <- Other project files
 
-# This hook modifies the commit message file ($1) to add UUID references.
-# It's triggered by Git after pre-commit and before the editor opens.
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "DEBUG: prepare-commit-msg hook STARTED"
+echo "DEBUG: Arg 1 (COMMIT_MSG_FILE): $1"
+echo "DEBUG: Arg 2 (COMMIT_SOURCE):   $2"
+echo "DEBUG: Arg 3 (COMMIT_SHA1):     $3"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
 
 COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
 COMMIT_SHA1=$3
 
-# Only run for standard commits (message source) and when not amending.
-# Also check if the message file is empty or only contains comments.
-if [ "$COMMIT_SOURCE" != "message" ] || [ -n "$COMMIT_SHA1" ] || grep -q -v -e '^#' "$COMMIT_MSG_FILE"; then
-    # If it's not a standard commit, or amending, or message file already has non-comment content, exit.
-    exit 0
-fi
+# --- Restore Conditions ---
+# Only modify if COMMIT_SOURCE indicates a template is being used (message, template, merge, squash)
+# AND if no explicit message is provided (COMMIT_SOURCE is not 'commit' from -F/-C/-c)
+# AND if the message file is currently empty or only contains comments.
+echo "DEBUG: Checking conditions..."
+case "$COMMIT_SOURCE" in
+    message|template|merge|squash)
+        # Check if message file is effectively empty (ignoring comments)
+        if ! grep -q -v -e '^#' "$COMMIT_MSG_FILE"; then
+             echo "DEBUG: Conditions met (Source: $COMMIT_SOURCE, File empty/comments only). Proceeding..."
+        else
+             echo "DEBUG: Exiting hook: Message file already has content."
+             exit 0
+        fi
+        ;;
+    commit)
+        echo "DEBUG: Exiting hook: Source is 'commit' (likely -F, -c, or -C)."
+        exit 0
+        ;;
+    *)
+        echo "DEBUG: Exiting hook: Unknown COMMIT_SOURCE '$COMMIT_SOURCE'."
+        exit 0
+        ;;
+esac
+# --- End Conditions ---
+
 
 echo "Prepare-commit-msg hook: Preparing commit message..."
 
@@ -46,6 +71,7 @@ for file in $files; do
   updated_uuid=$(grep -E "COMMIT-TRACKING: (UUID-[0-9]{8}-[0-9]{6}-[A-Z0-9]{4})" "$file" | head -1 | sed 's/.*COMMIT-TRACKING: \(UUID-[0-9]\{8\}-[0-9]\{6\}-[A-Z0-9]\{4\}\).*/\1/')
   if [ ! -z "$updated_uuid" ]; then
       unique_uuids["$updated_uuid"]=1
+      echo "DEBUG: Found UUID $updated_uuid in $file" # Debug
   fi
 done
 
@@ -57,15 +83,30 @@ if [ ${#unique_uuids[@]} -gt 0 ]; then
     done
     commit_message_uuids=${commit_message_uuids%,} # Remove trailing comma
 
-    # Read existing content (mostly comments from template)
-    existing_content=$(cat "$COMMIT_MSG_FILE")
+    # Construct the line to insert
+    refs_line="$commit_message_prefix$commit_message_uuids"
 
-    # Prepend the Refs line using printf for reliability
-    printf "%s%s\n\n%s" "$commit_message_prefix" "$commit_message_uuids" "$existing_content" > "$COMMIT_MSG_FILE"
+    # Use sed to insert the Refs line at the beginning of the file ($1)
+    echo "DEBUG: Attempting to insert line using sed: '$refs_line'" # Debug
+    # The '1i' command inserts before line 1. Need to escape special chars if any in refs_line.
+    # Assuming refs_line doesn't contain characters needing special sed escaping for now.
+    sed -i "1i\\$refs_line\n" "$COMMIT_MSG_FILE"
+    sed_status=$?
+
+    # Debug: Check write status and content
+    if [ $sed_status -eq 0 ]; then
+        echo "DEBUG: sed insert successful (exit code 0)."
+        echo "--- DEBUG: Content in $COMMIT_MSG_FILE after sed ---"
+        cat "$COMMIT_MSG_FILE"
+        echo "--- DEBUG: End Content ---"
+    else
+        echo "DEBUG: ⚠️ Error inserting line with sed (exit code $sed_status)."
+    fi
 
     echo "Prepare-commit-msg hook: Added UUID references to $COMMIT_MSG_FILE"
 else
     echo "Prepare-commit-msg hook: No UUIDs found in staged files to add."
 fi
 
+echo "DEBUG: prepare-commit-msg hook FINISHED"
 exit 0
