@@ -8,7 +8,7 @@
 
 ![image](https://github.com/user-attachments/assets/9609709d-f49e-45cd-b027-895c1c7c83f4)
 
-# Specify your own based image.
+# Specify your own base image.
 
 ![image](https://github.com/user-attachments/assets/44a9b88b-143a-40c4-ae2b-cd7d1a302525)
 
