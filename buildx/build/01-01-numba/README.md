@@ -1,6 +1,6 @@
 <!--
-# COMMIT-TRACKING: UUID-20240729-004815-A3B1
-# Description: Update links for project structure, remove external badges/images.
+# COMMIT-TRACKING: UUID-20240731-093001-PLATALL
+# Description: Clarify build-time test scope (CPU only).
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -28,6 +28,7 @@
 | &nbsp;&nbsp;&nbsp;Dependants | *Update with packages within this project that depend on numba* |
 | &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
 | &nbsp;&nbsp;&nbsp;Images | *See image details below* |
+| &nbsp;&nbsp;&nbsp;Notes | The build-time test verifies Numba's CPU JIT functionality. CUDA features require the appropriate base image and runtime environment (`--runtime nvidia`). |
 
 </details>
 
