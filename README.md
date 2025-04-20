@@ -10,7 +10,9 @@
 -->
 # JETC: Jetson Containers for Targeted Use Cases
 
-> **IMPORTANT ACKNOWLEDGMENT**: This project is based on the work from [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The primary contribution here is an implementation focused on utilizing Docker's buildx functionality for streamlined container building on Jetson devices. All credit for the original container implementations goes to the [dusty-nv team](https://github.com/dusty-nv/jetson-containers/graphs/contributors).
+> **IMPORTANT ACKNOWLEDGMENT**: This project is based on the work from [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The primary contribution here is an implementation focused on utilizing [Docker](https://www.docker.com/)'s [docker buildx build](https://docs.docker.com/build/builders/#difference-between-docker-build-and-docker-buildx-build) functionality for streamlined container building on Jetson devices.
+>
+> All credit for the original container implementations goes to the [dusty-nv and his team](https://github.com/dusty-nv/jetson-containers/graphs/contributors).
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
 
