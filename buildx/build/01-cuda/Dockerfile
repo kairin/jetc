@@ -27,7 +27,9 @@ ARG CUDA_URL \
     CUDA_ARCH_LIST \
     DISTRO
 
-COPY cuda/install.sh /tmp/cuda/install.sh
+# Copy the install script into the container
+# Assuming install.sh is directly in the build/01-cuda directory
+COPY install.sh /tmp/cuda/install.sh
 RUN /tmp/cuda/install.sh
 
 ENV CUDA_HOME="/usr/local/cuda"
