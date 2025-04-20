@@ -14,6 +14,9 @@
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
 
+![Screenshot from 2025-04-20 14-54-05](https://github.com/user-attachments/assets/bf61e6ab-12f0-45f3-860f-e65ec646871a)
+
+
 ![Jetson Containers](https://img.shields.io/badge/NVIDIA-Jetson-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 
 ## **What Can You Do With This Repo?**
