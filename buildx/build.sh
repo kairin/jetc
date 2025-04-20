@@ -327,6 +327,61 @@ if [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "--------------------------------------------------"
     exit 1  # Exit with failure code
 else
+    # Update .env with successfully built images
+    echo "Updating .env with successfully built images..."
+    ENV_FILE="$(dirname "$0")/.env"
+    
+    if [ -f "$ENV_FILE" ]; then
+        # Load existing AVAILABLE_IMAGES from .env
+        AVAILABLE_IMAGES=""
+        # shellcheck disable=SC1090
+        source "$ENV_FILE"
+        
+        # Convert to array (if exists)
+        IMAGES_ARRAY=()
+        if [ -n "$AVAILABLE_IMAGES" ]; then
+            IFS=';' read -r -a IMAGES_ARRAY <<< "$AVAILABLE_IMAGES"
+        fi
+        
+        # Add all built tags to array if not already there
+        for tag in "${BUILT_TAGS[@]}"; do
+            if ! [[ " ${IMAGES_ARRAY[*]} " =~ " ${tag} " ]]; then
+                IMAGES_ARRAY+=("$tag")
+                echo "  Added $tag to available images list"
+            fi
+        done
+        
+        # Convert back to semicolon-separated string
+        UPDATED_IMAGES=$(IFS=';'; echo "${IMAGES_ARRAY[*]}")
+        
+        # Update .env file
+        if grep -q "^AVAILABLE_IMAGES=" "$ENV_FILE"; then
+            # Replace existing line
+            sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$UPDATED_IMAGES|" "$ENV_FILE"
+        else
+            # Add new line
+            echo "# Available container images (semicolon-separated)" >> "$ENV_FILE"
+            echo "AVAILABLE_IMAGES=$UPDATED_IMAGES" >> "$ENV_FILE"
+        fi
+        
+        # Set the latest successful build as the new default base image
+        if [[ -n "$TIMESTAMPED_LATEST_TAG" ]]; then
+            if grep -q "^DEFAULT_BASE_IMAGE=" "$ENV_FILE"; then
+                # Replace existing line
+                sed -i "s|^DEFAULT_BASE_IMAGE=.*|DEFAULT_BASE_IMAGE=$TIMESTAMPED_LATEST_TAG|" "$ENV_FILE"
+            else
+                # Add new line
+                echo "# Default base image for builds" >> "$ENV_FILE"
+                echo "DEFAULT_BASE_IMAGE=$TIMESTAMPED_LATEST_TAG" >> "$ENV_FILE"
+            fi
+            echo "  Set $TIMESTAMPED_LATEST_TAG as the new default base image"
+        fi
+        
+        echo "Successfully updated .env with build results"
+    else
+        echo "Warning: .env file not found, cannot save built images for future use."
+    fi
+    
     echo "Build, push, pull, tag, verification, and run processes completed successfully!"
     echo "--------------------------------------------------"
     exit 0  # Exit with success code
