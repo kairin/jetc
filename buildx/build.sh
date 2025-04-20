@@ -1,18 +1,8 @@
 #!/bin/bash
 
-# COMMIT-TRACKING: UUID-20240730-160000-HRD1
-# Description: Remove dynamic base image logic; FROM lines are now hardcoded.
-# Author: Mr K / GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Current directory
-# │   └── build.sh               <- THIS FILE
-# └── ...                        <- Other project files
-
-# COMMIT-TRACKING: UUID-20240730-170000-DYN1
-# Description: Implement dynamic base image tracking and passing via build-arg.
+# COMMIT-TRACKING: UUID-20240802-165200-CONS
+# Description: Consolidated commit tracking headers - includes both removing hardcoded FROM lines 
+#              and implementing dynamic base image tracking via build-arg
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:

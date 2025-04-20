@@ -1,15 +1,4 @@
-<!-- COMMIT-TRACKING: UUID-20240730-022937-A1B2 -->
-<!-- Description: Summary of errors and warnings from build log log4 -->
-<!-- Author: GitHub Copilot -->
-<!-- -->
-<!-- File location diagram: -->
-<!-- jetc/                          <- Main project folder -->
-<!-- ├── buildx/                    <- Buildx directory -->
-<!-- │   ├── logs/                  <- Logs directory -->
-<!-- │   │   ├── log4               <- Input log file -->
-<!-- │   │   └── errors_and_warnings.md <- THIS FILE -->
-<!-- │   └── ...                    <- Other buildx files -->
-<!-- └── ...                        <- Other project files -->
+
 
 # Errors and Warnings Summary from log4
 
