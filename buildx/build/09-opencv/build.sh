@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Add commit-tracking header for opencv build script
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240801-150000-PLATFORM
+# Description: Optimize OpenCV build script for better performance and reliability
+# Author: GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -23,11 +23,12 @@ echo "Building opencv-python ${OPENCV_VERSION}"
 
 bash /tmp/opencv/install_deps.sh
 
+# Use shallow clone to reduce bandwidth and storage requirements
 cd /opt
 
-git clone --branch ${OPENCV_VERSION} --recursive https://github.com/opencv/opencv
-git clone --branch ${OPENCV_VERSION} --recursive https://github.com/opencv/opencv_contrib
-git clone --branch ${OPENCV_PYTHON} --recursive https://github.com/opencv/opencv-python
+git clone --depth 1 --branch ${OPENCV_VERSION} --recursive https://github.com/opencv/opencv
+git clone --depth 1 --branch ${OPENCV_VERSION} --recursive https://github.com/opencv/opencv_contrib
+git clone --depth 1 --branch ${OPENCV_PYTHON} --recursive https://github.com/opencv/opencv-python
 
 cd /opt/opencv-python/opencv
 git checkout --recurse-submodules ${OPENCV_VERSION}

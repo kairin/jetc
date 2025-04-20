@@ -1,5 +1,5 @@
-# COMMIT-TRACKING: UUID-20240801-120000-PLATFORM
-# Description: Consolidate commit-tracking headers and enforce platform in FROM.
+# COMMIT-TRACKING: UUID-20240801-170000-PLATFORM
+# Description: Consolidate installation scripts and enforce platform in FROM.
 # Author: GitHub Copilot
 #
 # File location diagram:
@@ -38,11 +38,11 @@ ARG OPENCV_VERSION \
 ENV OPENCV_VERSION=${OPENCV_VERSION} \
     OPENCV_URL=${OPENCV_URL}
     
-COPY build.sh install.sh install_deps.sh install_deb.sh patches.diff /tmp/opencv/
+COPY build.sh install_combined.sh patches.diff /tmp/opencv/
 
 # Combine RUN commands to reduce layers and clean up in the same layer
 RUN cd /tmp/opencv && \
-    (./install.sh || ./build.sh || (echo "BUILD FAILED (OpenCV ${OPENCV_VERSION})" && exit 1)) && \
+    (chmod +x ./install_combined.sh && ./install_combined.sh || ./build.sh || (echo "BUILD FAILED (OpenCV ${OPENCV_VERSION})" && exit 1)) && \
     pip3 install --no-cache-dir onnxruntime-gpu && \
     echo "check_python_pkg onnxruntime" >> /opt/list_app_checks.sh && \
     echo "check_python_pkg cv2" >> /opt/list_app_checks.sh && \
