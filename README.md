@@ -27,7 +27,7 @@ With JETC, you can:
 - **Use web interfaces** like Stable Diffusion WebUI and ComfyUI for creating AI art
 - **Build optimized containers** with all dependencies pre-configured
 - **Save hours of setup time** by avoiding manual installation of complex AI frameworks
-- planned [interface here](https://github.com/kairin/jetc/blob/main/proposed-app.md).
+- Planned [interface here](https://github.com/kairin/jetc/blob/main/proposed-app.md).
 
 ## **Quick Start Guide**
 
