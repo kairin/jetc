@@ -136,149 +136,176 @@ get_user_preferences() {
     return get_user_preferences_basic
   fi
 
-  # Create temporary file to store results
-  temp_file=$(mktemp)
-  temp_file2=$(mktemp) # Second temp file for menu
+  # Create temporary files
+  temp_options=$(mktemp)
+  temp_menu=$(mktemp)
+  temp_input=$(mktemp)
 
   # Define default states for checklist
-  local cache_default="off" # off = No = Use --no-cache
-  local squash_default="off" # off = No = Don't use --squash
-  local skip_push_pull_default="on" # on = Yes = Use --load
+  local cache_default="off" # Default: Use --no-cache
+  local squash_default="off" # Default: Don't use --squash
+  local skip_push_pull_default="on" # Default: Use --load (skip push/pull)
+  local use_builder_default="on" # Default: Use the builder
 
-  # Use --checklist for boolean options - Added visual '[ ]' for 'No'
-  # Note: Only the first checkbox [ ] is functional. The second is just text.
+  # Dialog dimensions
+  local DIALOG_HEIGHT=22
+  local DIALOG_WIDTH=85
+  local CHECKLIST_HEIGHT=5 # Number of options to display
+
+  # Use --checklist for boolean options with clearer descriptions
   dialog --backtitle "Docker Build Configuration" \
-         --title "Build Preferences ([X]=Yes, [ ]=No)" \
-         --checklist "\nSelect build options (Spacebar toggles [X], Enter confirms):" 18 85 4 \
-         "cache" "[ ] Use Build Cache   [ ] No (--no-cache)" "$cache_default" \
-         "squash" "[ ] Squash Layers     [ ] No (--squash)" "$squash_default" \
-         "skip_push_pull" "[ ] Skip Push/Pull  [ ] No (--load)" "$skip_push_pull_default" \
-         "use_builder" "[ ] Use Builder       [ ] No (Recommended: Yes)" "on" \
-         2>$temp_file2
+         --title "Build Options" \
+         --ok-label "Next" \
+         --cancel-label "Exit Build" \
+         --checklist "Use Spacebar to toggle options, Enter to confirm:" $DIALOG_HEIGHT $DIALOG_WIDTH $CHECKLIST_HEIGHT \
+         "cache" "Use Docker build cache (faster builds)" "$cache_default" \
+         "squash" "Squash image layers (experimental, smaller final image)" "$squash_default" \
+         "skip_push_pull" "Skip intermediate push/pull (use '--load')" "$skip_push_pull_default" \
+         "use_builder" "Use dedicated 'jetson-builder' (recommended)" "$use_builder_default" \
+         2>$temp_options
 
   checklist_exit_status=$?
-  selected_options=$(cat $temp_file)
+  selected_options=$(cat $temp_options)
 
-  # Process checklist results - Exit on Cancel/Esc
+  # Exit on Cancel/Esc in checklist
   if [ $checklist_exit_status -ne 0 ]; then
-    echo "Build preferences selection canceled. Exiting." >&2
-    rm -f $temp_file $temp_file2
+    echo "Build options selection canceled. Exiting." >&2
+    rm -f $temp_options $temp_menu $temp_input
     return 1 # Indicate cancellation
   fi
 
-  # Parse selections if OK was pressed
+  # Parse checklist selections
   [[ "$selected_options" == *'"cache"'* ]] && use_cache="y" || use_cache="n"
   [[ "$selected_options" == *'"squash"'* ]] && use_squash="y" || use_squash="n"
   [[ "$selected_options" == *'"skip_push_pull"'* ]] && skip_intermediate_push_pull="y" || skip_intermediate_push_pull="n"
-  # 'use_builder' is assumed yes if dialog is used
+  # 'use_builder' is assumed yes if dialog is used, but we check anyway
+  [[ "$selected_options" == *'"use_builder"'* ]] && use_builder="y" || use_builder="n"
+  if [[ "$use_builder" == "n" ]]; then
+      dialog --msgbox "Warning: Not using the dedicated 'jetson-builder' might lead to issues with NVIDIA runtime during build." 8 70
+  fi
 
-  # Base image selection using --menu - Renamed options for clarity
+
+  # Base image selection using --menu
+  local MENU_HEIGHT=4 # Number of menu items
   dialog --backtitle "Docker Build Configuration" \
          --title "Base Image Selection" \
-         --menu "Select base image action (Enter to confirm):" 18 85 3 \
-         "use_default" "Use Default (No Pull): $DEFAULT_BASE_IMAGE" \
-         "pull_default" "Pull Default: $DEFAULT_BASE_IMAGE" \
-         "specify_custom" "Specify Custom Image (Will Pull)" \
-         2>$temp_file2
+         --ok-label "Select" \
+         --cancel-label "Exit Build" \
+         --menu "Choose the base image for the first build stage:" $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
+         "use_default" "Use Default (if locally available): $DEFAULT_BASE_IMAGE" \
+         "pull_default" "Pull Default Image: $DEFAULT_BASE_IMAGE" \
+         "specify_custom" "Specify Custom Image (will attempt pull)" \
+         2>$temp_menu
 
   menu_exit_status=$?
-  BASE_IMAGE_ACTION=$(cat $temp_file2)
+  BASE_IMAGE_ACTION=$(cat $temp_menu)
 
-  # Process menu results - Exit on Cancel/Esc
+  # Exit on Cancel/Esc in menu
   if [ $menu_exit_status -ne 0 ]; then
     echo "Base image selection canceled. Exiting." >&2
-    rm -f $temp_file $temp_file2
+    rm -f $temp_options $temp_menu $temp_input
     return 1 # Indicate cancellation
   fi
 
-  # Process selection if OK was pressed
+  # Process menu selection
   case "$BASE_IMAGE_ACTION" in
     "specify_custom")
       # Ask for custom base image
       dialog --backtitle "Docker Build Configuration" \
              --title "Custom Base Image" \
-             --inputbox "Enter the full URL/tag of the base image to use and pull (Enter to confirm):" 10 85 "$DEFAULT_BASE_IMAGE" \
-             2>$temp_file # Reuse first temp file
+             --ok-label "Confirm Image" \
+             --cancel-label "Back" \
+             --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$DEFAULT_BASE_IMAGE" \
+             2>$temp_input
       input_exit_status=$?
-      CUSTOM_BASE_IMAGE=$(cat $temp_file)
+      CUSTOM_BASE_IMAGE=$(cat $temp_input)
 
-      # Exit on Cancel/Esc in input box
+      # Handle Cancel/Esc in input box (go back to menu or exit?) - Let's exit for simplicity
       if [ $input_exit_status -ne 0 ]; then
         echo "Custom base image input canceled. Exiting." >&2
-        rm -f $temp_file $temp_file2
+        rm -f $temp_options $temp_menu $temp_input
         return 1 # Indicate cancellation
       fi
 
-      # Process input if OK was pressed
+      # Validate input
       if [ -z "$CUSTOM_BASE_IMAGE" ]; then
-        dialog --msgbox "No base image entered. Reverting to default:\n$DEFAULT_BASE_IMAGE" 8 60
+        dialog --msgbox "No base image entered. Reverting to default:\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
         CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
         BASE_IMAGE_ACTION="use_default" # Revert action
       else
         echo "Attempting to use custom base image: $CUSTOM_BASE_IMAGE" >&2
         # Attempt to pull the custom image immediately
-        dialog --infobox "Pulling custom base image:\n$CUSTOM_BASE_IMAGE..." 5 70
+        dialog --infobox "Attempting to pull custom base image:\n$CUSTOM_BASE_IMAGE..." 5 $DIALOG_WIDTH
         sleep 1 # Give time to see the message
         if ! docker pull "$CUSTOM_BASE_IMAGE"; then
-          # Use --yesno for confirmation before exiting
-          if dialog --yesno "Failed to pull custom base image:\n$CUSTOM_BASE_IMAGE.\nPlease check the tag/URL.\n\nContinue with default image ($DEFAULT_BASE_IMAGE)?" 12 70; then
+          # Use --yesno for confirmation before exiting or reverting
+          if dialog --yesno "Failed to pull custom base image:\n$CUSTOM_BASE_IMAGE.\nPlease check the tag/URL.\n\nContinue build using the default image ($DEFAULT_BASE_IMAGE) instead?" 12 $DIALOG_WIDTH; then
              CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
              BASE_IMAGE_ACTION="use_default" # Revert on pull failure but continue
-             echo "Proceeding with default base image." >&2
+             echo "Proceeding with default base image after custom pull failure." >&2
+             dialog --msgbox "Proceeding with default base image:\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
           else
              echo "User chose to exit after failed custom image pull." >&2
-             rm -f $temp_file $temp_file2
+             rm -f $temp_options $temp_menu $temp_input
              return 1 # Exit if user selects No
           fi
         else
-          dialog --msgbox "Successfully pulled custom base image:\n$CUSTOM_BASE_IMAGE" 8 70
+          dialog --msgbox "Successfully pulled custom base image:\n$CUSTOM_BASE_IMAGE" 8 $DIALOG_WIDTH
           # Keep BASE_IMAGE_ACTION as specify_custom, image is set
         fi
       fi
       ;;
     "pull_default")
       # Pull the default base image
-      dialog --infobox "Pulling default base image:\n$DEFAULT_BASE_IMAGE..." 5 70
+      dialog --infobox "Attempting to pull default base image:\n$DEFAULT_BASE_IMAGE..." 5 $DIALOG_WIDTH
       sleep 1
       if ! docker pull "$DEFAULT_BASE_IMAGE"; then
-         # Use --yesno for confirmation before exiting
-         if dialog --yesno "Failed to pull default base image:\n$DEFAULT_BASE_IMAGE.\nBuild might fail if not available locally.\n\nContinue anyway?" 12 70; then
+         # Use --yesno for confirmation before exiting or continuing
+         if dialog --yesno "Failed to pull default base image:\n$DEFAULT_BASE_IMAGE.\nBuild might fail if it's not available locally.\n\nContinue anyway?" 12 $DIALOG_WIDTH; then
             echo "Proceeding without guaranteed default base image." >&2
+            dialog --msgbox "Warning: Default image not pulled. Build will proceed using local version if available." 8 $DIALOG_WIDTH
          else
             echo "User chose to exit after failed default image pull." >&2
-            rm -f $temp_file $temp_file2
+            rm -f $temp_options $temp_menu $temp_input
             return 1 # Exit if user selects No
          fi
       else
-        dialog --msgbox "Successfully pulled default base image:\n$DEFAULT_BASE_IMAGE" 8 70
+        dialog --msgbox "Successfully pulled default base image:\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
       fi
       CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE" # Set image to default after pull attempt
       ;;
     "use_default")
       # Use the default base image without pulling
       CUSTOM_BASE_IMAGE="$DEFAULT_BASE_IMAGE"
+      dialog --msgbox "Using default base image (will use local version if available):\n$DEFAULT_BASE_IMAGE" 8 $DIALOG_WIDTH
+      ;;
+    *) # Should not happen with --menu, but handle defensively
+      echo "Invalid base image action selected. Exiting." >&2
+      rm -f $temp_options $temp_menu $temp_input
+      return 1
       ;;
   esac
 
   # Clean up temp files
-  rm -f $temp_file $temp_file2
+  rm -f $temp_options $temp_menu $temp_input
 
   # Set the final CURRENT_BASE_IMAGE to be used by the build script
   CURRENT_BASE_IMAGE="$CUSTOM_BASE_IMAGE"
 
-  # Format the confirmation message
+  # Format the confirmation message - Improved clarity
   local confirmation_message
-  confirmation_message="Build will proceed with these settings:\n\n"
-  confirmation_message+="  Build Options:\n"
-  confirmation_message+="    - Use Build Cache (Yes/No): $use_cache\n"
-  confirmation_message+="    - Squash Layers (Yes/No):   $use_squash\n"
-  confirmation_message+="    - Skip Push/Pull (Yes=Load/No=Push): $skip_intermediate_push_pull\n\n"
-  confirmation_message+="  Base Image:\n"
-  confirmation_message+="    - Action Selected: $BASE_IMAGE_ACTION\n"
-  confirmation_message+="    - Image To Be Used: $CURRENT_BASE_IMAGE"
+  confirmation_message="Build Configuration Summary:\n\n"
+  confirmation_message+="Build Options:\n"
+  confirmation_message+="  - Use Cache:          $( [[ "$use_cache" == "y" ]] && echo "Yes" || echo "No (--no-cache)" )\n"
+  confirmation_message+="  - Squash Layers:      $( [[ "$use_squash" == "y" ]] && echo "Yes (--squash)" || echo "No" )\n"
+  confirmation_message+="  - Skip Push/Pull:   $( [[ "$skip_intermediate_push_pull" == "y" ]] && echo "Yes (--load)" || echo "No (--push)" )\n"
+  confirmation_message+="  - Use Builder:        $( [[ "$use_builder" == "y" ]] && echo "Yes (jetson-builder)" || echo "No (Default Docker)" )\n\n"
+  confirmation_message+="Base Image for First Stage:\n"
+  confirmation_message+="  - Action:             $BASE_IMAGE_ACTION\n"
+  confirmation_message+="  - Image Tag:          $CURRENT_BASE_IMAGE"
 
   # Ask for final confirmation before proceeding
-  if ! dialog --yesno "$confirmation_message\n\nProceed with build?" 22 85; then
+  if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\n\nProceed with build?" 20 $DIALOG_WIDTH; then
       echo "Build canceled by user at confirmation screen. Exiting." >&2
       return 1 # Indicate cancellation
   fi
