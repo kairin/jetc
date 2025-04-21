@@ -47,3 +47,5 @@ When making changes, always follow these rules to maintain consistency across th
 - Use current date and time for new commit tracking UUIDs
 - Maintain consistent footer structure across all files
 
+See `/workspaces/jetc/INSTRUCTIONS.md` for all coding, commit tracking, and minimal diff rules for this project.
+
