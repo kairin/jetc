@@ -1,14 +1,4 @@
 #!/bin/bash
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Current directory
-# │   └── jetcrun.sh             <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Fix duplicate X11 mount points when running with jetson-containers.
-# Author: Mr K / GitHub Copilot
 
 # Ensure we're running with bash
 if [ -z "$BASH_VERSION" ]; then
@@ -455,6 +445,16 @@ fi
 echo "Starting container..."
 $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── jetcrun.sh             <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Interactive script to launch Jetson containers with selectable images and runtime options. Reads and updates .env for persistent config.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-JRUN
 # COMMIT-TRACKING: UUID-20240803-180500-JRUN
 # COMMIT-TRACKING: UUID-20240804-091500-DLGF
 # COMMIT-TRACKING: UUID-20240804-175200-IMGV

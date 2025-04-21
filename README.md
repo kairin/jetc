@@ -1,12 +1,20 @@
 <!--
 # COMMIT-TRACKING: UUID-20240803-133000-RDME # Replace YYYYMMDD-HHMMSS with current system time
 # COMMIT-TRACKING: UUID-20240805-190000-RDME # Replace YYYYMMDD-HHMMSS with current system time
+# COMMIT-TRACKING: UUID-20250422-064000-RDME
 # Description: Updated README to reflect .env usage for AVAILABLE_IMAGES.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- THIS FILE
+# ├── buildx/                    <- Build system and scripts
+# │   ├── build/                 <- Build stages and Dockerfiles
+# │   ├── build.sh               <- Main build orchestrator
+# │   ├── jetcrun.sh             <- Container run utility
+# │   └── scripts/               <- Modular build scripts
+# ├── .github/                   <- Copilot and git integration
+# │   └── copilot-instructions.md<- Coding standards and commit tracking
 # └── ...                        <- Other project files
 -->
 # JETC: Jetson Containers for Targeted Use Cases

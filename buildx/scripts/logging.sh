@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── logging.sh         <- THIS FILE
-# └── ...                        <- Other project files
-
 # Initialize logging
 init_logging() {
   local log_dir="$1"
@@ -98,6 +91,6 @@ generate_error_summary() {
 # │       └── logging.sh         <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Logging functions for capturing build output to both terminal and log files
-# Author: GitHub Copilot
-# COMMIT-TRACKING: UUID-20250421-022500-LOGS
+# Description: Logging functions for capturing build output to both terminal and log files.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-LOGS

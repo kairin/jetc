@@ -1,15 +1,4 @@
 #!/bin/bash
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Current directory
-# │   └── build.sh               <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Consolidated commit tracking headers - includes both removing hardcoded FROM lines
-# and implementing dynamic base image tracking via build-arg
-# Author: Mr K / GitHub Copilot
 
 # Import utility scripts
 SCRIPT_DIR="$(dirname "$0")/scripts"
@@ -401,3 +390,14 @@ fi
 
 # COMMIT-TRACKING: UUID-20250421-020700-REFA
 generate_error_summary
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Main build orchestrator for Jetson container buildx system. Modular, interactive, and tracks all build stages and tags.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-BLDX

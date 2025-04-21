@@ -1,15 +1,4 @@
 #!/bin/bash
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── utils.sh           <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: General utility functions (dialog check, datetime).
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250421-020700-REFA
 
 # =========================================================================
 # Function: Check if dialog is installed, optionally install it.
@@ -61,3 +50,14 @@ get_system_datetime() {
   echo $(date +"%Y%m%d-%H%M%S")
   return 0
 }
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── utils.sh           <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: General utility functions for dialog, datetime, and system checks.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-UTIL

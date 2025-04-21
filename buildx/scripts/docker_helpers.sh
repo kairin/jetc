@@ -1,15 +1,4 @@
 #!/bin/bash
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── docker_helpers.sh  <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Helper functions for Docker build, tag, push, pull, and verification operations.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250421-020700-REFA
 
 # =========================================================================
 # Function: Setup Docker buildx builder for Jetson
@@ -334,3 +323,14 @@ build_folder_image() {
         return 1 # Failure
     fi
 }
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── docker_helpers.sh  <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Docker build, tag, push, pull, and verification helpers for modular Jetson container builds.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-DOCK

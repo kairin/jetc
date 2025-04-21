@@ -1,13 +1,3 @@
-<!--
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── copilot-must-follow.md <- THIS FILE
-# └── ...                        <- Other project files
--->
-
 # File Footer Rules
 
 ## Commit Tracking Format
@@ -143,6 +133,16 @@ FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 # COMMIT-TRACKING: UUID-20250421-022100-XXXX
 ```
 
-# COMMIT-TRACKING: UUID-20250421-022100-CFMT
-# Description: Updated commit tracking format to place headers at bottom of files
+<!--
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── copilot-must-follow.md <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Coding standards and commit tracking/footer rules for Jetson container project.
 # Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-CFMT
+-->

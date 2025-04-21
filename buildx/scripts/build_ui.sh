@@ -1,12 +1,5 @@
 #!/bin/bash
 #
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── build_ui.sh        <- THIS FILE
-# └── ...                        <- Other project files
-#
 # Description: UI functions for the build process (dialogs, prompts, .env handling).
 # Author: Mr K / GitHub Copilot
 # COMMIT-TRACKING: UUID-20250421-020700-REFA
@@ -833,3 +826,14 @@ show_post_build_menu() {
     return $?
   fi
 }
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── build_ui.sh        <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-BUIU

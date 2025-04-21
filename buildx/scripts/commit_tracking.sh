@@ -1,15 +1,4 @@
 #!/bin/bash
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── commit_tracking.sh <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Functions for generating and managing commit tracking UUIDs and headers.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250421-020700-REFA
 
 # Source utility functions (needed for get_system_datetime)
 SCRIPT_DIR_CT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -139,3 +128,14 @@ generate_file_header() {
   echo "Warning: generate_file_header is deprecated. Use generate_file_footer instead." >&2
   generate_file_footer "$@"
 }
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── commit_tracking.sh <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Functions for generating and managing commit tracking UUIDs and file footers.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-CMTT

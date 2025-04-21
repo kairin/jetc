@@ -1,15 +1,4 @@
 #!/bin/bash
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── verification.sh    <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Functions for verifying installed applications and packages inside a container.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250421-020700-REFA
 
 # Define colors for output (used by check functions)
 GREEN='\033[0;32m'
@@ -244,13 +233,13 @@ verify_container_apps() {
   echo "Running verification for image $tag (mode: $verify_mode)..." >&2
 
   # Check if docker is available
-  if ! command -v docker &> /dev/null; then
+  if (! command -v docker &> /dev/null); then
       echo "Error: Docker command not found." >&2
       return 1
   fi
 
   # Check if image exists locally
-  if ! docker image inspect "$tag" >/dev/null 2>&1; then
+  if (! docker image inspect "$tag" >/dev/null 2>&1); then
       echo "Error: Image $tag not found locally." >&2
       return 1
   fi
@@ -306,3 +295,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]] || [[ "$1" == "run_checks" ]]; then
         exit 1
     fi
 fi
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── verification.sh    <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Verification functions for checking installed apps and packages in Jetson containers.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250422-064000-VERF
