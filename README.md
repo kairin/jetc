@@ -30,6 +30,8 @@ This repository provides ready-to-use Docker containers for NVIDIA Jetson device
 
 ![Jetson Containers](https://img.shields.io/badge/NVIDIA-Jetson-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 
+---
+
 ## **What Can You Do With This Repo?**
 
 With JETC, you can:
@@ -38,7 +40,14 @@ With JETC, you can:
 - **Use web interfaces** like Stable Diffusion WebUI and ComfyUI for creating AI art
 - **Build optimized containers** with all dependencies pre-configured
 - **Save hours of setup time** by avoiding manual installation of complex AI frameworks
-- Planned [interface for build.sh](https://github.com/kairin/jetc/blob/main/proposed-app-build-sh.md), [interface for jetcrun.sh](https://github.com/kairin/jetc/blob/main/proposed-app-jetcrun-sh.md)
+- **Interactively build and run containers** using user-friendly scripts
+- **Track and verify built images** with robust .env management and verification tools
+- **Easily select and launch containers** with runtime options and persistent defaults
+- **Access detailed logs and troubleshooting guides** for every build step
+
+Planned [interface for build.sh](https://github.com/kairin/jetc/blob/main/proposed-app-build-sh.md), [interface for jetcrun.sh](https://github.com/kairin/jetc/blob/main/proposed-app-jetcrun-sh.md)
+
+---
 
 ## **Quick Start Guide**
 
@@ -143,20 +152,34 @@ When the build completes successfully, you can run your containers easily:
 ### **Root Structure**
 
 ```
-.
-├── README.md                        # This file - repository documentation
-├── buildx/                          # Main directory containing build system
-    ├── build/                       # Folder containing build directories for each component
-    ├── build.sh                     # Main build script for orchestrating all builds
-    ├── scripts/                     # Directory containing modular script components
-    │   ├── docker_utils.sh          # Docker utility functions
-    │   ├── setup_env.sh             # Environment setup functions
-    │   ├── setup_buildx.sh          # Docker buildx setup functions
-    │   ├── post_build_menu.sh       # Post-build menu options
-    │   ├── generate_app_checks.sh   # Helper script for generating application verification
-    │   └── list_installed_apps.sh   # Script for listing installed applications within a container
-    ├── jetcrun.sh                   # Utility script for running Jetson containers
-    └── logs/                        # Directory containing build logs
+jetc/
+├── README.md
+├── proposed-app-build-sh.md
+├── proposed-app-jetcrun-sh.md
+├── .env
+├── .gitattributes
+├── .gitignore
+├── .github/
+│   ├── copilot-instructions.md
+│   ├── git-template-setup.md
+│   ├── install-hooks.sh
+│   ├── pre-commit-hook.sh
+│   ├── prepare-commit-msg-hook.sh
+│   ├── setup-git-template.sh
+│   └── vs-code-snippets-guide.md
+├── buildx/
+│   ├── build/
+│   ├── build.sh
+│   ├── jetcrun.sh
+│   ├── scripts/
+│   │   ├── build_ui.sh
+│   │   ├── commit_tracking.sh
+│   │   ├── copilot-must-follow.md
+│   │   ├── docker_helpers.sh
+│   │   ├── logging.sh
+│   │   ├── utils.sh
+│   │   └── verification.sh
+│   └── logs/
 ```
 
 ### **Modular Script Structure**
@@ -169,28 +192,28 @@ The build system has been modularized for better maintainability:
    - Manages the overall build process
    - Handles errors and final tagging
 
-2. **`buildx/scripts/docker_utils.sh`** - Contains Docker utility functions:
+2. **`buildx/scripts/docker_helpers.sh`** - Contains Docker utility functions:
    - `verify_image_exists()` - Check if a Docker image exists locally
    - `verify_container_apps()` - Run verification inside a container
    - `list_installed_apps()` - List installed applications in a container
    - `build_folder_image()` - Build, push and pull a Docker image
 
-3. **`buildx/scripts/setup_env.sh`** - Handles environment setup:
+3. **`buildx/scripts/build_ui.sh`** - Handles environment setup and interactive UI:
    - `load_env_variables()` - Load environment variables from .env file
    - `setup_build_environment()` - Initialize build environment variables
    - `get_user_preferences()` - Get user input for build preferences
 
-4. **`buildx/scripts/setup_buildx.sh`** - Sets up Docker buildx:
-   - `setup_buildx_builder()` - Create or use Docker buildx builder
+4. **`buildx/scripts/utils.sh`** - General utility functions:
+   - Dialog checking, datetime retrieval, etc.
 
-5. **`buildx/scripts/post_build_menu.sh`** - Post-build options:
-   - `show_post_build_menu()` - Interactive menu for post-build operations
-
-6. **`buildx/scripts/list_installed_apps.sh`** - Container verification:
+5. **`buildx/scripts/verification.sh`** - Container verification:
    - Functions for checking installed applications in containers
 
-7. **`buildx/scripts/generate_app_checks.sh`** - Generates verification code:
-   - Creates checks based on Dockerfiles for application verification
+6. **`buildx/scripts/commit_tracking.sh`** - Commit tracking helpers
+
+7. **`buildx/scripts/logging.sh`** - Logging helpers
+
+---
 
 ### **`build/` Directory Structure**
 
@@ -220,6 +243,8 @@ The modularized build script (`build.sh`) processes directories in numerical ord
 2. Each numbered directory must contain a `Dockerfile` at its root
 3. For directories with sub-components (like `01-cuda`), a main `Dockerfile` is required for the build script to work correctly
 
+---
+
 ### **Special Notes for CUDA and Other Complex Components**
 
 For complex components with multiple sub-components (like CUDA):
@@ -227,6 +252,8 @@ For complex components with multiple sub-components (like CUDA):
 1. Create a main `Dockerfile` in the component directory (e.g., `01-cuda/Dockerfile`)
 2. This main Dockerfile should install core functionality and set up the environment
 3. Sub-components can be built separately in later steps (e.g., through separate build entries)
+
+---
 
 ## **How the Modular Build System Works**
 
