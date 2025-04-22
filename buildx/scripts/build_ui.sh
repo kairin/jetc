@@ -427,6 +427,10 @@ get_user_preferences() {
           else
             dialog --msgbox "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
             if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+            # --- ADD confirmation step here ---
+            if ! dialog --yesno "Use this image as the base image for the first build stage?\\n\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH; then
+              continue # Loop back to base image selection
+            fi
           fi
         fi
         ;;
@@ -444,6 +448,10 @@ get_user_preferences() {
         else
           dialog --msgbox "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
           if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+          # --- ADD confirmation step here ---
+          if ! dialog --yesno "Use this image as the base image for the first build stage?\\n\\n$current_default_base_image_display" 8 $DIALOG_WIDTH; then
+            continue # Loop back to base image selection
+          fi
         fi
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
         ;;
