@@ -1,89 +1,73 @@
 # Proposed Interface for build.sh (Jetson Containers)
 
-This document illustrates a proposed user interface and workflow for the `build.sh` script in the Jetson container build system. The goal is to provide a clear, interactive, and user-friendly experience for building complex multi-stage Docker images on Jetson devices.
+> **This document reflects the modular build steps as described in the README ("Modular Build Steps (Reflected in build.sh and scripts/)") and the actual build.sh workflow.**
 
 ---
 
-## Start Page
+## Modular Build Steps (as in README and build.sh)
 
-![Screenshot from 2025-04-20 14-54-05](https://github.com/user-attachments/assets/aa9080d3-a6c9-441b-9a7f-44649ad5d3f8)
+1. **Environment Setup and .env Loading**  
+   - Script: `buildx/scripts/build_env_setup.sh`  
+   - Initializes build variables and loads `.env` for defaults and image tracking.
 
-The build process begins with a welcoming start page, introducing the user to the Jetson container build system and summarizing the available options. This page helps orient new users and provides a clear entry point for the build workflow.
+2. **Builder Setup**  
+   - Script: `buildx/scripts/build_builder.sh`  
+   - Ensures the buildx builder is ready for multi-arch builds.
 
----
+3. **User Preferences Dialog**  
+   - Script: `buildx/scripts/build_prefs.sh`  
+   - Interactive dialog (or text prompts) for Docker info, build options, base image, and confirmation.
 
-## Interactive Dialog Workflow
+4. **Build Order Determination**  
+   - Script: `buildx/scripts/build_order.sh`  
+   - Determines which build stages/folders to process based on user selection.
 
-### Step 1: Build Stage Selection
+5. **Building Stages**  
+   - Script: `buildx/scripts/build_stages.sh`  
+   - Builds selected numbered and other directories in order, updating `.env` with successful tags.
 
-![image](https://github.com/user-attachments/assets/af3765f6-3d56-4f9a-9b89-9f4f610377b9)
+6. **Tagging and Pushing the Final Image**  
+   - Script: `buildx/scripts/build_tagging.sh`  
+   - Tags the last successful image with a timestamp and pushes it if required.
 
-The user is presented with a checklist of available build stages (numbered directories). They can select which stages to include in the build process, allowing for partial or full builds as needed. This enables advanced users to skip unnecessary stages or resume from a failed step.
+7. **Post-Build Options**  
+   - Script: `buildx/scripts/build_post.sh`  
+   - Presents menu to run, verify, or skip actions on the final image.
 
-### Step 2: Build Options
-
-![image](https://github.com/user-attachments/assets/9609709d-f49e-45cd-b027-895c1c7c83f4)
-
-A dialog allows the user to configure build options such as:
-- Use of build cache (for faster builds)
-- Squashing image layers (to reduce final image size)
-- Local build only (skip push/pull to registry)
-- Use of the optimized Jetson builder
-
-These options provide flexibility for both development and production builds.
-
-### Step 3: Base Image Selection
-
-![image](https://github.com/user-attachments/assets/44a9b88b-143a-40c4-ae2b-cd7d1a302525)
-
-The user can choose to:
-- Use the default base image (from `.env` or previous build)
-- Pull the default base image from the registry
-- Specify a custom base image (with validation and pull attempt)
-
-This ensures that the build always starts from a known, validated base image.
-
-### Step 4: Confirmation
-
-A summary dialog displays all selected options and stages, allowing the user to confirm or go back and edit their choices. This step helps prevent mistakes and ensures the user is aware of the build configuration.
+8. **Final Verification and .env Update**  
+   - Script: `buildx/scripts/build_verify.sh`  
+   - Verifies all built images exist locally and updates `.env` with the latest successful tag.
 
 ---
 
-## Pulling the Base Image
+## Interactive Dialog Workflow (Step 3: build_prefs.sh)
 
-![image](https://github.com/user-attachments/assets/55af5c86-222f-415d-aea8-b090dd4d9833)
+### Step 1: Build Stage Selection  
+- User selects which build stages to include (from available folders).
 
-If the user chooses to pull a base image (default or custom), the script attempts to pull it and provides feedback on success or failure. This step ensures that the build will not fail later due to missing images.
+### Step 2: Build Options  
+- User configures cache, squash, local build, and builder options.
 
----
+### Step 3: Base Image Selection  
+- User chooses to use default, pull default, or specify a custom base image.
 
-## Automated Build Process
-
-Once confirmed, the script orchestrates the build process:
-- Sequentially builds selected stages, passing the correct base image to each
-- Tracks successful builds and tags
-- Updates `.env` with available images and the latest successful tag
-- Provides detailed logging and error summaries
-
-The build process is robust and continues even if some stages fail, allowing for partial success and easy recovery.
+### Step 4: Confirmation  
+- User reviews all settings before starting the build.
 
 ---
 
-## Post-Build Options
+## Automated Build Process (Steps 4–8)
 
-After the build completes, the user is presented with options to:
-- Start a shell in the final image
-- Run quick or full verification of installed applications
-- List all installed packages
-- Skip further actions
-
-These options make it easy to verify and use the built images immediately.
+- Sequentially builds selected stages, passing the correct base image to each.
+- Tracks successful builds and tags in `.env`.
+- Updates `.env` with available images and the latest successful tag.
+- Provides detailed logging and error summaries.
+- Offers post-build options and final verification.
 
 ---
 
-## Summary
-
-This proposed interface aims to make the Jetson container build process accessible, robust, and transparent, even for users new to Docker or Jetson development. The interactive dialogs, clear feedback, and automated tracking of built images ensure a smooth experience from start to finish.
+**Note:**  
+This document is kept in sync with the modular build steps and script structure described in the README and implemented in `build.sh`.
 
 ---
 

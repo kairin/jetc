@@ -1,6 +1,6 @@
 # Proposed Interface for jetcrun.sh (Jetson Containers)
 
-This document illustrates a proposed user interface and workflow for the `jetcrun.sh` script, which is used to launch Jetson containers with various runtime options.
+> **This document reflects the image selection and runtime options as described in the README ("After the Build: Using Your AI Applications") and the modular build system's `.env` image tracking.**
 
 ---
 
@@ -12,33 +12,38 @@ The script starts with a clear introduction, guiding the user through the proces
 
 ---
 
-## Image Selection Dialog
+## Image Selection Dialog (Reflects .env AVAILABLE_IMAGES and LOCAL_DOCKER_IMAGES)
 
-![image](https://github.com/user-attachments/assets/d82e58e4-5de3-4f93-a2bf-e57020d9e4ed)
-
-The user is presented with a menu of available images (populated from `.env` and previous builds). They can select an image or enter a custom image name. This menu makes it easy to reuse previously built images and reduces the risk of typos.
+- The script presents a menu of available images, populated from:
+  - `AVAILABLE_IMAGES` (built and tracked by build.sh)
+  - `LOCAL_DOCKER_IMAGES` (all images found by `docker images`)
+  - `DEFAULT_IMAGE_NAME` and `DEFAULT_BASE_IMAGE` (for convenience)
+- User can select from the menu or enter a custom image name.
+- The selected image is saved back to `.env` for future runs.
 
 ---
 
 ## Runtime Options Dialog
 
-![image](https://github.com/user-attachments/assets/841fdabf-c0d1-495b-b460-552fbfe91df9)
-
-A checklist allows the user to enable or disable runtime options such as:
-- X11 forwarding (for GUI applications)
-- GPU access (for CUDA-enabled workloads)
-- Mounting the workspace directory
-- Running as root user
-
-These options are essential for customizing the container environment for different use cases.
+- User can enable/disable:
+  - X11 forwarding
+  - GPU access
+  - Workspace mount
+  - Root user
+- Options are saved to `.env` as defaults for next run.
 
 ---
 
 ## Launching the Container
 
-After confirming their selections, the script constructs the appropriate `docker run` or `jetson-containers run` command, ensuring all options are correctly applied and avoiding duplicate mounts or conflicting settings.
+- The script constructs the appropriate `docker run` or `jetson-containers run` command.
+- Checks if the selected image exists locally; attempts to pull if not.
+- Provides clear feedback and saves all selections to `.env`.
 
-The script also checks if the selected image exists locally, attempts to pull it if not, and provides clear feedback on the process. This helps prevent runtime errors due to missing images.
+---
+
+**Note:**  
+This workflow matches the modular build and run system described in the README and implemented in `build.sh` and `jetcrun.sh`.
 
 ---
 

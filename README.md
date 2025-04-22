@@ -238,16 +238,42 @@ jetc/
 ### **How to Use the Modular Build System**
 
 - Run `./build.sh` as before. It will sequentially source and execute each modular script for:
-  1. Environment setup and .env loading
-  2. Builder setup
-  3. User preferences dialog
-  4. Build order determination
-  5. Building stages
-  6. Tagging and pushing the final image
-  7. Post-build options
-  8. Final verification and .env update
+  1. **Environment setup and .env loading**  
+     (`buildx/scripts/build_env_setup.sh`)
+  2. **Builder setup**  
+     (`buildx/scripts/build_builder.sh`)
+  3. **User preferences dialog**  
+     (`buildx/scripts/build_prefs.sh`)
+  4. **Build order determination**  
+     (`buildx/scripts/build_order.sh`)
+  5. **Building stages**  
+     (`buildx/scripts/build_stages.sh`)
+  6. **Tagging and pushing the final image**  
+     (`buildx/scripts/build_tagging.sh`)
+  7. **Post-build options**  
+     (`buildx/scripts/build_post.sh`)
+  8. **Final verification and .env update**  
+     (`buildx/scripts/build_verify.sh`)
 
 - Each modular script is responsible for a single logical step, and all persistent state is passed via environment variables or `.env`.
+
+---
+
+### **Modular Build Steps (Reflected in build.sh and scripts/)**
+
+| Step | Script | Description |
+|------|--------|-------------|
+| 1 | `build_env_setup.sh` | Setup environment variables and load `.env` |
+| 2 | `build_builder.sh` | Ensure buildx builder is ready |
+| 3 | `build_prefs.sh` | Interactive user preferences dialog |
+| 4 | `build_order.sh` | Determine build order and selected folders |
+| 5 | `build_stages.sh` | Build selected numbered and other directories |
+| 6 | `build_tagging.sh` | Tag and push the final image |
+| 7 | `build_post.sh` | Post-build menu/options |
+| 8 | `build_verify.sh` | Final verification and update `.env` |
+
+**Note:**  
+This table reflects the modular build steps as implemented in `build.sh` and described in this README.
 
 ---
 
