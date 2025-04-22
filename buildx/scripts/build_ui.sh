@@ -230,6 +230,18 @@ get_user_preferences() {
       echo "DEBUG: Reading form values:" >&2
       cat "$temp_docker_info" >&2
       
+      # Defensive: Check if file has at least 3 lines
+      local line_count_check
+      line_count_check=$(wc -l < "$temp_docker_info")
+      if [[ "$line_count_check" -lt 3 ]]; then
+        echo "DEBUG: Dialog output has fewer than 3 lines ($line_count_check). Filling missing fields with previous values." >&2
+        # Pad missing lines with empty lines
+        while [ "$line_count_check" -lt 3 ]; do
+          echo "" >> "$temp_docker_info"
+          line_count_check=$((line_count_check+1))
+        done
+      fi
+
       # Read values more reliably - don't use mapfile which might fail silently
       local line_count=0
       local line_registry="" line_username="" line_prefix=""
@@ -263,6 +275,7 @@ get_user_preferences() {
         DOCKER_REGISTRY="$temp_registry"
         DOCKER_USERNAME="$temp_username"
         DOCKER_REPO_PREFIX="$temp_prefix"
+        echo "DEBUG: Step 0 complete. Registry:[$DOCKER_REGISTRY] User:[$DOCKER_USERNAME] Prefix:[$DOCKER_REPO_PREFIX]" >&2
         break
       fi
     done
@@ -296,13 +309,14 @@ get_user_preferences() {
                2>"$temp_folders"
 
         local folders_exit_status=$?
+        echo "DEBUG: Folder selection dialog exit status: $folders_exit_status" >&2
         if [ $folders_exit_status -ne 0 ]; then
             echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
             exit 1 # Indicate cancellation
         fi
         # Read the selected items (tags) from the temp file, remove quotes, space-separated
         selected_folders_list=$(cat "$temp_folders" | sed 's/"//g')
-        echo "Selected folders: $selected_folders_list" >&2 # Debugging
+        echo "DEBUG: Selected folders: $selected_folders_list" >&2 # Debugging
     else
         echo "No numbered build folders found in $build_dir. Skipping folder selection." >&2
         selected_folders_list="" # Ensure it's empty
@@ -328,12 +342,14 @@ get_user_preferences() {
             2>"$temp_options"
 
     local checklist_exit_status=$?
+    echo "DEBUG: Build options checklist exit status: $checklist_exit_status" >&2
     if [ $checklist_exit_status -ne 0 ]; then
       echo "Build options selection canceled (exit code: $checklist_exit_status). Exiting." >&2
       exit 1 # Indicate cancellation
     fi
     local selected_options
     selected_options=$(cat "$temp_options")
+    echo "DEBUG: Selected build options: $selected_options" >&2
 
     # Parse checklist selections into 'y'/'n' variables
     [[ "$selected_options" == *'"cache"'* ]] && use_cache="y" || use_cache="n"
@@ -364,11 +380,13 @@ get_user_preferences() {
            2>"$temp_base_choice"
 
     local menu_exit_status=$?
+    echo "DEBUG: Base image selection menu exit status: $menu_exit_status" >&2
     if [ $menu_exit_status -ne 0 ]; then
       echo "Base image selection canceled (exit code: $menu_exit_status). Exiting." >&2
       exit 1 # Indicate cancellation
     fi
     BASE_IMAGE_ACTION=$(cat "$temp_base_choice")
+    echo "DEBUG: Base image action selected: $BASE_IMAGE_ACTION" >&2
 
     # Process base image choice
     case "$BASE_IMAGE_ACTION" in
@@ -466,6 +484,7 @@ get_user_preferences() {
         echo "Build canceled by user at confirmation screen. Exiting." >&2
         exit 1 # Indicate cancellation
     fi
+    echo "DEBUG: Final confirmation accepted, proceeding to export preferences." >&2
 
     # --- Update .env file with confirmed settings ---
     # Call the helper function with the final confirmed values
@@ -491,7 +510,8 @@ get_user_preferences() {
       echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\"" # Export platform determined earlier
       echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Export selected folders
     } > "$PREFS_FILE"
-    echo "Preferences exported." >&2
+    echo "DEBUG: Preferences exported to $PREFS_FILE. Contents:" >&2
+    cat "$PREFS_FILE" >&2
     # --- End of export block ---
 
     # Explicitly remove trap and dialog temp files ONLY on success before returning
@@ -500,6 +520,7 @@ get_user_preferences() {
   ) # End of subshell
 
   local subshell_exit_code=$?
+  echo "DEBUG: get_user_preferences subshell exited with code $subshell_exit_code" >&2
   # Return the exit code of the subshell
   return $subshell_exit_code
 }
