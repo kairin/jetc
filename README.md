@@ -506,9 +506,13 @@ When you see messages like "Build, push or pull failed for build/10-bitsandbytes
 
 When contributing to this project, please follow our [Copilot coding standards](.github/copilot-instructions.md) which include:
 
-- File header format with commit tracking
+- File header format with commit tracking (footer only, never at the top)
 - Code organization principles
 - Minimal diff guidelines
+
+**All coding standards, minimal diff rules, and commit tracking/footer requirements are defined in [`./.github/copilot-instructions.md`](./.github/copilot-instructions.md).  
+This file is the canonical source for all contributors and automation.  
+See also [./.github/INSTRUCTIONS.md](./.github/INSTRUCTIONS.md) for summary and enforcement rules.**
 
 These standards ensure consistent documentation and tracking across the codebase.
 
