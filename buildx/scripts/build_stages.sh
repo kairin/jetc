@@ -1,9 +1,9 @@
 #!/bin/bash
 echo "Starting build process for selected stages..."
-local_use_cache="$use_cache"
-local_use_squash="$use_squash"
-local_skip_intermediate="$skip_intermediate_push_pull"
-local_platform="$PLATFORM"
+use_cache="$use_cache"
+use_squash="$use_squash"
+skip_intermediate_push_pull="$skip_intermediate_push_pull"
+platform="$PLATFORM"
 CURRENT_BASE_IMAGE="${SELECTED_BASE_IMAGE}"
 if [[ -z "$SELECTED_BASE_IMAGE" ]]; then
     echo "Error: SELECTED_BASE_IMAGE is still empty after sourcing preferences. Exiting."
@@ -15,11 +15,11 @@ if [[ ${#numbered_dirs[@]} -eq 0 ]]; then
     echo "No numbered directories selected or found to build in $BUILD_DIR."
 else
     for dir in "${numbered_dirs[@]}"; do
-      local basename=$(basename "$dir")
+      basename=$(basename "$dir")
       set_stage "$basename"
       echo "Processing selected numbered directory: $basename ($dir)"
       echo "Using base image: $CURRENT_BASE_IMAGE"
-      log_command build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+      log_command build_folder_image "$dir" "$use_cache" "$platform" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
       build_status=$?
       ATTEMPTED_TAGS+=("$fixed_tag")
       if [[ $build_status -eq 0 ]]; then
@@ -45,7 +45,7 @@ else
     echo "Building non-numbered directories using base image: $CURRENT_BASE_IMAGE"
     for dir in "${other_dirs[@]}"; do
       echo "Processing other directory: $dir"
-      log_command build_folder_image "$dir" "$local_use_cache" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+      log_command build_folder_image "$dir" "$use_cache" "$platform" "$use_squash" "$skip_intermediate_push_pull" "$CURRENT_BASE_IMAGE" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
       build_status=$?
       ATTEMPTED_TAGS+=("$fixed_tag")
       if [[ $build_status -eq 0 ]]; then
