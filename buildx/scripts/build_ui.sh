@@ -255,10 +255,17 @@ get_user_preferences() {
         ((line_count++))
       done < "$temp_docker_info"
 
-      # Fallback to empty string if any are still unset
-      line_registry="${line_registry:-}"
-      line_username="${line_username:-}"
-      line_prefix="${line_prefix:-}"
+      # Always trim whitespace and newlines
+      line_registry="$(echo -n "$line_registry" | tr -d '\r\n')"
+      line_username="$(echo -n "$line_username" | tr -d '\r\n')"
+      line_prefix="$(echo -n "$line_prefix" | tr -d '\r\n')"
+
+      # If the dialog output is empty, set all to empty string
+      if [[ -z "$line_registry" && -z "$line_username" && -z "$line_prefix" ]]; then
+        line_registry=""
+        line_username=""
+        line_prefix=""
+      fi
 
       # Assign with fallback to previous values if reading failed
       temp_registry="${line_registry:-$temp_registry}"
