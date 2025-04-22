@@ -1,0 +1,107 @@
+Setting build stage to: 01-00-build-essential
+==== EXECUTING: build_folder_image build/01-00-build-essential n linux/arm64 n n kairin/jetc:nvcr-io-nvidia-pytorch-24.12-py3-igpu kairin jetc  ====
+==== STAGE: 01-00-build-essential START: Wed Apr 23 04:22:08 +08 2025 ====
+==== STAGE: 01-00-build-essential END: Wed Apr 23 04:25:15 +08 2025 [Exit: 0] ====
+Setting build stage to: 01-01-00-protobuf_apt
+==== EXECUTING: build_folder_image build/01-01-00-protobuf_apt n linux/arm64 n n kairin/jetc:01-00-build-essential kairin jetc  ====
+==== STAGE: 01-01-00-protobuf_apt START: Wed Apr 23 04:25:15 +08 2025 ====
+==== STAGE: 01-01-00-protobuf_apt END: Wed Apr 23 04:25:35 +08 2025 [Exit: 0] ====
+Setting build stage to: 01-01-00-protobuf_cpp
+==== EXECUTING: build_folder_image build/01-01-00-protobuf_cpp n linux/arm64 n n kairin/jetc:01-01-00-protobuf_apt kairin jetc  ====
+==== STAGE: 01-01-00-protobuf_cpp START: Wed Apr 23 04:25:35 +08 2025 ====
+==== STAGE: 01-01-00-protobuf_cpp END: Wed Apr 23 04:25:57 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 01-01-arrow
+==== EXECUTING: build_folder_image build/01-01-arrow n linux/arm64 n n kairin/jetc:01-01-00-protobuf_apt kairin jetc  ====
+==== STAGE: 01-01-arrow START: Wed Apr 23 04:25:57 +08 2025 ====
+==== STAGE: 01-01-arrow END: Wed Apr 23 04:25:58 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 01-02-numba
+==== EXECUTING: build_folder_image build/01-02-numba n linux/arm64 n n kairin/jetc:01-01-00-protobuf_apt kairin jetc  ====
+==== STAGE: 01-02-numba START: Wed Apr 23 04:25:58 +08 2025 ====
+==== STAGE: 01-02-numba END: Wed Apr 23 04:28:02 +08 2025 [Exit: 0] ====
+Setting build stage to: 01-03-numpy
+==== EXECUTING: build_folder_image build/01-03-numpy n linux/arm64 n n kairin/jetc:01-02-numba kairin jetc  ====
+==== STAGE: 01-03-numpy START: Wed Apr 23 04:28:02 +08 2025 ====
+==== STAGE: 01-03-numpy END: Wed Apr 23 04:29:22 +08 2025 [Exit: 0] ====
+Setting build stage to: 01-04-cuda
+==== EXECUTING: build_folder_image build/01-04-cuda n linux/arm64 n n kairin/jetc:01-03-numpy kairin jetc  ====
+==== STAGE: 01-04-cuda START: Wed Apr 23 04:29:22 +08 2025 ====
+==== STAGE: 01-04-cuda END: Wed Apr 23 04:29:24 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 01-05-h5py
+==== EXECUTING: build_folder_image build/01-05-h5py n linux/arm64 n n kairin/jetc:01-03-numpy kairin jetc  ====
+==== STAGE: 01-05-h5py START: Wed Apr 23 04:29:24 +08 2025 ====
+==== STAGE: 01-05-h5py END: Wed Apr 23 04:30:06 +08 2025 [Exit: 0] ====
+Setting build stage to: 02-bazel
+==== EXECUTING: build_folder_image build/02-bazel n linux/arm64 n n kairin/jetc:01-05-h5py kairin jetc  ====
+==== STAGE: 02-bazel START: Wed Apr 23 04:30:06 +08 2025 ====
+==== STAGE: 02-bazel END: Wed Apr 23 04:30:20 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 03-ninja
+==== EXECUTING: build_folder_image build/03-ninja n linux/arm64 n n kairin/jetc:01-05-h5py kairin jetc  ====
+==== STAGE: 03-ninja START: Wed Apr 23 04:30:20 +08 2025 ====
+==== STAGE: 03-ninja END: Wed Apr 23 04:31:09 +08 2025 [Exit: 0] ====
+Setting build stage to: 04-python
+==== EXECUTING: build_folder_image build/04-python n linux/arm64 n n kairin/jetc:03-ninja kairin jetc  ====
+==== STAGE: 04-python START: Wed Apr 23 04:31:09 +08 2025 ====
+==== STAGE: 04-python END: Wed Apr 23 04:32:52 +08 2025 [Exit: 0] ====
+Setting build stage to: 06-rust
+==== EXECUTING: build_folder_image build/06-rust n linux/arm64 n n kairin/jetc:04-python kairin jetc  ====
+==== STAGE: 06-rust START: Wed Apr 23 04:32:52 +08 2025 ====
+==== STAGE: 06-rust END: Wed Apr 23 04:35:12 +08 2025 [Exit: 0] ====
+Setting build stage to: 09-opencv
+==== EXECUTING: build_folder_image build/09-opencv n linux/arm64 n n kairin/jetc:06-rust kairin jetc  ====
+==== STAGE: 09-opencv START: Wed Apr 23 04:35:12 +08 2025 ====
+==== STAGE: 09-opencv END: Wed Apr 23 04:37:42 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 10-onnx
+==== EXECUTING: build_folder_image build/10-onnx n linux/arm64 n n kairin/jetc:06-rust kairin jetc  ====
+==== STAGE: 10-onnx START: Wed Apr 23 04:37:42 +08 2025 ====
+==== STAGE: 10-onnx END: Wed Apr 23 04:38:03 +08 2025 [Exit: 0] ====
+Setting build stage to: 10-onnxruntime
+==== EXECUTING: build_folder_image build/10-onnxruntime n linux/arm64 n n kairin/jetc:10-onnx kairin jetc  ====
+==== STAGE: 10-onnxruntime START: Wed Apr 23 04:38:03 +08 2025 ====
+==== STAGE: 10-onnxruntime END: Wed Apr 23 04:38:06 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 10-triton
+==== EXECUTING: build_folder_image build/10-triton n linux/arm64 n n kairin/jetc:10-onnx kairin jetc  ====
+==== STAGE: 10-triton START: Wed Apr 23 04:38:06 +08 2025 ====
+==== STAGE: 10-triton END: Wed Apr 23 05:19:08 +08 2025 [Exit: 0] ====
+Setting build stage to: 11-diffusers
+==== EXECUTING: build_folder_image build/11-diffusers n linux/arm64 n n kairin/jetc:10-triton kairin jetc  ====
+==== STAGE: 11-diffusers START: Wed Apr 23 05:19:08 +08 2025 ====
+==== STAGE: 11-diffusers END: Wed Apr 23 05:21:01 +08 2025 [Exit: 0] ====
+Setting build stage to: 12-huggingface_hub
+==== EXECUTING: build_folder_image build/12-huggingface_hub n linux/arm64 n n kairin/jetc:11-diffusers kairin jetc  ====
+==== STAGE: 12-huggingface_hub START: Wed Apr 23 05:21:01 +08 2025 ====
+==== STAGE: 12-huggingface_hub END: Wed Apr 23 05:23:54 +08 2025 [Exit: 0] ====
+Setting build stage to: 13-transformers
+==== EXECUTING: build_folder_image build/13-transformers n linux/arm64 n n kairin/jetc:12-huggingface_hub kairin jetc  ====
+==== STAGE: 13-transformers START: Wed Apr 23 05:23:54 +08 2025 ====
+==== STAGE: 13-transformers END: Wed Apr 23 05:26:33 +08 2025 [Exit: 0] ====
+Setting build stage to: 14-xformers
+==== EXECUTING: build_folder_image build/14-xformers n linux/arm64 n n kairin/jetc:13-transformers kairin jetc  ====
+==== STAGE: 14-xformers START: Wed Apr 23 05:26:33 +08 2025 ====
+==== STAGE: 14-xformers END: Wed Apr 23 05:36:38 +08 2025 [Exit: 0] ====
+Setting build stage to: 15-flash-attention
+==== EXECUTING: build_folder_image build/15-flash-attention n linux/arm64 n n kairin/jetc:14-xformers kairin jetc  ====
+==== STAGE: 15-flash-attention START: Wed Apr 23 05:36:38 +08 2025 ====
+==== STAGE: 15-flash-attention END: Wed Apr 23 05:39:09 +08 2025 [Exit: 1] ====
+Continuing with next build...
+Setting build stage to: 16-stable-diffusion
+==== EXECUTING: build_folder_image build/16-stable-diffusion n linux/arm64 n n kairin/jetc:14-xformers kairin jetc  ====
+==== STAGE: 16-stable-diffusion START: Wed Apr 23 05:39:09 +08 2025 ====
+==== STAGE: 16-stable-diffusion END: Wed Apr 23 05:43:28 +08 2025 [Exit: 0] ====
+Setting build stage to: 17-stable-diffusion-webui
+==== EXECUTING: build_folder_image build/17-stable-diffusion-webui n linux/arm64 n n kairin/jetc:16-stable-diffusion kairin jetc  ====
+==== STAGE: 17-stable-diffusion-webui START: Wed Apr 23 05:43:28 +08 2025 ====
+==== STAGE: 17-stable-diffusion-webui END: Wed Apr 23 05:57:52 +08 2025 [Exit: 0] ====
+Setting build stage to: 18-comfyui
+==== EXECUTING: build_folder_image build/18-comfyui n linux/arm64 n n kairin/jetc:17-stable-diffusion-webui kairin jetc  ====
+==== STAGE: 18-comfyui START: Wed Apr 23 05:57:52 +08 2025 ====
+==== STAGE: 18-comfyui END: Wed Apr 23 06:00:11 +08 2025 [Exit: 0] ====
+Setting build stage to: 19-bitsandbytes
+==== EXECUTING: build_folder_image build/19-bitsandbytes n linux/arm64 n n kairin/jetc:18-comfyui kairin jetc  ====
+==== STAGE: 19-bitsandbytes START: Wed Apr 23 06:00:11 +08 2025 ====
+==== STAGE: 19-bitsandbytes END: Wed Apr 23 06:12:06 +08 2025 [Exit: 0] ====

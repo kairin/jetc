@@ -1,0 +1,8 @@
+Build process for build/01-00-build-essential exited with code 130
+Build process for build/01-01-00-protobuf_apt exited with code 130
+Build process for build/01-01-00-protobuf_cpp exited with code 130
+Build process for build/01-01-arrow exited with code 130
+Build process for build/01-02-numba exited with code 130
+Build process for build/01-03-numpy exited with code 130
+Build process for build/01-04-cuda exited with code 130
+Build process for build/01-05-h5py exited with code 130

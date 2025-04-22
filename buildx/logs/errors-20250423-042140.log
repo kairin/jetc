@@ -1,0 +1,7 @@
+Build process for build/01-01-00-protobuf_cpp exited with code 1
+Build process for build/01-01-arrow exited with code 1
+Build process for build/01-04-cuda exited with code 1
+Build process for build/02-bazel exited with code 1
+Build process for build/09-opencv exited with code 1
+Build process for build/10-onnxruntime exited with code 1
+Build process for build/15-flash-attention exited with code 1
