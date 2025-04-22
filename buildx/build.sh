@@ -41,7 +41,8 @@ source "$SCRIPT_DIR/build_env_setup.sh" || exit 1
 source "$SCRIPT_DIR/build_builder.sh" || exit 1
 
 # Call the function that shows the dialogs and gets user preferences
-source "$SCRIPT_DIR/build_prefs.sh" || exit 1
+# Note: build_prefs.sh functionality integrated into build_ui.sh
+get_user_preferences
 
 # Verify contents of the selected base image before building
 if [ -n "$SELECTED_BASE_IMAGE" ]; then
@@ -62,11 +63,15 @@ source "$SCRIPT_DIR/build_stages.sh" || exit 1
 # Tag and push final image
 source "$SCRIPT_DIR/build_tagging.sh" || exit 1
 
-# Post-build menu/options
-source "$SCRIPT_DIR/build_post.sh" || exit 1
+# Post-build menu/options - now integrated into build_ui.sh
+if [[ -n "$FINAL_IMAGE_TAG" ]]; then
+  show_post_build_menu "$FINAL_IMAGE_TAG"
+fi
 
-# Final verification of built images
-source "$SCRIPT_DIR/build_verify.sh" || exit 1
+# Final verification of built images - now integrated into verification.sh
+if [[ -n "$FINAL_IMAGE_TAG" ]]; then
+  verify_container_apps "$FINAL_IMAGE_TAG" "quick"
+fi
 
 # Automatically update commit tracking UUID timestamp in this file and scripts after build
 for f in "$0" "$SCRIPT_DIR"/*.sh; do
