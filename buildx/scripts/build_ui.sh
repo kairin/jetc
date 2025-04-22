@@ -369,147 +369,141 @@ get_user_preferences() {
     local BASE_IMAGE_ACTION="use_default" # Default action
 
     local MENU_HEIGHT=4
-    while true; do
-      dialog --backtitle "Docker Build Configuration" \
-             --title "Step 2: Base Image Selection" \
-             --ok-label "Confirm Choice" \
-             --cancel-label "Exit Build" \
-             --radiolist "Choose the base image for the *first* build stage:" $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
-             "use_default"    "Use Default (if locally available): $current_default_base_image_display"  "on" \
-             "pull_default"   "Pull Default Image Now: $current_default_base_image_display"             "off" \
-             "specify_custom" "Specify Custom Image (will attempt pull)"                "off" \
-             2>"$temp_base_choice"
+    dialog --backtitle "Docker Build Configuration" \
+           --title "Step 2: Base Image Selection" \
+           --ok-label "Confirm Choice" \
+           --cancel-label "Exit Build" \
+           --radiolist "Choose the base image for the *first* build stage:" $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
+           "use_default"    "Use Default (if locally available): $current_default_base_image_display"  "on" \
+           "pull_default"   "Pull Default Image Now: $current_default_base_image_display"             "off" \
+           "specify_custom" "Specify Custom Image (will attempt pull)"                "off" \
+           2>"$temp_base_choice"
 
-      local menu_exit_status=$?
-      echo "DEBUG: Base image selection menu exit status: $menu_exit_status" >&2
-      if [ $menu_exit_status -ne 0 ]; then
-        echo "Base image selection canceled (exit code: $menu_exit_status). Exiting." >&2
-        exit 1 # Indicate cancellation
-      fi
-      BASE_IMAGE_ACTION=$(cat "$temp_base_choice")
-      echo "DEBUG: Base image action selected: $BASE_IMAGE_ACTION" >&2
+    local menu_exit_status=$?
+    echo "DEBUG: Base image selection menu exit status: $menu_exit_status" >&2
+    if [ $menu_exit_status -ne 0 ]; then
+      echo "Base image selection canceled (exit code: $menu_exit_status). Exiting." >&2
+      exit 1 # Indicate cancellation
+    fi
+    BASE_IMAGE_ACTION=$(cat "$temp_base_choice")
+    echo "DEBUG: Base image action selected: $BASE_IMAGE_ACTION" >&2
 
-      # Process base image choice
-      case "$BASE_IMAGE_ACTION" in
-        "specify_custom")
-          dialog --backtitle "Docker Build Configuration" \
-                 --title "Step 2a: Custom Base Image" \
-                 --ok-label "Confirm Image" \
-                 --cancel-label "Exit Build" \
-                 --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$current_default_base_image_display" \
-                 2>"$temp_custom_image"
-          local input_exit_status=$?
-          if [ $input_exit_status -ne 0 ]; then
-            echo "Custom base image input canceled (exit code: $input_exit_status). Exiting." >&2
-            exit 1
-          fi
-          local entered_image
-          entered_image=$(cat "$temp_custom_image")
+    # Process base image choice
+    case "$BASE_IMAGE_ACTION" in
+      "specify_custom")
+        dialog --backtitle "Docker Build Configuration" \
+               --title "Step 2a: Custom Base Image" \
+               --ok-label "Confirm Image" \
+               --cancel-label "Exit Build" \
+               --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$current_default_base_image_display" \
+               2>"$temp_custom_image"
+        local input_exit_status=$?
+        if [ $input_exit_status -ne 0 ]; then
+          echo "Custom base image input canceled (exit code: $input_exit_status). Exiting." >&2
+          exit 1
+        fi
+        local entered_image
+        entered_image=$(cat "$temp_custom_image")
 
-          if [ -z "$entered_image" ]; then
-            dialog --msgbox "No custom image entered. Reverting to default:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
-            if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
-            SELECTED_IMAGE_TAG="$current_default_base_image_display"
-            BASE_IMAGE_ACTION="use_default" # Update action
-          else
-            SELECTED_IMAGE_TAG="$entered_image"
-            dialog --infobox "Attempting to pull custom base image:\\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH
-            sleep 1 # Give time to see the message
-            if ! pull_image "$SELECTED_IMAGE_TAG"; then # Use helper function
-              if dialog --yesno "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nCheck tag/URL.\\n\\nContinue build using default ($current_default_base_image_display)? Warning: Build might fail." 12 $DIALOG_WIDTH; then
-                 SELECTED_IMAGE_TAG="$current_default_base_image_display"
-                 BASE_IMAGE_ACTION="use_default" # Update action
-                 dialog --msgbox "Proceeding with default base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-                 if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
-              else
-                 echo "User chose to exit after failed custom image pull." >&2
-                 exit 1
-              fi
+        if [ -z "$entered_image" ]; then
+          dialog --msgbox "No custom image entered. Reverting to default:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
+          if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+          SELECTED_IMAGE_TAG="$current_default_base_image_display"
+          BASE_IMAGE_ACTION="use_default" # Update action
+        else
+          SELECTED_IMAGE_TAG="$entered_image"
+          dialog --infobox "Attempting to pull custom base image:\\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH
+          sleep 1 # Give time to see the message
+          if ! pull_image "$SELECTED_IMAGE_TAG"; then # Use helper function
+            if dialog --yesno "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nCheck tag/URL.\\n\\nContinue build using default ($current_default_base_image_display)? Warning: Build might fail." 12 $DIALOG_WIDTH; then
+               SELECTED_IMAGE_TAG="$current_default_base_image_display"
+               BASE_IMAGE_ACTION="use_default" # Update action
+               dialog --msgbox "Proceeding with default base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+               if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
             else
-              dialog --msgbox "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-              if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
-              # --- Show installed apps in the pulled image ---
-              if [ -f "$SCRIPT_DIR_BUI/verification.sh" ]; then
-                bash "$SCRIPT_DIR_BUI/verification.sh" verify_container_apps "$SELECTED_IMAGE_TAG" "all" | tee /tmp/installed_apps.txt
-                # Parse installed apps for checklist
-                mapfile -t installed_apps < <(grep -E "^✅ " /tmp/installed_apps.txt | sed 's/^✅ //;s/:.*//')
-                if [ ${#installed_apps[@]} -gt 0 ]; then
-                  dialog --backtitle "Base Image App Check" \
-                    --title "Installed Apps Detected" \
-                    --checklist "Uncheck any apps you want to RE-INSTALL (checked = SKIP install):" 20 80 12 \
-                    $(for app in "${installed_apps[@]}"; do echo "\"$app\" \"$app\" on "; done) \
-                    2>"$temp_options"
-                  skip_apps=$(cat "$temp_options")
-                  export SKIP_APPS_LIST="$skip_apps"
-                fi
-              fi
-              # --- Confirm use of this image ---
-              if ! dialog --yesno "Use this image as the base image for the first build stage?\\n\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH; then
-                continue # Loop back to base image selection
-              fi
+               echo "User chose to exit after failed custom image pull." >&2
+               exit 1
             fi
-          fi
-          ;;
-        "pull_default")
-          dialog --infobox "Attempting to pull default base image:\\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
-          sleep 1
-          if ! pull_image "$current_default_base_image_display"; then # Use helper function
-             if dialog --yesno "Failed to pull default base image:\\n$current_default_base_image_display.\\nBuild might fail if not local.\\n\\nContinue anyway?" 12 $DIALOG_WIDTH; then
-                dialog --msgbox "Warning: Default image not pulled. Using local if available." 8 $DIALOG_WIDTH
-                if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
-             else
-                echo "User chose to exit after failed default image pull." >&2
-                exit 1
-             fi
           else
-            dialog --msgbox "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
+            dialog --msgbox "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
             if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
-            # --- Show installed apps in the pulled image ---
+            # --- Verify and list installed apps in the image ---
             if [ -f "$SCRIPT_DIR_BUI/verification.sh" ]; then
-              bash "$SCRIPT_DIR_BUI/verification.sh" verify_container_apps "$current_default_base_image_display" "all" | tee /tmp/installed_apps.txt
-              mapfile -t installed_apps < <(grep -E "^✅ " /tmp/installed_apps.txt | sed 's/^✅ //;s/:.*//')
-              if [ ${#installed_apps[@]} -gt 0 ]; then
+              TMP_APPS=$(mktemp)
+              bash "$SCRIPT_DIR_BUI/verification.sh" list_installed_apps "$SELECTED_IMAGE_TAG" > "$TMP_APPS"
+              # Parse app list for checklist
+              mapfile -t app_lines < "$TMP_APPS"
+              rm -f "$TMP_APPS"
+              app_checklist_items=()
+              for app in "${app_lines[@]}"; do
+                [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on")
+              done
+              if [ ${#app_checklist_items[@]} -gt 0 ]; then
                 dialog --backtitle "Base Image App Check" \
-                  --title "Installed Apps Detected" \
-                  --checklist "Uncheck any apps you want to RE-INSTALL (checked = SKIP install):" 20 80 12 \
-                  $(for app in "${installed_apps[@]}"; do echo "\"$app\" \"$app\" on "; done) \
-                  2>"$temp_options"
-                skip_apps=$(cat "$temp_options")
+                  --title "Installed Apps in $SELECTED_IMAGE_TAG" \
+                  --checklist "Uncheck any app you want to RE-INSTALL (default: skip install if present):" 20 $DIALOG_WIDTH 10 \
+                  "${app_checklist_items[@]}" 2>"$temp_options"
+                skip_apps=$(cat "$temp_options" | sed 's/"//g')
                 export SKIP_APPS_LIST="$skip_apps"
               fi
             fi
-            if ! dialog --yesno "Use this image as the base image for the first build stage?\\n\\n$current_default_base_image_display" 8 $DIALOG_WIDTH; then
+            # --- Confirm use as base image ---
+            if ! dialog --yesno "Use this image as the base image for the first build stage?\\n\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH; then
               continue # Loop back to base image selection
             fi
           fi
-          SELECTED_IMAGE_TAG="$current_default_base_image_display"
-          ;;
-        "use_default")
-          SELECTED_IMAGE_TAG="$current_default_base_image_display"
-          dialog --msgbox "Using default base image (local version if available):\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+        fi
+        ;;
+      "pull_default")
+        dialog --infobox "Attempting to pull default base image:\\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
+        sleep 1
+        if ! pull_image "$current_default_base_image_display"; then # Use helper function
+           if dialog --yesno "Failed to pull default base image:\\n$current_default_base_image_display.\\nBuild might fail if not local.\\n\\nContinue anyway?" 12 $DIALOG_WIDTH; then
+              dialog --msgbox "Warning: Default image not pulled. Using local if available." 8 $DIALOG_WIDTH
+              if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+           else
+              echo "User chose to exit after failed default image pull." >&2
+              exit 1
+           fi
+        else
+          dialog --msgbox "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
           if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
-          # --- Show installed apps in the local image ---
+          # --- Verify and list installed apps in the image ---
           if [ -f "$SCRIPT_DIR_BUI/verification.sh" ]; then
-            bash "$SCRIPT_DIR_BUI/verification.sh" verify_container_apps "$SELECTED_IMAGE_TAG" "all" | tee /tmp/installed_apps.txt
-            mapfile -t installed_apps < <(grep -E "^✅ " /tmp/installed_apps.txt | sed 's/^✅ //;s/:.*//')
-            if [ ${#installed_apps[@]} -gt 0 ]; then
+            TMP_APPS=$(mktemp)
+            bash "$SCRIPT_DIR_BUI/verification.sh" list_installed_apps "$current_default_base_image_display" > "$TMP_APPS"
+            mapfile -t app_lines < "$TMP_APPS"
+            rm -f "$TMP_APPS"
+            app_checklist_items=()
+            for app in "${app_lines[@]}"; do
+              [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on")
+            done
+            if [ ${#app_checklist_items[@]} -gt 0 ]; then
               dialog --backtitle "Base Image App Check" \
-                --title "Installed Apps Detected" \
-                --checklist "Uncheck any apps you want to RE-INSTALL (checked = SKIP install):" 20 80 12 \
-                $(for app in "${installed_apps[@]}"; do echo "\"$app\" \"$app\" on "; done) \
-                2>"$temp_options"
-              skip_apps=$(cat "$temp_options")
+                --title "Installed Apps in $current_default_base_image_display" \
+                --checklist "Uncheck any app you want to RE-INSTALL (default: skip install if present):" 20 $DIALOG_WIDTH 10 \
+                "${app_checklist_items[@]}" 2>"$temp_options"
+              skip_apps=$(cat "$temp_options" | sed 's/"//g')
               export SKIP_APPS_LIST="$skip_apps"
             fi
           fi
-          ;;
-        *)
-          echo "Invalid base image action selected: '$BASE_IMAGE_ACTION'. Exiting." >&2
-          exit 1
-          ;;
-      esac
-      break
-    done
+          # --- Confirm use as base image ---
+          if ! dialog --yesno "Use this image as the base image for the first build stage?\\n\\n$current_default_base_image_display" 8 $DIALOG_WIDTH; then
+            continue # Loop back to base image selection
+          fi
+        fi
+        SELECTED_IMAGE_TAG="$current_default_base_image_display"
+        ;;
+      "use_default")
+        SELECTED_IMAGE_TAG="$current_default_base_image_display"
+        dialog --msgbox "Using default base image (local version if available):\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+        ;;
+      *)
+        echo "Invalid base image action selected: '$BASE_IMAGE_ACTION'. Exiting." >&2
+        exit 1
+        ;;
+    esac
 
     # --- Step 3: Final Confirmation ---
     local confirmation_message
@@ -531,7 +525,10 @@ get_user_preferences() {
     confirmation_message+="  - Use Builder:        $( [[ "$use_builder" == "y" ]] && echo "Yes (jetson-builder)" || echo "No (Default Docker)" )\\n\\n" # Use selected builder name
     confirmation_message+="Base Image for First Stage:\\n"
     confirmation_message+="  - Action Chosen:      $BASE_IMAGE_ACTION\\n"
-    confirmation_message+="  - Image Tag To Use:   $SELECTED_IMAGE_TAG" # Use the final selected tag
+    confirmation_message+="  - Image Tag To Use:   $SELECTED_IMAGE_TAG\\n"
+    if [[ -n "$SKIP_APPS_LIST" ]]; then
+      confirmation_message+="  - Will SKIP install for: $SKIP_APPS_LIST\\n"
+    fi
 
     if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then # Increased height slightly
         echo "Build canceled by user at confirmation screen. Exiting." >&2
@@ -562,6 +559,9 @@ get_user_preferences() {
       echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\"" # Export the final chosen image tag
       echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\"" # Export platform determined earlier
       echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Export selected folders
+      if [[ -n "$SKIP_APPS_LIST" ]]; then
+        echo "export SKIP_APPS_LIST=\"${SKIP_APPS_LIST}\""
+      fi
     } > "$PREFS_FILE"
     echo "DEBUG: Preferences exported to $PREFS_FILE. Contents:" >&2
     cat "$PREFS_FILE" >&2
