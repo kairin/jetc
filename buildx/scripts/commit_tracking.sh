@@ -65,7 +65,7 @@ generate_file_footer() {
   local description=$2
   local author=$3
   local identifier=${4:-$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 4 | head -n 1)}
-  local uuid=$(generate_commit_uuid "$identifier")
+  local uuid=$(generate_commit_uuid("$identifier"))
 
   # Determine comment style based on file extension
   local comment_start="#"
