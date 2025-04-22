@@ -194,11 +194,11 @@ get_user_preferences() {
     trap 'rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders" "$PREFS_FILE"' EXIT TERM INT
 
     # Dialog dimensions
-    local DIALOG_HEIGHT=25
+    local DIALOG_HEIGHT=12
     local DIALOG_WIDTH=85
     local CHECKLIST_HEIGHT=6
-    local FORM_HEIGHT=6 # Number of visible lines in the form
-    local FOLDER_LIST_HEIGHT=10 # Max items visible in folder list
+    local FORM_HEIGHT=3
+    local FOLDER_LIST_HEIGHT=10
 
     # --- Step 0: Docker Registry/User/Prefix Confirmation ---
     # Use local variables to hold dialog results before overwriting globals/exports
