@@ -13,6 +13,8 @@ source "$SCRIPT_DIR_BUI/docker_helpers.sh" || { echo "Error: docker_helpers.sh n
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_BUI/verification.sh" || { echo "Error: verification.sh not found."; exit 1; }
 
+# Always resolve .env to canonical location (same as build.sh and jetcrun.sh)
+ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env"
 
 # =========================================================================
 # Function: Update .env file with new values
@@ -25,7 +27,7 @@ update_env_file() {
     local new_prefix="$3"
     local new_base_image="$4" # This will update DEFAULT_BASE_IMAGE
     local env_file # Determine the path relative to this script's location
-    env_file="$SCRIPT_DIR_BUI/../.env"
+    env_file="$ENV_CANONICAL"
 
     echo "Attempting to update settings in $env_file..." >&2
 
@@ -114,7 +116,7 @@ EOF
 # Returns: 0 (always succeeds, variables might be empty if file not found)
 # =========================================================================
 load_env_variables() {
-  local env_file="$SCRIPT_DIR_BUI/../.env"
+  local env_file="$ENV_CANONICAL"
 
   if [ -f "$env_file" ]; then
     echo "Loading environment variables from $env_file..." >&2
