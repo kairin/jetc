@@ -64,3 +64,13 @@ else
 fi
 echo "--------------------------------------------------"
 echo "Folder build process complete!"
+# COMMIT-TRACKING: UUID-20250422-210000-BSTG
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Current directory
+# │   └── scripts/               <- Current directory
+# │       └── build_stages.sh    <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Build selected numbered and other directories, updating .env and tags.
+# Author: Mr K / GitHub Copilot

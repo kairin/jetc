@@ -285,14 +285,35 @@ get_user_preferences() {
     local folder_checklist_items=()
     local numbered_folders=()
     local folder_count=0
-
-    # Find numbered directories and prepare checklist items
+    # --- Enhancement: Auto-uncheck folders for apps already in base image ---
+    declare -A present_apps_map
+    local base_image_for_check="${DEFAULT_BASE_IMAGE}"
+    if [ -n "$SELECTED_IMAGE_TAG" ]; then
+      base_image_for_check="$SELECTED_IMAGE_TAG"
+    fi
+    local present_apps_list=""
+    if [ -f "$SCRIPT_DIR_BUI/verification.sh" ]; then
+      TMP_APPS=$(mktemp)
+      bash "$SCRIPT_DIR_BUI/verification.sh" list_installed_apps "$base_image_for_check" > "$TMP_APPS"
+      present_apps_list=$(cat "$TMP_APPS" | grep -Eo '✅ [^:]+:' | sed 's/✅ //;s/://')
+      rm -f "$TMP_APPS"
+      for app in $present_apps_list; do
+        present_apps_map["$app"]=1
+      done
+    fi
+    # Map build folder names to app names (simple heuristic: folder name after dash)
     if [ -d "$build_dir" ]; then
         mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
         for folder_path in "${numbered_folders[@]}"; do
             folder_name=$(basename "$folder_path")
-            # tag item status (default to on)
-            folder_checklist_items+=("$folder_name" "$folder_name" "on")
+            # Heuristic: app name is after first dash, e.g. 01-03-numpy -> numpy
+            app_name="${folder_name#*-}"
+            # If present in base image, default to off
+            if [[ -n "${present_apps_map[$app_name]}" ]]; then
+              folder_checklist_items+=("$folder_name" "$folder_name (already in base image)" "off")
+            else
+              folder_checklist_items+=("$folder_name" "$folder_name" "on")
+            fi
             ((folder_count++))
         done
     fi
@@ -921,6 +942,7 @@ show_post_build_menu() {
   fi
 }
 
+# COMMIT-TRACKING: UUID-20250422-210000-BUIU
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -930,4 +952,3 @@ show_post_build_menu() {
 #
 # Description: UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-BUIU
