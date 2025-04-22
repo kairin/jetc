@@ -123,6 +123,25 @@ generate_file_footer() {
   echo -e "$footer"
 }
 
+# =========================================================================
+# Function: Update commit tracking UUID timestamp in a file's footer
+# Arguments: $1 = file path
+# Returns: 0 on success, 1 on failure
+# =========================================================================
+update_commit_tracking_footer() {
+  local file="$1"
+  local now
+  now=$(get_system_datetime)
+  # Only update the first COMMIT-TRACKING line found in the last 30 lines
+  sed -i -E "{
+    \$!b
+    :a
+    N
+    \$!ba
+    s/(COMMIT-TRACKING: UUID-)[0-9]{8}-[0-9]{6}(-[A-Z0-9]{4})/\1${now}\2/
+  }" "$file"
+}
+
 # For backward compatibility, rename and alias the old function
 generate_file_header() {
   echo "Warning: generate_file_header is deprecated. Use generate_file_footer instead." >&2

@@ -445,6 +445,13 @@ fi
 echo "Starting container..."
 $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 
+# Automatically update commit tracking UUID timestamp in this file after run
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")/scripts"
+if [ -f "$SCRIPT_DIR/commit_tracking.sh" ]; then
+  source "$SCRIPT_DIR/commit_tracking.sh"
+  update_commit_tracking_footer "$0"
+fi
+
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation

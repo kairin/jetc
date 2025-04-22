@@ -58,6 +58,14 @@ source "$SCRIPT_DIR/build_post.sh" || exit 1
 # Final verification of built images
 source "$SCRIPT_DIR/build_verify.sh" || exit 1
 
+# Automatically update commit tracking UUID timestamp in this file and scripts after build
+for f in "$0" "$SCRIPT_DIR"/*.sh; do
+  if grep -q "COMMIT-TRACKING: UUID-" "$f"; then
+    source "$SCRIPT_DIR/commit_tracking.sh"
+    update_commit_tracking_footer "$f"
+  fi
+done
+
 # COMMIT-TRACKING: UUID-20250421-020700-REFA
 generate_error_summary
 
