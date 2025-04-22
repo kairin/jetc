@@ -47,11 +47,11 @@ log_command() {
   echo "==== EXECUTING: $command ====" | tee -a "${MAIN_LOG}"
   echo "==== STAGE: ${stage_name} START: $(date) ====" | tee -a "${MAIN_LOG}"
   
-  set -o pipefail
+  set +o pipefail
   # Run the command, showing output on console while also capturing to logs
-  # Send stderr to stdout to capture both, tee to main log
-  # The key improvement here is using process substitution to avoid affecting the main output
-  eval "$command" 2>&1 | tee >(cat >> "${MAIN_LOG}") >(grep -i -E 'error|warning|fail|critical' >> "${ERROR_LOG}") >/dev/null
+  # Do NOT redirect stdout to tee, only tee stderr to error log
+  # This preserves all interactive output from docker buildx (progress bars, etc.)
+  eval "$command"
   local result=$?
   set +o pipefail
   
