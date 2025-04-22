@@ -43,6 +43,16 @@ source "$SCRIPT_DIR/build_builder.sh" || exit 1
 # Call the function that shows the dialogs and gets user preferences
 source "$SCRIPT_DIR/build_prefs.sh" || exit 1
 
+# Verify contents of the selected base image before building
+if [ -n "$SELECTED_BASE_IMAGE" ]; then
+  echo "Verifying installed apps in base image: $SELECTED_BASE_IMAGE"
+  if [ -f "$SCRIPT_DIR/verification.sh" ]; then
+    bash "$SCRIPT_DIR/verification.sh" verify_container_apps "$SELECTED_BASE_IMAGE" "all"
+  else
+    echo "verification.sh not found, skipping base image verification."
+  fi
+fi
+
 # Determine build order and prepare selected folders map
 source "$SCRIPT_DIR/build_order.sh" || exit 1
 
