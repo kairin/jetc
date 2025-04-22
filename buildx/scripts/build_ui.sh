@@ -225,7 +225,7 @@ get_user_preferences() {
       
       if [ $form_exit_status -ne 0 ]; then
         echo "Docker information entry canceled (exit code: $form_exit_status). Exiting." >&2
-        exit 1 # Indicate cancellation
+        return 1 # Return from function with error status instead of exit
       fi
       
       echo "DEBUG: Reading form values:" >&2
@@ -445,7 +445,7 @@ get_user_preferences() {
               rm -f "$TMP_APPS"
               app_checklist_items=()
               for app in "${app_lines[@]}"; do [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on"); done
-              if [ ${#app_checklist_items[@]} -gt 0 ]; then
+              if ((${#app_checklist_items[@]} > 0)); then
                 dialog --backtitle "Base Image App Check (Default)" \
                   --title "Installed Apps in $SELECTED_IMAGE_TAG" \
                   --checklist "Uncheck any app you want to RE-INSTALL (default: skip install if present):" 20 $DIALOG_WIDTH 10 \
@@ -467,7 +467,7 @@ get_user_preferences() {
                    bash "$SCRIPT_DIR_BUI/verification.sh" list_installed_apps "$SELECTED_IMAGE_TAG" > "$TMP_APPS"
                    mapfile -t app_lines < "$TMP_APPS"; rm -f "$TMP_APPS"
                    app_checklist_items=(); for app in "${app_lines[@]}"; do [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on"); done
-                   if [ ${#app_checklist_items[@]} -gt 0 ]; then
+                   if ((${#app_checklist_items[@]} > 0)); then
                      dialog --backtitle "Base Image App Check (Default)" --title "Installed Apps in $SELECTED_IMAGE_TAG" --checklist "Uncheck to RE-INSTALL:" 20 $DIALOG_WIDTH 10 "${app_checklist_items[@]}" 2>"$temp_options"
                      SKIP_APPS_LIST=$(cat "$temp_options" | sed 's/"//g')
                    fi
@@ -486,7 +486,7 @@ get_user_preferences() {
                 bash "$SCRIPT_DIR_BUI/verification.sh" list_installed_apps "$SELECTED_IMAGE_TAG" > "$TMP_APPS"
                 mapfile -t app_lines < "$TMP_APPS"; rm -f "$TMP_APPS"
                 app_checklist_items=(); for app in "${app_lines[@]}"; do [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on"); done
-                if [ ${#app_checklist_items[@]} -gt 0 ]; then
+                if ((${#app_checklist_items[@]} > 0)); then
                   dialog --backtitle "Base Image App Check (Custom)" --title "Installed Apps in $SELECTED_IMAGE_TAG" --checklist "Uncheck to RE-INSTALL:" 20 $DIALOG_WIDTH 10 "${app_checklist_items[@]}" 2>"$temp_options"
                   SKIP_APPS_LIST=$(cat "$temp_options" | sed 's/"//g')
                 fi
@@ -522,7 +522,7 @@ get_user_preferences() {
               for app in "${app_lines[@]}"; do
                 [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on")
               done
-              if [ ${#app_checklist_items[@]} -gt 0 ]; then
+              if ((${#app_checklist_items[@]} > 0)); then
                 dialog --backtitle "Base Image App Check" \
                   --title "Installed Apps in $current_default_base_image_display" \
                   --checklist "Uncheck any app you want to RE-INSTALL (default: skip install if present):" 20 $DIALOG_WIDTH 10 \
@@ -551,7 +551,7 @@ get_user_preferences() {
             for app in "${app_lines[@]}"; do
               [[ -n "$app" ]] && app_checklist_items+=("$app" "$app" "on")
             done
-            if [ ${#app_checklist_items[@]} -gt 0 ]; then
+            if ((${#app_checklist_items[@]} > 0)); then
               dialog --backtitle "Base Image App Check" \
                 --title "Installed Apps in $SELECTED_IMAGE_TAG" \
                 --checklist "Uncheck any app you want to RE-INSTALL (default: skip install if present):" 20 $DIALOG_WIDTH 10 \
