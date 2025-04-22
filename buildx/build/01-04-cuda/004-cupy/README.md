@@ -1,23 +1,22 @@
 <!--
 ######################################################################
 # THIS FILE CAN BE DELETED
-# All CUDA subcomponent documentation is now consolidated in
-# ../README.md (the parent CUDA directory).
+# Reason for deletion: File is empty, content covered by parent README.
 # You do NOT need this file anymore.
 ######################################################################
-# COMMIT-TRACKING: UUID-20240730-100000-B4D1
-# Description: Stub - refer to consolidated CUDA README.
-# Author: Mr K / GitHub Copilot
-#
+
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-cuda/             <- CUDA directory
-# │   │       └── cupy/            <- Current directory
-# │   │           └── README.md    <- THIS FILE
+# ├── buildx/                    <- Build system and scripts
+# │   └── build/                 <- Build stages directory
+# │       └── 01-04-cuda/        <- Parent directory
+# │           └── 004-cupy/      <- Current directory
+# │               └── README.md  <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Marked for deletion - empty file.
+# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20250423-100000-DELF
 -->
 # cupy
 

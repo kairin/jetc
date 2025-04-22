@@ -165,120 +165,136 @@ _list_python_packages() {
 }
 
 # =========================================================================
-# Main verification function called inside the container
-# Arguments: $1 = mode (all, quick, tools, ml, libs, cuda, python, system)
+# Function: List installed applications detected by checks (Internal use)
+# Arguments: None (runs all checks internally)
+# Returns: List of detected app names, one per line
 # =========================================================================
-run_verification_checks() {
-  local mode="${1:-quick}" # Default to quick verification
+_list_installed_apps() {
+  echo -e "${CYAN}--- Detecting Installed Applications ---${NC}"
+  # Run checks silently and capture output
+  local output
+  output=$( (
+    _check_system_tools
+    _check_ml_frameworks
+    _check_libraries
+    _check_cuda_info
+  ) 2>&1 ) # Capture stdout and stderr
 
-  echo -e "${BLUE}===================================================${NC}"
-  echo -e "${BLUE}🔍 CONTAINER APPLICATION VERIFICATION (Mode: $mode)${NC}"
-  echo -e "${BLUE}===================================================${NC}"
-
-  case "$mode" in
-    "all")
-      _check_system_tools
-      _check_ml_frameworks
-      _check_libraries
-      _check_cuda_info
-      _list_python_packages
-      _list_system_packages
-      ;;
-    "quick")
-      _check_system_tools
-      _check_ml_frameworks
-      _check_libraries
-      _check_cuda_info
-      ;;
-    "tools")
-      _check_system_tools
-      ;;
-    "ml")
-      _check_ml_frameworks
-      ;;
-    "libs")
-      _check_libraries
-      ;;
-    "cuda")
-      _check_cuda_info
-      ;;
-    "python")
-      _list_python_packages
-      ;;
-    "system")
-      _list_system_packages
-      ;;
-    *)
-      echo -e "${RED}Invalid mode: $mode${NC}" >&2
-      echo "Usage: $0 [all|quick|tools|ml|libs|cuda|python|system]" >&2
-      exit 1
-      ;;
-  esac
-
-  echo -e "\n${BLUE}===================================================${NC}"
-  echo -e "${BLUE}🏁 Verification complete (Mode: $mode)${NC}"
-  echo -e "${BLUE}===================================================${NC}"
+  # Extract app names from lines containing the checkmark
+  echo "$output" | grep -Eo '✅ [^:]+:' | sed 's/✅ //;s/://' | sort -u
 }
 
 # =========================================================================
-# Function: Run verification checks inside a target container image
+# Main verification function called inside the container
+# Arguments: $1 = mode (all, quick, tools, ml, libs, cuda, python, system, list_apps)
+# =========================================================================
+run_verification_checks() {
+  local mode=${1:-quick} # Default to quick check
+
+  echo -e "${BLUE}=========================================${NC}"
+  echo -e "${BLUE} Running Verification Checks (Mode: $mode)${NC}"
+  echo -e "${BLUE}=========================================${NC}"
+
+  case "$mode" in
+    all)
+      _check_system_tools
+      _check_ml_frameworks
+      _check_libraries
+      _check_cuda_info
+      _list_system_packages # List all system packages
+      _list_python_packages # List all python packages
+      ;;
+    quick)
+      _check_system_tools
+      _check_ml_frameworks
+      _check_libraries
+      _check_cuda_info
+      ;;
+    tools) _check_system_tools ;;
+    ml) _check_ml_frameworks ;;
+    libs) _check_libraries ;;
+    cuda) _check_cuda_info ;;
+    python) _list_python_packages ;;
+    system) _list_system_packages ;;
+    list_apps) _list_installed_apps ;; # New mode to just list apps
+    *)
+      echo -e "${RED}Error: Invalid verification mode '$mode'. Valid modes: all, quick, tools, ml, libs, cuda, python, system, list_apps.${NC}"
+      return 1
+      ;;
+  esac
+
+  echo -e "${BLUE}=========================================${NC}"
+  echo -e "${BLUE} Verification Checks Complete (Mode: $mode)${NC}"
+  echo -e "${BLUE}=========================================${NC}"
+  return 0
+}
+
+# =========================================================================
+# Function: Run verification checks or list apps inside a target container image
 # Arguments: $1 = image tag, $2 = verification mode (optional, default: quick)
 # Returns: Exit status of the verification script inside the container
 # =========================================================================
 verify_container_apps() {
-  local tag=$1
-  local verify_mode="${2:-quick}"
-  local this_script_path="${BASH_SOURCE[0]}" # Path to this script file
+  local image_tag=$1
+  local mode=${2:-quick} # Default to quick verification
 
-  echo "Running verification for image $tag (mode: $verify_mode)..." >&2
-
-  # Check if docker is available
-  if (! command -v docker &> /dev/null); then
-      echo "Error: Docker command not found." >&2
-      return 1
+  if [[ -z "$image_tag" ]]; then
+    echo -e "${RED}Error: No image tag provided to verify_container_apps.${NC}"
+    return 1
   fi
 
   # Check if image exists locally
-  if (! docker image inspect "$tag" >/dev/null 2>&1); then
-      echo "Error: Image $tag not found locally." >&2
+  if ! docker image inspect "$image_tag" &>/dev/null; then
+    echo -e "${YELLOW}Warning: Image '$image_tag' not found locally. Cannot run verification.${NC}"
+    return 1
+  fi
+
+  echo -e "${BLUE}--- Running Verification (Mode: $mode) in container: $image_tag ---${NC}"
+
+  # Copy this script into the container temporarily
+  local container_id
+  container_id=$(docker create "$image_tag")
+  if [ -z "$container_id" ]; then
+      echo -e "${RED}Error: Failed to create temporary container for verification.${NC}"
       return 1
   fi
 
-  # Define path inside container
-  local container_script_path="/tmp/verify_apps.sh"
-
-  # Use docker run with volume mount to execute this script inside the container
-  # Mount this script file itself into the container
-  # Use --entrypoint to override default CMD/ENTRYPOINT
-  # Execute the run_verification_checks function within the container context
-  docker run --rm \
-    -v "$this_script_path":"$container_script_path":ro \
-    --entrypoint /bin/bash \
-    "$tag" \
-    "$container_script_path" "run_checks" "$verify_mode" # Pass args to script
-
-  local exit_status=$?
-  if [ $exit_status -eq 0 ]; then
-      echo "Verification successful for $tag (mode: $verify_mode)." >&2
-  else
-      echo "Verification failed for $tag (mode: $verify_mode). Exit status: $exit_status" >&2
+  # Ensure the /tmp directory exists in the container (should always be true)
+  docker cp "$0" "${container_id}:/tmp/verify_apps.sh"
+  if [ $? -ne 0 ]; then
+      echo -e "${RED}Error: Failed to copy verification script into container.${NC}"
+      docker rm -f "$container_id" &>/dev/null
+      return 1
   fi
+
+  # Run the script inside the container
+  # Use docker exec on a running container, or docker run --rm for a one-off
+  # Using docker run --rm is simpler here
+  docker run --rm --gpus all -v "/tmp/verify_apps.sh:/tmp/verify_apps.sh:ro" "$image_tag" bash /tmp/verify_apps.sh run_checks "$mode"
+  local exit_status=$?
+
+  # Clean up the temporary container created earlier if needed (docker run --rm handles this)
+  # docker rm -f "$container_id" &>/dev/null
+
+  if [ $exit_status -ne 0 ]; then
+    echo -e "${RED}--- Verification (Mode: $mode) failed in container: $image_tag (Exit code: $exit_status) ---${NC}"
+  else
+    echo -e "${GREEN}--- Verification (Mode: $mode) completed successfully in container: $image_tag ---${NC}"
+  fi
+
   return $exit_status
 }
 
 # =========================================================================
-# Function: List installed applications (runs verification in 'all' mode)
+# Function: List installed apps inside a target container image
 # Arguments: $1 = image tag
-# Returns: Exit status of the verification script inside the container
+# Returns: Prints list of apps to stdout, returns 0 on success, 1 on failure
 # =========================================================================
 list_installed_apps() {
     local image_tag=$1
-    echo "Listing all installed packages and tools in: $image_tag" >&2
-    # Run verification in 'all' mode which includes listing packages
-    verify_container_apps "$image_tag" "all"
+    verify_container_apps "$image_tag" "list_apps" # Use the new mode
     return $?
 }
-
 
 # =========================================================================
 # Entry point when script is executed directly (e.g., inside container)
