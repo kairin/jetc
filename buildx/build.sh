@@ -48,6 +48,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# --- Source the exported preferences so all variables are available ---
+if [ -f "$PREFS_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$PREFS_FILE"
+else
+  echo "Error: Preferences file $PREFS_FILE not found after get_user_preferences."
+  exit 1
+fi
+
 # Verify contents of the selected base image before building
 if [ -n "$SELECTED_BASE_IMAGE" ]; then
   echo "Verifying installed apps in base image: $SELECTED_BASE_IMAGE"

@@ -178,6 +178,9 @@ get_user_preferences() {
     return $? # Return the exit code of the basic function
   fi
 
+  # --- Ensure environment variables are loaded from .env before showing dialog ---
+  load_env_variables
+
   # Temporary file for preferences export (must match build.sh)
   local PREFS_FILE="/tmp/build_prefs.sh"
 
