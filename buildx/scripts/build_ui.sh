@@ -207,34 +207,47 @@ get_user_preferences() {
     local temp_prefix="$DOCKER_REPO_PREFIX"
 
     while true; do
-      # Add --no-cancel flag to prevent ESC from canceling, forcing button use
-      # Change --cancel-label to < Back for better navigation cues
-      dialog --backtitle "Docker Build Configuration" \
+      # Replace the dialog command with a more straightforward version
+      # that focuses on simplicity and reliability
+      dialog --clear --no-cancel \
+             --backtitle "Docker Build Configuration" \
              --title "Step 0: Docker Information" \
-             --ok-label "Next >" \
-             --cancel-label "< Exit" \
-             --no-cancel \
+             --ok-label "Next" \
              --form "Confirm or edit Docker details (loaded from .env):" $DIALOG_HEIGHT $DIALOG_WIDTH $FORM_HEIGHT \
-             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 45 40 0 \
-             "Username (required):"                   2 1 "$temp_username"    2 45 40 0 \
-             "Repository Prefix (required):"          3 1 "$temp_prefix"      3 45 40 0 \
+             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 40 40 0 \
+             "Username (required):"                   2 1 "$temp_username"    2 40 40 0 \
+             "Repository Prefix (required):"          3 1 "$temp_prefix"      3 40 40 0 \
              2>"$temp_docker_info"
 
       local form_exit_status=$?
-      echo "DEBUG: Form exit status: $form_exit_status" >&2  # Debug output to see what's happening
+      echo "DEBUG: Form exit status: $form_exit_status" >&2
       
       if [ $form_exit_status -ne 0 ]; then
         echo "Docker information entry canceled (exit code: $form_exit_status). Exiting." >&2
         exit 1 # Indicate cancellation
       fi
-
-      # Read the values back from the temp file (one per line)
-      mapfile -t lines < "$temp_docker_info"
-
-      # Assign to temporary variables (handle potential empty registry)
-      temp_registry="${lines[0]:-}" # Use parameter expansion for default empty string
-      temp_username="${lines[1]:-}"
-      temp_prefix="${lines[2]:-}"
+      
+      echo "DEBUG: Reading form values:" >&2
+      cat "$temp_docker_info" >&2
+      
+      # Read values more reliably - don't use mapfile which might fail silently
+      local line_count=0
+      local line_registry="" line_username="" line_prefix=""
+      while IFS= read -r line; do
+        case "$line_count" in
+          0) line_registry="$line" ;;
+          1) line_username="$line" ;;
+          2) line_prefix="$line" ;;
+        esac
+        ((line_count++))
+      done < "$temp_docker_info"
+      
+      # Assign with fallback to previous values if reading failed
+      temp_registry="${line_registry:-$temp_registry}"
+      temp_username="${line_username:-$temp_username}"
+      temp_prefix="${line_prefix:-$temp_prefix}"
+      
+      echo "DEBUG: Parsed values - Registry:[$temp_registry] User:[$temp_username] Prefix:[$temp_prefix]" >&2
 
       # Validate required fields
       local validation_error=""
