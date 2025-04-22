@@ -43,6 +43,10 @@ source "$SCRIPT_DIR/build_builder.sh" || exit 1
 # Call the function that shows the dialogs and gets user preferences
 # Note: build_prefs.sh functionality integrated into build_ui.sh
 get_user_preferences
+if [ $? -ne 0 ]; then
+  echo "User cancelled or error in preferences dialog. Exiting build."
+  exit 1
+fi
 
 # Verify contents of the selected base image before building
 if [ -n "$SELECTED_BASE_IMAGE" ]; then
