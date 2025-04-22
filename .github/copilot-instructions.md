@@ -1,5 +1,7 @@
 # Jetson Container Development Instructions
 
+> **This file is the canonical source for all coding standards, minimal diff rules, and commit tracking/footer requirements for the Jetson Container project. All contributors and automation must refer to this file for compliance.**
+
 No full content for existing files unless requested
 - No explanations or extra context
 
@@ -7,16 +9,17 @@ Come back to check this file again before responding to anything.
 
 ## Minimal Diff Rules
 
-
 copilot_minimal_diff:
   - "# filepath: <path>" at top of every code block
   - Never repeat unchanged code
   - Use "# ...existing code..." for unchanged regions
   - New file: output full content with filepath
-  - Deleted file: filepath + "// FILE DELETED"  - Moved file: old/new filepaths + "// FILE MOVED"  - No full content for existing files unless requested  - No explanations or extra context```### Example:```python# filepath: /path/to/file.py# ...existing code...def new_func(): pass# ...existing code...```
+  - Deleted file: filepath + "// FILE DELETED"
+  - Moved file: old/new filepaths + "// FILE MOVED"
+  - No full content for existing files unless requested
+  - No explanations or extra context
 
 ## Request Interpretation Rules
-
 
 request_interpretation:
   - Analyze requests carefully before proposing code changes
@@ -30,22 +33,45 @@ request_interpretation:
   - When in doubt, ask for clarification rather than suggesting changes
   - Respond to the request type - explanation or code modification
 
-
 ## Coding Standards
 
-The coding standards and footer rules for this project are defined in:
-`/home/ks/apps/jetc/buildx/scripts/copilot-must-follow.md`
+The coding standards and footer rules for this project are defined here. All scripts and markdown files must comply with these standards.
 
-Please refer to that file for:
-- Commit tracking format
-- Required file footers (placed at BOTTOM of files)
-- Comment style guidelines
-- Minimal diff rules
+- Place commit tracking information at the **BOTTOM** of all files, not the top.
+- Use current date and time for new commit tracking UUIDs.
+- Maintain consistent footer structure across all files.
+- The footer must include:
+  - File location diagram (showing the file's place in the project)
+  - Description
+  - Author
+  - COMMIT-TRACKING UUID
 
-When making changes, always follow these rules to maintain consistency across the project:
-- Place commit tracking information at the BOTTOM of all files, not the top
-- Use current date and time for new commit tracking UUIDs
-- Maintain consistent footer structure across all files
+See `.github/INSTRUCTIONS.md` for summary and enforcement rules.
 
-See `/workspaces/jetc/INSTRUCTIONS.md` for all coding, commit tracking, and minimal diff rules for this project.
+---
+
+<!--
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Main project README
+# ├── .github/                   <- Copilot and git integration
+# │   ├── copilot-instructions.md<- THIS FILE (canonical coding standards)
+# │   ├── INSTRUCTIONS.md        <- Enforcement and summary
+# │   ├── git-template-setup.md
+# │   ├── install-hooks.sh
+# │   ├── pre-commit-hook.sh
+# │   ├── prepare-commit-msg-hook.sh
+# │   ├── setup-git-template.sh
+# │   └── vs-code-snippets-guide.md
+# ├── buildx/                    <- Build system and scripts
+# │   ├── build/                 <- Build stages and Dockerfiles
+# │   ├── build.sh               <- Main build orchestrator
+# │   ├── jetcrun.sh             <- Container run utility
+# │   └── scripts/               <- Modular build scripts
+# └── ...                        <- Other project files
+#
+# Description: Canonical coding standards, minimal diff rules, and commit tracking/footer requirements for Jetson Container project. All contributors must comply.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20240805-200000-COPILOTINST
+-->
 

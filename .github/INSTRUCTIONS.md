@@ -40,8 +40,10 @@
 
 ## Coding Standards
 
-- Follow all comment style, commit tracking, and minimal diff rules as defined in `/home/ks/apps/jetc/buildx/scripts/copilot-must-follow.md`.
-- All scripts and markdown files must comply with these standards.
+- All coding standards, minimal diff rules, and commit tracking/footer requirements are defined in:
+  - `.github/copilot-instructions.md` (canonical location)
+  - `/home/ks/apps/jetc/buildx/scripts/copilot-must-follow.md` (reference copy)
+- Always refer to `.github/copilot-instructions.md` for the latest rules.
 
 ## Error Correction and Enforcement
 
@@ -62,6 +64,7 @@
 # ├── .gitignore
 # ├── .github/                   <- Copilot and git integration
 # │   ├── copilot-instructions.md
+# │   ├── INSTRUCTIONS.md        <- THIS FILE
 # │   ├── git-template-setup.md
 # │   ├── install-hooks.sh
 # │   ├── pre-commit-hook.sh
@@ -72,18 +75,18 @@
 # │   ├── build/                 <- Build stages and Dockerfiles
 # │   ├── build.sh               <- Main build orchestrator
 # │   ├── jetcrun.sh             <- Container run utility
-# │   ├── scripts/               <- Modular build scripts
-# │   │   ├── build_ui.sh
-# │   │   ├── commit_tracking.sh
-# │   │   ├── copilot-must-follow.md
-# │   │   ├── docker_helpers.sh
-# │   │   ├── logging.sh
-# │   │   ├── utils.sh
-# │   │   └── verification.sh
+# │   └── scripts/               <- Modular build scripts
+# │       ├── build_ui.sh
+# │       ├── commit_tracking.sh
+# │       ├── copilot-must-follow.md
+# │       ├── docker_helpers.sh
+# │       ├── logging.sh
+# │       ├── utils.sh
+# │       └── verification.sh
 # │   └── logs/                  <- Build logs
 # └── ...                        <- Other project files
 #
-# Description: Development instructions for Jetson container project, including file header/footer compliance, minimal diff rules, commit tracking, request interpretation, coding standards, and error correction.
+# Description: Jetson Container project instructions, including file header/footer compliance, minimal diff rules, commit tracking, request interpretation, coding standards, and error correction. Canonical coding standards are in .github/copilot-instructions.md.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-064000-DEVINST
+# COMMIT-TRACKING: UUID-20240805-200000-INSTRFIX
 -->
