@@ -269,7 +269,7 @@ get_user_preferences() {
 
       if [[ -n "$validation_error" ]]; then
         dialog --msgbox "Validation Error:\\n\\n$validation_error\\nPlease correct the entries." 10 $DIALOG_WIDTH
-        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; return 1; fi
         # Loop continues
       else
         # Validation passed, update main variables and break the loop
@@ -334,7 +334,7 @@ get_user_preferences() {
         echo "DEBUG: Folder selection dialog exit status: $folders_exit_status" >&2
         if [ $folders_exit_status -ne 0 ]; then
             echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
-            exit 1 # Indicate cancellation
+            return 1 # Indicate cancellation
         fi
         # Read the selected items (tags) from the temp file, remove quotes, space-separated
         selected_folders_list=$(cat "$temp_folders" | sed 's/"//g')
@@ -367,7 +367,7 @@ get_user_preferences() {
     echo "DEBUG: Build options checklist exit status: $checklist_exit_status" >&2
     if [ $checklist_exit_status -ne 0 ]; then
       echo "Build options selection canceled (exit code: $checklist_exit_status). Exiting." >&2
-      exit 1 # Indicate cancellation
+      return 1 # Indicate cancellation
     fi
     local selected_options
     selected_options=$(cat "$temp_options")
@@ -381,7 +381,7 @@ get_user_preferences() {
 
     if [[ "$use_builder" == "n" ]]; then
         dialog --msgbox "Warning: Not using the dedicated 'jetson-builder' might lead to issues with NVIDIA runtime during build." 8 70
-        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; return 1; fi
     fi
 
     # --- Step 2: Base Image Selection ---
@@ -596,7 +596,7 @@ get_user_preferences() {
 
     if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then # Increased height slightly
         echo "Build canceled by user at confirmation screen. Exiting." >&2
-        exit 1 # Indicate cancellation
+        return 1 # Indicate cancellation
     fi
     echo "DEBUG: Final confirmation accepted, proceeding to export preferences." >&2
 
