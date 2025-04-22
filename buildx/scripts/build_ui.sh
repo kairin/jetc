@@ -210,9 +210,9 @@ get_user_preferences() {
              --ok-label "Next: Select Stages" \
              --cancel-label "Exit Build" \
              --form "Confirm or edit Docker details (loaded from .env):" $DIALOG_HEIGHT $DIALOG_WIDTH $FORM_HEIGHT \
-             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 40 70 0 \
-             "Username (required):"                   2 1 "$temp_username"    2 40 70 0 \
-             "Repository Prefix (required):"          3 1 "$temp_prefix" 3 40 70 0 \
+             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 45 40 0 \
+             "Username (required):"                   2 1 "$temp_username"    2 45 40 0 \
+             "Repository Prefix (required):"          3 1 "$temp_prefix"      3 45 40 0 \
              2>"$temp_docker_info"
 
       local form_exit_status=$?
