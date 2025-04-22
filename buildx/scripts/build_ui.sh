@@ -254,7 +254,12 @@ get_user_preferences() {
         esac
         ((line_count++))
       done < "$temp_docker_info"
-      
+
+      # Fallback to empty string if any are still unset
+      line_registry="${line_registry:-}"
+      line_username="${line_username:-}"
+      line_prefix="${line_prefix:-}"
+
       # Assign with fallback to previous values if reading failed
       temp_registry="${line_registry:-$temp_registry}"
       temp_username="${line_username:-$temp_username}"
