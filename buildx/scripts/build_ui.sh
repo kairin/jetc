@@ -207,10 +207,13 @@ get_user_preferences() {
     local temp_prefix="$DOCKER_REPO_PREFIX"
 
     while true; do
+      # Add --no-cancel flag to prevent ESC from canceling, forcing button use
+      # Change --cancel-label to < Back for better navigation cues
       dialog --backtitle "Docker Build Configuration" \
              --title "Step 0: Docker Information" \
-             --ok-label "Next: Select Stages" \
-             --cancel-label "Exit Build" \
+             --ok-label "Next >" \
+             --cancel-label "< Exit" \
+             --no-cancel \
              --form "Confirm or edit Docker details (loaded from .env):" $DIALOG_HEIGHT $DIALOG_WIDTH $FORM_HEIGHT \
              "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 45 40 0 \
              "Username (required):"                   2 1 "$temp_username"    2 45 40 0 \
@@ -218,6 +221,8 @@ get_user_preferences() {
              2>"$temp_docker_info"
 
       local form_exit_status=$?
+      echo "DEBUG: Form exit status: $form_exit_status" >&2  # Debug output to see what's happening
+      
       if [ $form_exit_status -ne 0 ]; then
         echo "Docker information entry canceled (exit code: $form_exit_status). Exiting." >&2
         exit 1 # Indicate cancellation
