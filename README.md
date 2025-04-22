@@ -170,6 +170,155 @@ jetc/
 │   ├── build.sh
 │   ├── jetcrun.sh
 │   ├── scripts/
+│   │   ├── build_env_setup.sh
+│   │   ├── build_builder.sh
+│   │   ├── build_prefs.sh
+│   │   ├── build_order.sh
+│   │   ├── build_stages.sh
+│   │   ├── build_tagging.sh
+│   │   ├── build_post.sh
+│   │   ├── build_verify.sh
+│   │   ├── build_ui.sh
+│   │   ├── commit_tracking.sh
+│   │   ├── copilot-must-follow.md
+│   │   ├── docker_helpers.sh
+│   │   ├── logging.sh
+│   │   ├── utils.sh
+│   │   └── verification.sh
+│   └── logs/
+```
+
+---
+
+### **Modular Script Structure and Roles**
+
+#### **Top-level**
+- `README.md` — Project documentation and usage.
+- `.env` — Canonical environment/config file for buildx.
+- `proposed-app-build-sh.md`, `proposed-app-jetcrun-sh.md` — UI/workflow proposals.
+
+#### **.github/**
+- `copilot-instructions.md` — Coding standards, minimal diff rules, commit tracking.
+- `INSTRUCTIONS.md` — Enforcement and summary of standards.
+- `pre-commit-hook.sh`, `prepare-commit-msg-hook.sh`, `install-hooks.sh`, `setup-git-template.sh`, `git-template-setup.md`, `vs-code-snippets-guide.md` — Git hooks and VS Code integration for commit tracking.
+
+#### **buildx/**
+- `build.sh` — Main orchestrator, now a thin script that sources modular scripts for each build step.
+- `jetcrun.sh` — Interactive script to launch containers, reads and updates `.env`.
+
+#### **buildx/scripts/**
+- `build_env_setup.sh` — Sets up build environment variables and loads `.env`.
+- `build_builder.sh` — Ensures buildx builder is ready.
+- `build_prefs.sh` — Handles user preferences dialog and exports selections.
+- `build_order.sh` — Determines build order and selected folders.
+- `build_stages.sh` — Builds selected numbered and other directories.
+- `build_tagging.sh` — Tags and pushes the final image.
+- `build_post.sh` — Handles post-build menu/options.
+- `build_verify.sh` — Final verification of built images and updates `.env`.
+- `build_ui.sh` — UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
+- `docker_helpers.sh` — Docker build, tag, push, pull, and verification helpers.
+- `utils.sh` — General utility functions (dialog check, datetime, etc.).
+- `logging.sh` — Logging functions for build output and error summary.
+- `verification.sh` — Container verification functions.
+- `commit_tracking.sh` — Commit tracking UUID and footer helpers.
+- `copilot-must-follow.md` — Reference copy of coding standards.
+
+---
+
+### **Why This Modularization?**
+
+- **Maintainability:** Each script has a single responsibility, making it easier to update or debug specific steps.
+- **Readability:** `build.sh` is now a clear, high-level orchestrator, not a monolithic script.
+- **Extensibility:** New build steps or features can be added as new scripts without cluttering the main orchestrator.
+- **Testing:** Individual scripts can be tested or run independently.
+- **Compliance:** This structure enforces the coding standards and minimal diff rules defined in `.github/copilot-instructions.md`.
+
+---
+
+### **How to Use the Modular Build System**
+
+- Run `./build.sh` as before. It will sequentially source and execute each modular script for:
+  1. Environment setup and .env loading
+  2. Builder setup
+  3. User preferences dialog
+  4. Build order determination
+  5. Building stages
+  6. Tagging and pushing the final image
+  7. Post-build options
+  8. Final verification and .env update
+
+- Each modular script is responsible for a single logical step, and all persistent state is passed via environment variables or `.env`.
+
+---
+
+## **What to Expect During the Build Process**
+
+As a beginner, here's what you'll see during the build:
+
+- The script will build multiple containers in sequence (01-build-essential, 02-bazel, etc.)
+- You'll see progress messages for each component showing success or failure
+- **Some components might fail** - this is normal and the script will continue with the next one
+- At the end, you'll have a collection of usable containers even if some steps failed
+
+![Build Process Example](https://raw.githubusercontent.com/kairin/jetc/main/docs/images/build_process_example.png)
+
+## **After the Build: Using Your AI Applications**
+
+When the build completes successfully, you can run your containers easily:
+
+1. **Use the `jetcrun.sh` script (Recommended)**:
+   ```bash
+   ./jetcrun.sh
+   ```
+   - Select the desired image from the menu (which includes images automatically added during the build).
+   - Choose runtime options (X11, GPU, Workspace Mount, Root User).
+   - The script handles constructing the `docker run` or `jetson-containers run` command.
+
+2. **Manual `docker run` (Example)**:
+   If you prefer manual control, you can still use `docker run`. Find the exact tag in your `buildx/.env` file under `AVAILABLE_IMAGES` or `DEFAULT_IMAGE_NAME`.
+   ```bash
+   # Example for Stable Diffusion WebUI
+   # Get the tag from .env (e.g., kairin/jetc:latest-YYYYMMDD-HHMMSS-1)
+   IMAGE_TAG="kairin/jetc:latest-..." 
+   docker run -it --rm --gpus all -p 7860:7860 -v /media/kkk:/workspace "$IMAGE_TAG" bash
+   # Inside container:
+   # cd /opt/stable-diffusion-webui
+   # python launch.py --listen --port 7860
+   ```
+
+## **Repository Structure**
+
+### **Root Structure**
+
+```
+jetc/
+├── README.md
+├── proposed-app-build-sh.md
+├── proposed-app-jetcrun-sh.md
+├── .env
+├── .gitattributes
+├── .gitignore
+├── .github/
+│   ├── copilot-instructions.md
+│   ├── git-template-setup.md
+│   ├── install-hooks.sh
+│   ├── pre-commit-hook.sh
+│   ├── prepare-commit-msg-hook.sh
+│   ├── setup-git-template.sh
+│   └── vs-code-snippets-guide.md
+├── buildx/
+│   ├── build/
+│   ├── build.sh
+│   ├── jetcrun.sh
+│   ├── scripts/
+│   │   ├── build_env_setup.sh
+│   │   ├── build_builder.sh
+│   │   ├── build_prefs.sh
+│   │   ├── build_order.sh
+│   │   ├── build_stages.sh
+│   │   ├── build_tagging.sh
+│   │   ├── build_post.sh
+│   │   ├── build_verify.sh
 │   │   ├── build_ui.sh
 │   │   ├── commit_tracking.sh
 │   │   ├── copilot-must-follow.md
