@@ -5,7 +5,7 @@
 # Returns: 0 if dialog is available, 1 otherwise.
 # =========================================================================
 check_install_dialog() {
-  if ! command -v dialog &> /dev/null; then
+  if (! command -v dialog &> /dev/null); then
     echo "Dialog package not found. Attempting to install..." >&2
     # Try common package managers
     if command -v apt-get &> /dev/null; then
@@ -21,7 +21,7 @@ check_install_dialog() {
       return 1
     fi
     # Verify installation succeeded
-    if ! command -v dialog &> /dev/null; then
+    if (! command -v dialog &> /dev/null); then
        echo "Failed to install dialog. Falling back to basic prompts." >&2
        return 1
     fi
@@ -37,12 +37,14 @@ check_install_dialog() {
 get_system_datetime() {
   # Check if timedatectl is available (systemd-based systems like Ubuntu 22.04+)
   if command -v timedatectl &> /dev/null; then
-    # Use timedatectl to get synchronized system time
-    local datetime=$(timedatectl show --property=TimeUSec --value 2>/dev/null | cut -d' ' -f1)
+    # Use timedatectl in a simpler, more reliable way
+    local datetime=$(timedatectl | grep "Local time" | awk '{print $3" "$4}' 2>/dev/null)
     if [ -n "$datetime" ]; then
-      # Convert to desired format
-      echo $(date -d "@$(echo $datetime | cut -d. -f1)" +"%Y%m%d-%H%M%S")
-      return 0
+      # Convert to desired format using date command with input date string
+      echo $(date -d "$datetime" +"%Y%m%d-%H%M%S" 2>/dev/null)
+      if [ $? -eq 0 ]; then
+        return 0
+      fi
     fi
   fi
 
