@@ -170,7 +170,7 @@ load_env_variables() {
 # =========================================================================
 get_user_preferences() {
   # Check if dialog is available, fallback if not
-  if ! check_install_dialog; then
+  if (! check_install_dialog); then
     echo "Dialog not available or failed to install. Falling back to basic prompts." >&2
     # Call the basic prompt function and ensure it writes to the temp file too
     get_user_preferences_basic
@@ -191,7 +191,7 @@ get_user_preferences() {
   # Ensure temp files are cleaned up on exit or error within this function
   # Use a subshell trap to avoid interfering with traps in calling scripts
   (
-    trap 'rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders" "$PREFS_FILE"' EXIT TERM INT
+    trap 'rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders"' EXIT TERM INT
 
     # Dialog dimensions
     local DIALOG_HEIGHT=12
