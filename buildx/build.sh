@@ -34,11 +34,8 @@ handle_build_error() {
 # Define the temporary file path for preferences
 PREFS_FILE="/tmp/build_prefs.sh"
 
-# Setup basic build environment (like ARCH, PLATFORM, DATE)
-source "$SCRIPT_DIR/build_env.sh" || exit 1
-
-# Load initial .env variables (might be overridden by user preferences)
-source "$SCRIPT_DIR/build_env_load.sh" || exit 1
+# Setup basic build environment and load initial .env variables
+source "$SCRIPT_DIR/build_env_setup.sh" || exit 1
 
 # Setup builder *before* getting preferences that might depend on it
 source "$SCRIPT_DIR/build_builder.sh" || exit 1
