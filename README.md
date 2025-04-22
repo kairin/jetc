@@ -1,7 +1,5 @@
 <!--
-# COMMIT-TRACKING: UUID-20240803-133000-RDME # Replace YYYYMMDD-HHMMSS with current system time
-# COMMIT-TRACKING: UUID-20240805-190000-RDME # Replace YYYYMMDD-HHMMSS with current system time
-# COMMIT-TRACKING: UUID-20250422-064000-RDME
+# COMMIT-TRACKING: UUID-20250422-083100-RDME
 # Description: Updated README to reflect .env usage for AVAILABLE_IMAGES.
 # Author: Mr K / GitHub Copilot
 #

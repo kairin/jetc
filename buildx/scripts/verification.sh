@@ -305,4 +305,4 @@ fi
 #
 # Description: Verification functions for checking installed apps and packages in Jetson containers.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-064000-VERF
+# COMMIT-TRACKING: UUID-20250422-083100-VERF

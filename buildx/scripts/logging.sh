@@ -93,4 +93,4 @@ generate_error_summary() {
 #
 # Description: Logging functions for capturing build output to both terminal and log files.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-064000-LOGS
+# COMMIT-TRACKING: UUID-20250422-083100-LOGS
