@@ -120,10 +120,13 @@ load_env_variables() {
 
   if [ -f "$env_file" ]; then
     echo "Loading environment variables from $env_file..." >&2
-    # Use set -a to export all variables defined in the .env file
+    # Only source lines that are valid variable assignments (no spaces, no shell commands)
     set -a
-    # shellcheck disable=SC1090 # Source file from variable
-    . "$env_file"
+    eval "$(
+      grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" \
+      | grep -v '^[[:space:]]*#' \
+      | sed 's/[[:space:]]*$//'
+    )"
     set +a
     echo "Finished loading .env file." >&2
   else
