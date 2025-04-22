@@ -51,6 +51,19 @@ get_system_datetime() {
   return 0
 }
 
+# =========================================================================
+# Function: Setup basic build environment variables (ARCH, PLATFORM, DATE)
+# Exports: ARCH, PLATFORM, CURRENT_DATE_TIME
+# Returns: 0 on success
+# =========================================================================
+setup_build_environment() {
+  # Detect architecture (default to arm64 for Jetson)
+  export ARCH="${ARCH:-arm64}"
+  export PLATFORM="${PLATFORM:-linux/arm64}"
+  export CURRENT_DATE_TIME="$(get_system_datetime)"
+  return 0
+}
+
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
