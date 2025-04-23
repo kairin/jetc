@@ -6,26 +6,37 @@ SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_CANONICAL="$(cd "$SCRIPT_DIR_ENV/.." && pwd)/.env"
 
 # =========================================================================
-# Function: Update .env file with new values
+# Function: Update .env file with new values, with backup if no new input
 # Arguments: 1: Username, 2: Registry, 3: Prefix, 4: Base Image Tag
 # =========================================================================
 update_env_file() {
-    # Read the current .env file
+    # Backup .env before making changes
     if [ -f "$ENV_CANONICAL" ]; then
-        source "$ENV_CANONICAL"
+        cp "$ENV_CANONICAL" "$ENV_CANONICAL.bak.$(date +%Y%m%d-%H%M%S)"
     fi
 
-    # Update the values
-    DOCKER_USERNAME="$1"
-    DOCKER_REGISTRY="$2"
-    DOCKER_REPO_PREFIX="$3"
-    DEFAULT_BASE_IMAGE="$4"
+    # Read the current .env file
+    if [ -f "$ENV_CANONICAL" ]; then
+        # Only export safe lines for update
+        while IFS='=' read -r key value; do
+            [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
+            [[ "$key" =~ ";" ]] && continue
+            if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+                export "$key=$value"
+            fi
+        done < <(grep -v '^#' "$ENV_CANONICAL" | grep '=')
+    fi
+
+    # Update the values if provided, else keep previous
+    DOCKER_USERNAME="${1:-$DOCKER_USERNAME}"
+    DOCKER_REGISTRY="${2:-$DOCKER_REGISTRY}"
+    DOCKER_REPO_PREFIX="${3:-$DOCKER_REPO_PREFIX}"
+    DEFAULT_BASE_IMAGE="${4:-$DEFAULT_BASE_IMAGE}"
 
     # Write the updated values back to the .env file
     temp_file=$(mktemp)
     trap 'rm -f "$temp_file"' EXIT
 
-    # Preserve comments and update values
     while IFS= read -r line; do
         case "$line" in
             DOCKER_USERNAME=*) echo "DOCKER_USERNAME=$DOCKER_USERNAME" ;;
@@ -46,7 +57,17 @@ update_env_file() {
 # =========================================================================
 load_env_variables() {
     if [ -f "$ENV_CANONICAL" ]; then
-        export $(grep -v '^#' "$ENV_CANONICAL" | xargs)
+        # Only export lines that are safe VAR=VALUE (no semicolons, no spaces around =, not commented)
+        while IFS='=' read -r key value; do
+            # Skip comments and empty lines
+            [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
+            # Skip lines with semicolons in key (not a valid var)
+            [[ "$key" =~ ";" ]] && continue
+            # Only allow safe variable names
+            if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+                export "$key=$value"
+            fi
+        done < <(grep -v '^#' "$ENV_CANONICAL" | grep '=')
     fi
     # Always set defaults if missing
     DOCKER_USERNAME=${DOCKER_USERNAME:-}
@@ -63,6 +84,6 @@ load_env_variables() {
 # │       └── env_helpers.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: .env file helpers for Jetson Container build system (update/load).
+# Description: .env file helpers for Jetson Container build system (update/load, safe parsing, backup).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250423-232231-ENVH
+# COMMIT-TRACKING: UUID-20240805-220000-ENVSAFE
