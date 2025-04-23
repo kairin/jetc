@@ -45,10 +45,8 @@ verify_image_exists() {
       return 1
   fi
   if docker image inspect "$tag_to_check" >/dev/null 2>&1; then
-    # echo "Image $tag_to_check found locally." >&2 # Optional: uncomment for verbose logging
     return 0  # Image exists
   else
-    # echo "Image $tag_to_check not found locally." >&2 # Optional: uncomment for verbose logging
     return 1  # Image does not exist
   fi
 }
@@ -156,12 +154,12 @@ uses_base_image_arg() {
 # Returns: Build argument string (e.g., "--build-arg BASE_IMAGE=tag") or empty
 # =========================================================================
 generate_base_image_args() {
-  local base_image=$1
-  if [[ -n "$base_image" ]]; then
-    echo "--build-arg BASE_IMAGE=$base_image"
-  else
-    echo ""
-  fi
+    local base_image=$1
+    if [[ -n "$base_image" ]]; then
+        echo "--build-arg BASE_IMAGE=$base_image"
+    else
+        echo ""
+    fi
 }
 
 # =========================================================================

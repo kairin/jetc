@@ -28,6 +28,17 @@ handle_build_error() {
 }
 
 # =========================================================================
+# Function to update AVAILABLE_IMAGES in .env
+# =========================================================================
+update_available_images_in_env() {
+    local new_tag="$1"
+    local env_file="$(dirname "$0")/.env"
+    # ...existing code...
+    echo "  Updated AVAILABLE_IMAGES in $env_file with tag '$new_tag'."
+    return 0
+}
+
+# =========================================================================
 # Main Build Process
 # =========================================================================
 
@@ -74,8 +85,22 @@ source "$SCRIPT_DIR/build_order.sh" || exit 1
 # Build selected numbered and other directories
 source "$SCRIPT_DIR/build_stages.sh" || exit 1
 
+# Build Process - Selected Numbered Directories First
+for dir in "${numbered_dirs[@]}"; do
+    # ...existing code...
+    build_folder_image "$dir" "$local_use_cache" "$DOCKER_USERNAME" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+    # ...existing code...
+done
+
 # Tag and push final image
 source "$SCRIPT_DIR/build_tagging.sh" || exit 1
+
+# Create Final Timestamped Tag
+if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
+    generate_timestamped_tag "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY" "$CURRENT_DATE_TIME"
+    TIMESTAMPED_LATEST_TAG="$timestamped_tag"
+    # ...existing code...
+fi
 
 # Post-build menu/options - now integrated into build_ui.sh
 if [[ -n "$FINAL_IMAGE_TAG" ]]; then
