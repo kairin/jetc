@@ -281,7 +281,7 @@ get_user_preferences() {
     if [ -f "$SCRIPT_DIR_BUI/verification.sh" ]; then
       TMP_APPS=$(mktemp)
       bash "$SCRIPT_DIR_BUI/verification.sh" list_installed_apps "$base_image_for_check" > "$TMP_APPS"
-      present_apps_list=$(cat "$TMP_APPS" | grep -Eo '✅ [^:]+:' | sed 's/✅ //;s/://')
+      present_apps_list=$(cat "$TMP_APPS")
       rm -f "$TMP_APPS"
       for app in $present_apps_list; do
         present_apps_map["$app"]=1
