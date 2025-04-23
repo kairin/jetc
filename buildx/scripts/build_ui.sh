@@ -216,70 +216,35 @@ get_user_preferences() {
     local temp_prefix="$DOCKER_REPO_PREFIX"
 
     while true; do
-      # Replace the dialog command with a more straightforward version
-      # that focuses on simplicity and reliability
-      dialog --clear --no-cancel \
-             --backtitle "Docker Build Configuration" \
+      dialog --backtitle "Docker Build Configuration" \
              --title "Step 0: Docker Information" \
-             --ok-label "Next" \
+             --ok-label "Next: Select Stages" \
+             --cancel-label "Exit Build" \
              --form "Confirm or edit Docker details (loaded from .env):" $DIALOG_HEIGHT $DIALOG_WIDTH $FORM_HEIGHT \
-             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 40 40 0 \
-             "Username (required):"                   2 1 "$temp_username"    2 40 40 0 \
-             "Repository Prefix (required):"          3 1 "$temp_prefix"      3 40 40 0 \
+             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 40 70 0 \
+             "Username (required):"                   2 1 "$temp_username"    2 40 70 0 \
+             "Repository Prefix (required):"          3 1 "$temp_prefix" 3 40 70 0 \
              2>"$temp_docker_info"
 
       local form_exit_status=$?
-      echo "DEBUG: Form exit status: $form_exit_status" >&2
-      
       if [ $form_exit_status -ne 0 ]; then
         echo "Docker information entry canceled (exit code: $form_exit_status). Exiting." >&2
-        return 1 # Return from function with error status instead of exit
-      fi
-      
-      echo "DEBUG: Reading form values:" >&2
-      cat "$temp_docker_info" >&2
-      
-      # Defensive: Check if file has at least 3 lines
-      local line_count_check
-      line_count_check=$(wc -l < "$temp_docker_info")
-      if [[ "$line_count_check" -lt 3 ]]; then
-        echo "DEBUG: Dialog output has fewer than 3 lines ($line_count_check). Filling missing fields with previous values." >&2
-        # Pad missing lines with empty lines
-        while [ "$line_count_check" -lt 3 ]; do
-          echo "" >> "$temp_docker_info"
-          line_count_check=$((line_count_check+1))
-        done
+        exit 1 # Indicate cancellation
       fi
 
-      # Read values more reliably - don't use mapfile which might fail silently
-      local line_count=0
-      local line_registry="" line_username="" line_prefix=""
-      while IFS= read -r line; do
-        case "$line_count" in
-          0) line_registry="$line" ;;
-          1) line_username="$line" ;;
-          2) line_prefix="$line" ;;
-        esac
-        ((line_count++))
-      done < "$temp_docker_info"
+      # Read the values back from the temp file (one per line)
+      mapfile -t lines < "$temp_docker_info"
 
-      # Always trim whitespace and newlines
-      line_registry="$(echo -n "$line_registry" | tr -d '\r\n')"
-      line_username="$(echo -n "$line_username" | tr -d '\r\n')"
-      line_prefix="$(echo -n "$line_prefix" | tr -d '\r\n')"
+      # Defensive: Ensure at least 3 lines
+      while [ "${#lines[@]}" -lt 3 ]; do
+        lines+=("")
+      done
 
-      # If the dialog output is empty, set all to empty string
-      if [[ -z "$line_registry" && -z "$line_username" && -z "$line_prefix" ]]; then
-        line_registry=""
-        line_username=""
-        line_prefix=""
-      fi
+      # Assign to temporary variables (handle potential empty registry)
+      temp_registry="$(echo -n "${lines[0]}" | tr -d '\r\n')"
+      temp_username="$(echo -n "${lines[1]}" | tr -d '\r\n')"
+      temp_prefix="$(echo -n "${lines[2]}" | tr -d '\r\n')"
 
-      # Assign with fallback to previous values if reading failed
-      temp_registry="${line_registry:-$temp_registry}"
-      temp_username="${line_username:-$temp_username}"
-      temp_prefix="${line_prefix:-$temp_prefix}"
-      
       echo "DEBUG: Parsed values - Registry:[$temp_registry] User:[$temp_username] Prefix:[$temp_prefix]" >&2
 
       # Validate required fields
@@ -289,16 +254,16 @@ get_user_preferences() {
 
       if [[ -n "$validation_error" ]]; then
         dialog --msgbox "Validation Error:\\n\\n$validation_error\\nPlease correct the entries." 10 $DIALOG_WIDTH
-        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; return 1; fi
-        # Loop continues
-      else
-        # Validation passed, update main variables and break the loop
-        DOCKER_REGISTRY="$temp_registry"
-        DOCKER_USERNAME="$temp_username"
-        DOCKER_REPO_PREFIX="$temp_prefix"
-        echo "DEBUG: Step 0 complete. Registry:[$DOCKER_REGISTRY] User:[$DOCKER_USERNAME] Prefix:[$DOCKER_REPO_PREFIX]" >&2
-        break
+        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+        continue
       fi
+
+      # Assign to main variables and break
+      DOCKER_REGISTRY="$temp_registry"
+      DOCKER_USERNAME="$temp_username"
+      DOCKER_REPO_PREFIX="$temp_prefix"
+      export DOCKER_REGISTRY DOCKER_USERNAME DOCKER_REPO_PREFIX
+      break
     done
 
     # --- Step 0.5: Select Build Folders ---

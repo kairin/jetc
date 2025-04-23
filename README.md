@@ -113,6 +113,27 @@ See [structure.md](buildx/readme/structure.md) for a full breakdown.
   ```
 - The build script will attempt to create and start the builder automatically if needed.
 
+### Dialog Form Issues
+
+If the build process stops after the Docker information dialog or does not proceed:
+
+- Ensure you enter a **non-empty Docker Username** and **Repository Prefix**. These are required.
+- If you leave these fields blank, the script will prompt you to correct them.
+- If you see repeated prompts or the script exits, check your terminal for error messages.
+- If the `.env` file is missing or incomplete, the script will prompt for all required values.
+
+### Required .env Variables
+
+Your `buildx/.env` file should include at least:
+
+```ini
+DOCKER_USERNAME=your-dockerhub-username
+DOCKER_REPO_PREFIX=your-repo-prefix
+DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3
+```
+
+The `DOCKER_REGISTRY` variable is optional and can be left blank for Docker Hub.
+
 ---
 
 ## More Information
