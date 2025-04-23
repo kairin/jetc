@@ -203,8 +203,6 @@ ensure_buildx_builder_running() {
   else
     docker buildx use "$builder_name"
   fi
-  # Ensure builder is running
-  docker buildx inspect "$builder_name" | grep -q "Status: running" || docker buildx start "$builder_name"
   echo "Buildx builder '$builder_name' is ready." >&2
 }
 
