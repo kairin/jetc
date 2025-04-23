@@ -127,7 +127,7 @@ See [structure.md](buildx/readme/structure.md) for a full breakdown.
 
 ## License
 
-MIT License. See LICENSE file.
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). This means that you are free to use, share, and adapt the project for non-commercial purposes. Commercial use and monetization are explicitly prohibited. See the LICENSE file for full details.
 
 <!--
 # File location diagram:
