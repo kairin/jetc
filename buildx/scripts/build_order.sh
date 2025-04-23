@@ -1,6 +1,6 @@
 ######################################################################
 # THIS FILE CAN BE DELETED
-# Reason for deletion: File is empty. Functionality likely integrated into build.sh.
+# Reason for deletion: Build order and folder selection are now handled in build_ui.sh and passed to build_stages.sh.
 # You do NOT need this file anymore.
 ######################################################################
 

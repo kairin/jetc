@@ -1,6 +1,6 @@
 ######################################################################
 # THIS FILE CAN BE DELETED
-# Reason for deletion: File is empty. Functionality likely integrated into docker_helpers.sh or build.sh.
+# Reason for deletion: All builder setup is now handled in build.sh (calls ensure_buildx_builder_running from docker_helpers.sh).
 # You do NOT need this file anymore.
 ######################################################################
 

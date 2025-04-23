@@ -1,6 +1,6 @@
 ######################################################################
 # THIS FILE CAN BE DELETED
-# Reason for deletion: File is empty. Functionality likely integrated into build.sh or docker_helpers.sh.
+# Reason for deletion: Tagging logic is now handled in docker_helpers.sh and invoked from build.sh.
 # You do NOT need this file anymore.
 ######################################################################
 

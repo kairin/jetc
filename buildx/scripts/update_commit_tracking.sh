@@ -1,6 +1,6 @@
 ######################################################################
 # THIS FILE CAN BE DELETED
-# Reason for deletion: File is empty. Functionality likely in commit_tracking.sh.
+# Reason for deletion: Commit tracking logic is now handled in commit_tracking.sh.
 # You do NOT need this file anymore.
 ######################################################################
 

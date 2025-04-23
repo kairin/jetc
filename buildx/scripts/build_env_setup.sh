@@ -1,6 +1,6 @@
 ######################################################################
 # THIS FILE CAN BE DELETED
-# Reason for deletion: File is empty. Functionality likely integrated into build.sh or other scripts.
+# Reason for deletion: All environment setup and .env loading is now handled in build.sh (via build_ui.sh: load_env_variables).
 # You do NOT need this file anymore.
 ######################################################################
 
