@@ -299,13 +299,12 @@ list_installed_apps() {
 # =========================================================================
 # Entry point when script is executed directly (e.g., inside container)
 # =========================================================================
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]] || [[ "$1" == "run_checks" ]]; then
-    # If called with "run_checks", execute the internal function
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Only print usage and exit if executed directly, not when sourced or called as a function
     if [[ "$1" == "run_checks" ]]; then
         run_verification_checks "$2" # Pass the mode (e.g., quick, all)
         exit $?
     else
-        # If executed directly without "run_checks", show usage
         echo "This script is intended to be run inside a Docker container via 'verify_container_apps' or 'list_installed_apps'." >&2
         echo "Usage (within container): /tmp/verify_apps.sh run_checks [mode]" >&2
         exit 1
