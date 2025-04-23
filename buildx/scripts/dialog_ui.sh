@@ -8,13 +8,12 @@ source "$SCRIPT_DIR_DLG/utils.sh" || { echo "Error: utils.sh not found."; exit 1
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_DLG/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
 
-# Example: stub for get_user_preferences (move full dialog logic here from build_ui.sh)
 get_user_preferences() {
-  # ...existing code from build_ui.sh get_user_preferences...
+  # ...existing code for get_user_preferences from build_ui.sh...
 }
 
 get_user_preferences_basic() {
-  # ...existing code from build_ui.sh get_user_preferences_basic...
+  # ...existing code for get_user_preferences_basic from build_ui.sh...
 }
 
 # File location diagram:
