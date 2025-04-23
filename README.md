@@ -124,15 +124,18 @@ If the build process stops after the Docker information dialog or does not proce
 
 ### Required .env Variables
 
-Your `buildx/.env` file should include at least:
+Your `buildx/.env` file is the **canonical source** for all build and run configuration, image tracking, and persistent state. It should include at least:
 
 ```ini
 DOCKER_USERNAME=your-dockerhub-username
 DOCKER_REPO_PREFIX=your-repo-prefix
 DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3
+AVAILABLE_IMAGES=
 ```
 
 The `DOCKER_REGISTRY` variable is optional and can be left blank for Docker Hub.
+
+All scripts (build, run, tagging, verification) read and update `.env` for configuration and image state. Do not edit `.env` while a build or run is in progress.
 
 ---
 
