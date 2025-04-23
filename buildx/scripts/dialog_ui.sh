@@ -25,4 +25,4 @@ get_user_preferences_basic() {
 #
 # Description: Dialog UI logic for Jetson Container build system (user preferences, build options, folder selection).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240805-211000-DLGUI
+# COMMIT-TRACKING: UUID-20250423-232231-DLGUI
