@@ -62,13 +62,9 @@ get_user_preferences() {
       temp_username="$(echo -n "${lines[1]}" | tr -d '\r\n')"
       temp_prefix="$(echo -n "${lines[2]}" | tr -d '\r\n')"
 
-      local validation_error=""
-      if [[ -z "$temp_username" ]]; then validation_error+="Username cannot be empty.\\n"; fi
-      if [[ -z "$temp_prefix" ]]; then validation_error+="Repository Prefix cannot be empty.\\n"; fi
-
-      if [[ -n "$validation_error" ]]; then
-        dialog --msgbox "Validation Error:\\n\\n$validation_error\\nPlease correct the entries." 10 $DIALOG_WIDTH
-        if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
+      # Accept pre-filled or default values as valid if non-empty
+      if [[ -z "$temp_username" || -z "$temp_prefix" ]]; then
+        dialog --msgbox "Validation Error:\\n\\nUsername and Repository Prefix are required.\\nPlease correct the entries." 10 $DIALOG_WIDTH
         continue
       fi
 

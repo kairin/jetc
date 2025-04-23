@@ -48,6 +48,12 @@ load_env_variables() {
     if [ -f "$ENV_CANONICAL" ]; then
         export $(grep -v '^#' "$ENV_CANONICAL" | xargs)
     fi
+    # Always set defaults if missing
+    DOCKER_USERNAME=${DOCKER_USERNAME:-}
+    DOCKER_REGISTRY=${DOCKER_REGISTRY:-}
+    DOCKER_REPO_PREFIX=${DOCKER_REPO_PREFIX:-}
+    DEFAULT_BASE_IMAGE=${DEFAULT_BASE_IMAGE:-"nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3"}
+    export DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE
 }
 
 # File location diagram:
