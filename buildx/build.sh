@@ -46,11 +46,11 @@ update_available_images_in_env() {
 PREFS_FILE="/tmp/build_prefs.sh"
 
 # Setup basic build environment and load initial .env variables
-source "$SCRIPT_DIR/build_env_setup.sh" || exit 1
+source "$SCRIPT_DIR/build_ui.sh" || exit 1
+load_env_variables
 
 # Setup builder *before* getting preferences that might depend on it
 ensure_buildx_builder_running
-source "$SCRIPT_DIR/build_builder.sh" || exit 1
 
 # Call the function that shows the dialogs and gets user preferences
 # Note: build_prefs.sh functionality integrated into build_ui.sh
@@ -80,10 +80,8 @@ if [ -n "$SELECTED_BASE_IMAGE" ]; then
 fi
 
 # Determine build order and prepare selected folders map
-source "$SCRIPT_DIR/build_order.sh" || exit 1
-
 # Build selected numbered and other directories
-source "$SCRIPT_DIR/build_stages.sh" || exit 1
+build_selected_stages
 
 # Build Process - Selected Numbered Directories First
 for dir in "${numbered_dirs[@]}"; do
