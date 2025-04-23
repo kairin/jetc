@@ -38,6 +38,7 @@ PREFS_FILE="/tmp/build_prefs.sh"
 source "$SCRIPT_DIR/build_env_setup.sh" || exit 1
 
 # Setup builder *before* getting preferences that might depend on it
+ensure_buildx_builder_running
 source "$SCRIPT_DIR/build_builder.sh" || exit 1
 
 # Call the function that shows the dialogs and gets user preferences

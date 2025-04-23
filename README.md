@@ -95,6 +95,26 @@ See [structure.md](buildx/readme/structure.md) for a full breakdown.
 
 ---
 
+## Troubleshooting
+
+### .env Variable Errors
+
+- If you see errors like `No such file or directory` with an image name, check your `.env` file for invalid lines.
+- Only lines of the form `VAR=value` are allowed. Do not add arbitrary text or commands.
+- Never source or execute the value of a variable from `.env`.
+
+### Docker buildx Builder
+
+- The build system requires a working Docker buildx builder named `jetson-builder`.
+- If you see errors about buildx or builder not found, run:
+  ```bash
+  docker buildx create --name jetson-builder --driver docker-container --use
+  docker buildx start jetson-builder
+  ```
+- The build script will attempt to create and start the builder automatically if needed.
+
+---
+
 ## More Information
 
 - [Features & FAQ](buildx/readme/features.md)

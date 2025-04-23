@@ -193,6 +193,22 @@ generate_push_load_args() {
 }
 
 # =========================================================================
+# Function: Ensure buildx builder is running
+# =========================================================================
+ensure_buildx_builder_running() {
+  local builder_name="jetson-builder"
+  if ! docker buildx inspect "$builder_name" &>/dev/null; then
+    echo "Creating buildx builder: $builder_name" >&2
+    docker buildx create --name "$builder_name" --driver docker-container --use
+  else
+    docker buildx use "$builder_name"
+  fi
+  # Ensure builder is running
+  docker buildx inspect "$builder_name" | grep -q "Status: running" || docker buildx start "$builder_name"
+  echo "Buildx builder '$builder_name' is ready." >&2
+}
+
+# =========================================================================
 # Build a Docker image from a specific folder using buildx
 # =========================================================================
 # Parameters:

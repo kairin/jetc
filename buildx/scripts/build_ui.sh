@@ -120,14 +120,16 @@ load_env_variables() {
 
   if [ -f "$env_file" ]; then
     echo "Loading environment variables from $env_file..." >&2
-    # Only source lines that are valid variable assignments (no spaces, no shell commands)
-    set -a
-    eval "$(
-      grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file" \
-      | grep -v '^[[:space:]]*#' \
-      | sed 's/[[:space:]]*$//'
-    )"
-    set +a
+    # Only export lines that are valid variable assignments, never eval or source values
+    while IFS='=' read -r key value; do
+      # Skip comments and empty lines
+      [[ "$key" =~ ^[[:space:]]*# ]] && continue
+      [[ -z "$key" || -z "$value" ]] && continue
+      # Only allow valid variable names
+      if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+        export "$key=$value"
+      fi
+    done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$env_file")
     echo "Finished loading .env file." >&2
   else
     echo "INFO: $env_file not found. Will rely on defaults or prompts." >&2
