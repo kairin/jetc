@@ -66,6 +66,14 @@ setup_build_environment() {
   return 0
 }
 
+# =========================================================================
+# Function: Get and store the current datetime for reference across the app
+# =========================================================================
+store_current_datetime() {
+  export JETC_RUN_DATETIME="$(date +"%Y-%m-%d %H:%M:%S")"
+  echo "$JETC_RUN_DATETIME"
+}
+
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
