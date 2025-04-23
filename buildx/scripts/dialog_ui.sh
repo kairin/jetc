@@ -9,11 +9,11 @@ source "$SCRIPT_DIR_DLG/utils.sh" || { echo "Error: utils.sh not found."; exit 1
 source "$SCRIPT_DIR_DLG/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
 
 get_user_preferences() {
-  # ...existing code for get_user_preferences from build_ui.sh...
+  # ...existing code from build_ui.sh get_user_preferences...
 }
 
 get_user_preferences_basic() {
-  # ...existing code for get_user_preferences_basic from build_ui.sh...
+  # ...existing code from build_ui.sh get_user_preferences_basic...
 }
 
 # File location diagram:
