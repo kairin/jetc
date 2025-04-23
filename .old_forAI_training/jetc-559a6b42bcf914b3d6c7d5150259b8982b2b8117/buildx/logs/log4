@@ -1,0 +1,1064 @@
+❯ ls -a
+.  ..  build  build.sh  jetcrun.sh  logs  scripts
+❯ ./build.sh
+Found .env file in ../.vscode directory
+Using existing buildx builder: jetson-builder
+Do you want to build with cache? (y/n): n
+Do you want to attempt squashing image layers (experimental)? (y/n): n
+Skip intermediate push/pull for each stage (requires --load)? (y/n): y
+Note: Skipping push/pull. Will use '--load' to make images available locally.
+Initial base image set to: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Determining build order...
+Starting build process...
+--- Building Numbered Directories ---
+Processing numbered directory: build/01-00-build-essential
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Generating fixed tag: kairin/001:01-00-build-essential
+--------------------------------------------------
+Building image from folder: build/01-00-build-essential
+Image Name: 01-00-build-essential
+Platform: linux/arm64
+Tag: kairin/001:01-00-build-essential
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:01-00-build-essential --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --load build/01-00-build-essential
+[+] Building 52.0s (12/12) FINISHED                                                                       docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 7.79kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 26)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                             1.9s
+ => [auth] kairin/001:pull token for registry-1.docker.io                                                                            0.0s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/6] FROM docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu@sha256:dde556a5bcbffea413d29bca3f0f9c05eb7107c1e6b57d  0.0s
+ => => resolve docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu@sha256:dde556a5bcbffea413d29bca3f0f9c05eb7107c1e6b57dac08e8e  0.0s
+ => [2/6] RUN touch /opt/list_app_checks.sh                                                                                          0.2s
+ => [3/6] RUN set -ex     && apt-get update     && apt-get install -y --no-install-recommends         locales         locales-all    9.9s
+ => [4/6] RUN echo '#!/usr/bin/env bash' > /tmp/vercmp &&     echo '#' >> /tmp/vercmp &&     echo '# Backportable version compariso  0.1s
+ => [5/6] RUN echo '#!/usr/bin/env bash' > /tmp/tarpack &&     echo 'set -ex' >> /tmp/tarpack &&     echo '' >> /tmp/tarpack &&      0.1s 
+ => [6/6] RUN echo "# Check for build tools" >> /tmp/build_checks.sh     && echo "check_cmd gcc 'gcc --version'" >> /tmp/build_chec  0.1s 
+ => exporting to docker image format                                                                                                39.3s 
+ => => exporting layers                                                                                                              0.5s 
+ => => exporting manifest sha256:88627b7861655680e00cefe45b3048eb4a3da21b92df8c9a8e227e4fb94f8e24                                    0.0s 
+ => => exporting config sha256:55e1a0ffb875a9083a1290195865b073fbd4e97e7ae20a22bcb370a00e3689c8                                      0.0s
+ => => sending tarball                                                                                                              38.8s
+ => importing to docker                                                                                                              1.2s
+ => => loading layer f95f2054c40c 135B / 135B                                                                                        1.2s
+ => => loading layer e6bb76339737 4.23kB / 4.23kB                                                                                    1.2s
+ => => loading layer 22baf2e29500 451B / 451B                                                                                        1.2s
+ => => loading layer b9e17001393c 828B / 828B                                                                                        1.2s
+ => => loading layer 0d698137d97c 256B / 256B                                                                                        1.1s
+Skipped pulling image kairin/001:01-00-build-essential as push was skipped.
+Verifying image kairin/001:01-00-build-essential exists locally...
+Image kairin/001:01-00-build-essential verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:01-00-build-essential
+Next base image will be: kairin/001:01-00-build-essential
+Processing numbered directory: build/01-01-arrow
+Using base image: kairin/001:01-00-build-essential
+Generating fixed tag: kairin/001:01-01-arrow
+--------------------------------------------------
+Building image from folder: build/01-01-arrow
+Image Name: 01-01-arrow
+Platform: linux/arm64
+Tag: kairin/001:01-01-arrow
+Base Image (FROM via ARG): kairin/001:01-00-build-essential
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:01-01-arrow --build-arg BASE_IMAGE=kairin/001:01-00-build-essential --no-cache --load build/01-01-arrow
+[+] Building 2.0s (5/11)                                                                                  docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.84kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 16)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:01-00-build-essential                                                          0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/8] FROM docker.io/kairin/001:01-00-build-essential@sha256:de753bbf537515ba50e505c0032c3100655a86ec450405decbb35346c66  0.0s
+ => => resolve docker.io/kairin/001:01-00-build-essential@sha256:de753bbf537515ba50e505c0032c3100655a86ec450405decbb35346c665ab0b    0.0s
+ => ERROR [2/8] RUN git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow              1.0s
+------                                                                                                                                    
+ > [2/8] RUN git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow:                         
+0.094 Cloning into '/opt/arrow'...
+0.921 warning: Could not find remote branch  to clone.
+0.922 fatal: Remote branch  not found in upstream origin
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 16)
+Dockerfile:20
+--------------------
+  18 |     ARG ARROW_BRANCH
+  19 |     
+  20 | >>> RUN git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow
+  21 |         
+  22 |     RUN cd /opt/arrow/cpp && \
+--------------------
+ERROR: failed to solve: process "/bin/sh -c git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow" did not complete successfully: exit code: 128
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-01-arrow (build/01-01-arrow).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-01-arrow. Subsequent dependent builds might fail.
+Build process for build/01-01-arrow exited with code 1
+Continuing with next build...
+Processing numbered directory: build/01-01-numba
+Using base image: kairin/001:01-00-build-essential
+Generating fixed tag: kairin/001:01-01-numba
+--------------------------------------------------
+Building image from folder: build/01-01-numba
+Image Name: 01-01-numba
+Platform: linux/arm64
+Tag: kairin/001:01-01-numba
+Base Image (FROM via ARG): kairin/001:01-00-build-essential
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:01-01-numba --build-arg BASE_IMAGE=kairin/001:01-00-build-essential --no-cache --load build/01-01-numba
+[+] Building 37.7s (7/8)                                                                                  docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 5.69kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 16)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:01-00-build-essential                                                          0.3s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/5] FROM docker.io/kairin/001:01-00-build-essential@sha256:de753bbf537515ba50e505c0032c3100655a86ec450405decbb35346c66  0.0s
+ => => resolve docker.io/kairin/001:01-00-build-essential@sha256:de753bbf537515ba50e505c0032c3100655a86ec450405decbb35346c665ab0b    0.0s
+ => [2/5] RUN apt-get update &&     apt-get install -y --no-install-recommends     llvm-dev     && rm -rf /var/lib/apt/lists/*      31.9s
+ => [3/5] RUN pip3 install --no-cache-dir --break-system-packages numba &&     echo "Installed numba version:" &&     pip3 show num  4.4s 
+ => ERROR [4/5] RUN echo '#!/usr/bin/env python3' > /tmp/test_numba.py &&     echo "print('testing numba...')" >> /tmp/test_numba.p  0.9s 
+------                                                                                                                                    
+ > [4/5] RUN echo '#!/usr/bin/env python3' > /tmp/test_numba.py &&     echo "print('testing numba...')" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "import math" >> /tmp/test_numba.py &&     echo "import numba" >> /tmp/test_numba.py &&     echo "from numba import vectorize, guvectorize, cuda" >> /tmp/test_numba.py &&     echo "import numpy as np" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "print('numba version: ' + str(numba.__version__))" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "# test scalar vectorization" >> /tmp/test_numba.py &&     echo "print('testing cuda vectorized ufunc...')" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "@vectorize(['float32(float32, float32, float32)'," >> /tmp/test_numba.py &&     echo "            'float64(float64, float64, float64)']," >> /tmp/test_numba.py &&     echo "           target='cuda')" >> /tmp/test_numba.py &&     echo "def cu_discriminant(a, b, c):" >> /tmp/test_numba.py &&     echo "    return math.sqrt(b ** 2 - 4 * a * c)" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "N = 10000" >> /tmp/test_numba.py &&     echo "dtype = np.float32" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "# prepare the input" >> /tmp/test_numba.py &&     echo "A = np.array(np.random.sample(N), dtype=dtype)" >> /tmp/test_numba.py &&     echo "B = np.array(np.random.sample(N) + 10, dtype=dtype)" >> /tmp/test_numba.py &&     echo "C = np.array(np.random.sample(N), dtype=dtype)" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "D = cu_discriminant(A, B, C)" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "print('cuda vectorized ufunc result:')" >> /tmp/test_numba.py &&     echo "# print(D) # Commented out to avoid excessive output" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "# test array vectorization" >> /tmp/test_numba.py &&     echo "print('testing cuda guvectorized ufunc...')" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "@guvectorize(['uint8[:], uint8[:], uint8[:]'," >> /tmp/test_numba.py &&     echo "              'float32[:], float32[:], float32[:]'], " >> /tmp/test_numba.py &&     echo "              '(n),(n)->(n)'," >> /tmp/test_numba.py &&     echo "             target='cuda')" >> /tmp/test_numba.py &&     echo "def cu_add_arrays(x, y, res):" >> /tmp/test_numba.py &&     echo "    for i in range(x.shape[0]):" >> /tmp/test_numba.py &&     echo "        res[i] = x[i] + y[i]" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "A = np.full((2,4,3), 1, dtype)" >> /tmp/test_numba.py &&     echo "B = np.full(A.shape, 2, dtype)" >> /tmp/test_numba.py &&     echo "C = cu_add_arrays(A, B)" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "print('cuda guvectorized ufunc result:')" >> /tmp/test_numba.py &&     echo "# print(C) # Commented out to avoid excessive output" >> /tmp/test_numba.py &&     echo "" >> /tmp/test_numba.py &&     echo "print('numba OK\n')" >> /tmp/test_numba.py &&     echo "Running embedded numba test script..." &&     python3 /tmp/test_numba.py &&     rm /tmp/test_numba.py:
+0.105 Running embedded numba test script...
+0.747 testing numba...
+0.747 numba version: 0.61.0
+0.747 testing cuda vectorized ufunc...
+0.747 Traceback (most recent call last):
+0.747   File "/tmp/test_numba.py", line 14, in <module>
+0.747     @vectorize(['float32(float32, float32, float32)',
+0.747      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+0.747   File "/usr/local/lib/python3.12/dist-packages/numba/np/ufunc/decorators.py", line 131, in wrap
+0.748     vec.add(sig)
+0.749   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/deviceufunc.py", line 391, in add
+0.749     corefn, return_type = self._compile_core(devfnsig)
+0.749                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+0.749   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/vectorizers.py", line 202, in _compile_core
+0.749     cudevfn = cuda.jit(sig, device=True, inline=True)(self.pyfunc)
+0.749               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+0.749   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/decorators.py", line 131, in _jit
+0.750     disp.compile_device(argtypes, restype)
+0.750   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/dispatcher.py", line 882, in compile_device
+0.751     cc = get_current_device().compute_capability
+0.751          ^^^^^^^^^^^^^^^^^^^^
+0.751   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/api.py", line 443, in get_current_device
+0.752     return current_context().device
+0.752            ^^^^^^^^^^^^^^^^^
+0.752   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/cudadrv/devices.py", line 220, in get_context
+0.752     return _runtime.get_or_create_context(devnum)
+0.752            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+0.752   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/cudadrv/devices.py", line 138, in get_or_create_context
+0.753     return self._get_or_create_context_uncached(devnum)
+0.753            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+0.753   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/cudadrv/devices.py", line 153, in _get_or_create_context_uncached
+0.753     with driver.get_active_context() as ac:
+0.753   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/cudadrv/driver.py", line 495, in __enter__
+0.753     driver.cuCtxGetCurrent(byref(hctx))
+0.753     ^^^^^^^^^^^^^^^^^^^^^^
+0.753   File "/usr/local/lib/python3.12/dist-packages/numba/cuda/cudadrv/driver.py", line 295, in __getattr__
+0.753     raise CudaSupportError("Error at driver init: \n%s:" %
+0.754 numba.cuda.cudadrv.error.CudaSupportError: Error at driver init: 
+0.754 
+0.754 CUDA driver library cannot be found.
+0.754 If you are sure that a CUDA driver is installed,
+0.754 try setting environment variable NUMBA_CUDA_DRIVER
+0.754 with the file path of the CUDA driver shared library.
+0.754 :
+------
+Dockerfile:41
+--------------------
+  40 |     # For more complex tests, consider using `COPY test.py /tmp/test_numba.py` instead.
+  41 | >>> RUN echo '#!/usr/bin/env python3' > /tmp/test_numba.py && \
+  42 | >>>     echo "print('testing numba...')" >> /tmp/test_numba.py && \
+  43 | >>>     echo "" >> /tmp/test_numba.py && \
+  44 | >>>     echo "import math" >> /tmp/test_numba.py && \
+  45 | >>>     echo "import numba" >> /tmp/test_numba.py && \
+  46 | >>>     echo "from numba import vectorize, guvectorize, cuda" >> /tmp/test_numba.py && \
+  47 | >>>     echo "import numpy as np" >> /tmp/test_numba.py && \
+  48 | >>>     echo "" >> /tmp/test_numba.py && \
+  49 | >>>     echo "print('numba version: ' + str(numba.__version__))" >> /tmp/test_numba.py && \
+  50 | >>>     echo "" >> /tmp/test_numba.py && \
+  51 | >>>     echo "# test scalar vectorization" >> /tmp/test_numba.py && \
+  52 | >>>     echo "print('testing cuda vectorized ufunc...')" >> /tmp/test_numba.py && \
+  53 | >>>     echo "" >> /tmp/test_numba.py && \
+  54 | >>>     echo "@vectorize(['float32(float32, float32, float32)'," >> /tmp/test_numba.py && \
+  55 | >>>     echo "            'float64(float64, float64, float64)']," >> /tmp/test_numba.py && \
+  56 | >>>     echo "           target='cuda')" >> /tmp/test_numba.py && \
+  57 | >>>     echo "def cu_discriminant(a, b, c):" >> /tmp/test_numba.py && \
+  58 | >>>     echo "    return math.sqrt(b ** 2 - 4 * a * c)" >> /tmp/test_numba.py && \
+  59 | >>>     echo "" >> /tmp/test_numba.py && \
+  60 | >>>     echo "N = 10000" >> /tmp/test_numba.py && \
+  61 | >>>     echo "dtype = np.float32" >> /tmp/test_numba.py && \
+  62 | >>>     echo "" >> /tmp/test_numba.py && \
+  63 | >>>     echo "# prepare the input" >> /tmp/test_numba.py && \
+  64 | >>>     echo "A = np.array(np.random.sample(N), dtype=dtype)" >> /tmp/test_numba.py && \
+  65 | >>>     echo "B = np.array(np.random.sample(N) + 10, dtype=dtype)" >> /tmp/test_numba.py && \
+  66 | >>>     echo "C = np.array(np.random.sample(N), dtype=dtype)" >> /tmp/test_numba.py && \
+  67 | >>>     echo "" >> /tmp/test_numba.py && \
+  68 | >>>     echo "D = cu_discriminant(A, B, C)" >> /tmp/test_numba.py && \
+  69 | >>>     echo "" >> /tmp/test_numba.py && \
+  70 | >>>     echo "print('cuda vectorized ufunc result:')" >> /tmp/test_numba.py && \
+  71 | >>>     echo "# print(D) # Commented out to avoid excessive output" >> /tmp/test_numba.py && \
+  72 | >>>     echo "" >> /tmp/test_numba.py && \
+  73 | >>>     echo "# test array vectorization" >> /tmp/test_numba.py && \
+  74 | >>>     echo "print('testing cuda guvectorized ufunc...')" >> /tmp/test_numba.py && \
+  75 | >>>     echo "" >> /tmp/test_numba.py && \
+  76 | >>>     echo "@guvectorize(['uint8[:], uint8[:], uint8[:]'," >> /tmp/test_numba.py && \
+  77 | >>>     echo "              'float32[:], float32[:], float32[:]'], " >> /tmp/test_numba.py && \
+  78 | >>>     echo "              '(n),(n)->(n)'," >> /tmp/test_numba.py && \
+  79 | >>>     echo "             target='cuda')" >> /tmp/test_numba.py && \
+  80 | >>>     echo "def cu_add_arrays(x, y, res):" >> /tmp/test_numba.py && \
+  81 | >>>     echo "    for i in range(x.shape[0]):" >> /tmp/test_numba.py && \
+  82 | >>>     echo "        res[i] = x[i] + y[i]" >> /tmp/test_numba.py && \
+  83 | >>>     echo "" >> /tmp/test_numba.py && \
+  84 | >>>     echo "A = np.full((2,4,3), 1, dtype)" >> /tmp/test_numba.py && \
+  85 | >>>     echo "B = np.full(A.shape, 2, dtype)" >> /tmp/test_numba.py && \
+  86 | >>>     echo "C = cu_add_arrays(A, B)" >> /tmp/test_numba.py && \
+  87 | >>>     echo "" >> /tmp/test_numba.py && \
+  88 | >>>     echo "print('cuda guvectorized ufunc result:')" >> /tmp/test_numba.py && \
+  89 | >>>     echo "# print(C) # Commented out to avoid excessive output" >> /tmp/test_numba.py && \
+  90 | >>>     echo "" >> /tmp/test_numba.py && \
+  91 | >>>     echo "print('numba OK\\n')" >> /tmp/test_numba.py && \
+  92 | >>>     echo "Running embedded numba test script..." && \
+  93 | >>>     python3 /tmp/test_numba.py && \
+  94 | >>>     rm /tmp/test_numba.py
+  95 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c echo '#!/usr/bin/env python3' > /tmp/test_numba.py &&     echo \"print('testing numba...')\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"import math\" >> /tmp/test_numba.py &&     echo \"import numba\" >> /tmp/test_numba.py &&     echo \"from numba import vectorize, guvectorize, cuda\" >> /tmp/test_numba.py &&     echo \"import numpy as np\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"print('numba version: ' + str(numba.__version__))\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"# test scalar vectorization\" >> /tmp/test_numba.py &&     echo \"print('testing cuda vectorized ufunc...')\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"@vectorize(['float32(float32, float32, float32)',\" >> /tmp/test_numba.py &&     echo \"            'float64(float64, float64, float64)'],\" >> /tmp/test_numba.py &&     echo \"           target='cuda')\" >> /tmp/test_numba.py &&     echo \"def cu_discriminant(a, b, c):\" >> /tmp/test_numba.py &&     echo \"    return math.sqrt(b ** 2 - 4 * a * c)\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"N = 10000\" >> /tmp/test_numba.py &&     echo \"dtype = np.float32\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"# prepare the input\" >> /tmp/test_numba.py &&     echo \"A = np.array(np.random.sample(N), dtype=dtype)\" >> /tmp/test_numba.py &&     echo \"B = np.array(np.random.sample(N) + 10, dtype=dtype)\" >> /tmp/test_numba.py &&     echo \"C = np.array(np.random.sample(N), dtype=dtype)\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"D = cu_discriminant(A, B, C)\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"print('cuda vectorized ufunc result:')\" >> /tmp/test_numba.py &&     echo \"# print(D) # Commented out to avoid excessive output\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"# test array vectorization\" >> /tmp/test_numba.py &&     echo \"print('testing cuda guvectorized ufunc...')\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"@guvectorize(['uint8[:], uint8[:], uint8[:]',\" >> /tmp/test_numba.py &&     echo \"              'float32[:], float32[:], float32[:]'], \" >> /tmp/test_numba.py &&     echo \"              '(n),(n)->(n)',\" >> /tmp/test_numba.py &&     echo \"             target='cuda')\" >> /tmp/test_numba.py &&     echo \"def cu_add_arrays(x, y, res):\" >> /tmp/test_numba.py &&     echo \"    for i in range(x.shape[0]):\" >> /tmp/test_numba.py &&     echo \"        res[i] = x[i] + y[i]\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"A = np.full((2,4,3), 1, dtype)\" >> /tmp/test_numba.py &&     echo \"B = np.full(A.shape, 2, dtype)\" >> /tmp/test_numba.py &&     echo \"C = cu_add_arrays(A, B)\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"print('cuda guvectorized ufunc result:')\" >> /tmp/test_numba.py &&     echo \"# print(C) # Commented out to avoid excessive output\" >> /tmp/test_numba.py &&     echo \"\" >> /tmp/test_numba.py &&     echo \"print('numba OK\\\\n')\" >> /tmp/test_numba.py &&     echo \"Running embedded numba test script...\" &&     python3 /tmp/test_numba.py &&     rm /tmp/test_numba.py" did not complete successfully: exit code: 1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-01-numba (build/01-01-numba).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-01-numba. Subsequent dependent builds might fail.
+Build process for build/01-01-numba exited with code 1
+Continuing with next build...
+Processing numbered directory: build/01-01-numpy
+Using base image: kairin/001:01-00-build-essential
+Generating fixed tag: kairin/001:01-01-numpy
+--------------------------------------------------
+Building image from folder: build/01-01-numpy
+Image Name: 01-01-numpy
+Platform: linux/arm64
+Tag: kairin/001:01-01-numpy
+Base Image (FROM via ARG): kairin/001:01-00-build-essential
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:01-01-numpy --build-arg BASE_IMAGE=kairin/001:01-00-build-essential --no-cache --load build/01-01-numpy
+[+] Building 38.9s (9/9) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.67kB                                                                                               0.0s
+ => [internal] load metadata for docker.io/kairin/001:01-00-build-essential                                                          0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/4] FROM docker.io/kairin/001:01-00-build-essential@sha256:de753bbf537515ba50e505c0032c3100655a86ec450405decbb35346c66  0.0s
+ => => resolve docker.io/kairin/001:01-00-build-essential@sha256:de753bbf537515ba50e505c0032c3100655a86ec450405decbb35346c665ab0b    0.0s
+ => [2/4] RUN set -ex &&     pip3 install --no-cache-dir --force-reinstall numpy &&     echo "Installed numpy version:" &&     pip3  1.0s
+ => [3/4] RUN echo '#!/usr/bin/env python3' > /tmp/test_numpy.py &&     echo "print('testing numpy...')" >> /tmp/test_numpy.py &&    0.4s
+ => [4/4] RUN echo "# Check for Numpy" >> /tmp/numpy_checks.sh     && echo "check_python_package numpy 'Numpy numerical computing l  0.1s
+ => exporting to docker image format                                                                                                36.3s 
+ => => exporting layers                                                                                                              0.3s 
+ => => exporting manifest sha256:9de0bce7804a40a60fb098ba83e65dbaf9d99a4d272924413aea8d6d5d1bebb4                                    0.0s 
+ => => exporting config sha256:2df6f2803bd768eba039d89d8f3d68c18b16cb90306f6426f1b8eb08c316b11d                                      0.0s 
+ => => sending tarball                                                                                                              35.9s 
+ => importing to docker                                                                                                              1.1s
+ => => loading layer 6caa5e3c3c8c 314B / 314B                                                                                        1.1s
+Skipped pulling image kairin/001:01-01-numpy as push was skipped.
+Verifying image kairin/001:01-01-numpy exists locally...
+Image kairin/001:01-01-numpy verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:01-01-numpy
+Next base image will be: kairin/001:01-01-numpy
+Processing numbered directory: build/01-cuda
+Using base image: kairin/001:01-01-numpy
+Generating fixed tag: kairin/001:01-cuda
+--------------------------------------------------
+Building image from folder: build/01-cuda
+Image Name: 01-cuda
+Platform: linux/arm64
+Tag: kairin/001:01-cuda
+Base Image (FROM via ARG): kairin/001:01-01-numpy
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:01-cuda --build-arg BASE_IMAGE=kairin/001:01-01-numpy --no-cache --load build/01-cuda
+[+] Building 1.1s (6/8)                                                                                   docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.20kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 21)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:01-01-numpy                                                                    0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/5] FROM docker.io/kairin/001:01-01-numpy@sha256:cfb1b6f4fc8e379205db250270f5de961eae1c3f11d52728b3fe65d63c4dcb7b       0.0s
+ => => resolve docker.io/kairin/001:01-01-numpy@sha256:cfb1b6f4fc8e379205db250270f5de961eae1c3f11d52728b3fe65d63c4dcb7b              0.0s
+ => ERROR [2/5] COPY cuda/install.sh /tmp/cuda/install.sh                                                                            0.0s
+------
+ > [2/5] COPY cuda/install.sh /tmp/cuda/install.sh:
+------
+
+ 2 warnings found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 21)
+ - UndefinedVar: Usage of undefined variable '$LD_LIBRARY_PATH' (line 35)
+Dockerfile:29
+--------------------
+  27 |         DISTRO
+  28 |     
+  29 | >>> COPY cuda/install.sh /tmp/cuda/install.sh
+  30 |     RUN /tmp/cuda/install.sh
+  31 |     
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref kfcfcjoj9cv7l48t1svsyu42x::kjn0fvy4msmysedcybq8n65pw: "/cuda/install.sh": not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-cuda (build/01-cuda).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-cuda. Subsequent dependent builds might fail.
+Build process for build/01-cuda exited with code 1
+Continuing with next build...
+Processing numbered directory: build/02-bazel
+Using base image: kairin/001:01-01-numpy
+Generating fixed tag: kairin/001:02-bazel
+--------------------------------------------------
+Building image from folder: build/02-bazel
+Image Name: 02-bazel
+Platform: linux/arm64
+Tag: kairin/001:02-bazel
+Base Image (FROM via ARG): kairin/001:01-01-numpy
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:02-bazel --build-arg BASE_IMAGE=kairin/001:01-01-numpy --no-cache --load build/02-bazel
+[+] Building 45.6s (8/8) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.10kB                                                                                               0.0s
+ => [internal] load metadata for docker.io/kairin/001:01-01-numpy                                                                    0.3s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:01-01-numpy@sha256:cfb1b6f4fc8e379205db250270f5de961eae1c3f11d52728b3fe65d63c4dcb7b       0.0s
+ => => resolve docker.io/kairin/001:01-01-numpy@sha256:cfb1b6f4fc8e379205db250270f5de961eae1c3f11d52728b3fe65d63c4dcb7b              0.0s
+ => [2/3] RUN BAZELISK_RELEASE=$(wget -qO- https://api.github.com/repos/bazelbuild/bazelisk/releases/latest | grep -Po '"tag_name":  2.2s
+ => [3/3] RUN bazel --version                                                                                                        3.0s
+ => exporting to docker image format                                                                                                39.9s 
+ => => exporting layers                                                                                                              3.4s 
+ => => exporting manifest sha256:564935fcc4a5f9af2dae9871ca44d0fed1e416dda602d16179d8571f38710c92                                    0.0s
+ => => exporting config sha256:7635a74b2857f38eea5e7b225193fc359247222d7025d80aa2823b36cd5f3c39                                      0.0s
+ => => sending tarball                                                                                                              36.5s
+ => importing to docker                                                                                                              1.5s
+ => => loading layer 5a5b3716bc27 56.04MB / 56.04MB                                                                                  1.5s
+Skipped pulling image kairin/001:02-bazel as push was skipped.
+Verifying image kairin/001:02-bazel exists locally...
+Image kairin/001:02-bazel verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:02-bazel
+Next base image will be: kairin/001:02-bazel
+Processing numbered directory: build/03-ninja
+Using base image: kairin/001:02-bazel
+Generating fixed tag: kairin/001:03-ninja
+--------------------------------------------------
+Building image from folder: build/03-ninja
+Image Name: 03-ninja
+Platform: linux/arm64
+Tag: kairin/001:03-ninja
+Base Image (FROM via ARG): kairin/001:02-bazel
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:03-ninja --build-arg BASE_IMAGE=kairin/001:02-bazel --no-cache --load build/03-ninja
+[+] Building 63.4s (8/8) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.75kB                                                                                               0.0s
+ => [internal] load metadata for docker.io/kairin/001:02-bazel                                                                       0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:02-bazel@sha256:eeb58f3e481c60372acc9108262141ce09ce69060101ad1e176b527fd045e63b          0.0s
+ => => resolve docker.io/kairin/001:02-bazel@sha256:eeb58f3e481c60372acc9108262141ce09ce69060101ad1e176b527fd045e63b                 0.0s
+ => [2/3] RUN apt-get update &&     apt-get install -y --no-install-recommends     unzip wget curl jq                               13.8s
+ => [3/3] RUN LATEST_VERSION=$(curl -s https://api.github.com/repos/ninja-build/ninja/releases/latest | jq -r .tag_name) &&     wge  7.9s 
+ => exporting to docker image format                                                                                                40.5s 
+ => => exporting layers                                                                                                              3.4s 
+ => => exporting manifest sha256:7c5169fc83a04beb57b47848212543b65dbdf0bb66cc2cf26ee3aee048e7c347                                    0.0s 
+ => => exporting config sha256:1b5705f78bcbe290b2645a79983624809f3da8ee2d2dbe04b77127c489536ad2                                      0.0s 
+ => => sending tarball                                                                                                              37.0s 
+ => importing to docker                                                                                                              1.7s 
+ => => loading layer 2d7f94ed0050 34.16MB / 34.16MB                                                                                  1.7s
+ => => loading layer 0f39b390f8a0 485.39kB / 485.39kB                                                                                1.2s
+Skipped pulling image kairin/001:03-ninja as push was skipped.
+Verifying image kairin/001:03-ninja exists locally...
+Image kairin/001:03-ninja verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:03-ninja
+Next base image will be: kairin/001:03-ninja
+Processing numbered directory: build/04-python
+Using base image: kairin/001:03-ninja
+Generating fixed tag: kairin/001:04-python
+--------------------------------------------------
+Building image from folder: build/04-python
+Image Name: 04-python
+Platform: linux/arm64
+Tag: kairin/001:04-python
+Base Image (FROM via ARG): kairin/001:03-ninja
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:04-python --build-arg BASE_IMAGE=kairin/001:03-ninja --no-cache --load build/04-python
+[+] Building 72.4s (9/9) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.92kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:03-ninja                                                                       0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 32B                                                                                                     0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:03-ninja@sha256:ef79bde5cdb5dcf6218f7a049108fcfacf34783df8252e0bde9f315820a9b410          0.0s
+ => => resolve docker.io/kairin/001:03-ninja@sha256:ef79bde5cdb5dcf6218f7a049108fcfacf34783df8252e0bde9f315820a9b410                 0.0s
+ => [2/3] COPY install.sh /tmp/install_python.sh                                                                                     0.1s
+ => [3/3] RUN /tmp/install_python.sh                                                                                                32.7s
+ => exporting to docker image format                                                                                                38.5s 
+ => => exporting layers                                                                                                              1.8s 
+ => => exporting manifest sha256:05d338d510b3b942457f30df1f5a856d4f2f78b0fecc95febd3cac50bd0d643d                                    0.0s 
+ => => exporting config sha256:b4b669c7f578f2bf2abd6f2aa0b58784b6eacec01c7169b4a711e4d23cad2687                                      0.0s 
+ => => sending tarball                                                                                                              36.7s 
+ => importing to docker                                                                                                              1.8s 
+ => => loading layer ad465045d52e 1.00kB / 1.00kB                                                                                    1.8s
+ => => loading layer 0b475259eb1b 4.09MB / 4.09MB                                                                                    1.7s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Skipped pulling image kairin/001:04-python as push was skipped.
+Verifying image kairin/001:04-python exists locally...
+Image kairin/001:04-python verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:04-python
+Next base image will be: kairin/001:04-python
+Processing numbered directory: build/05-h5py
+Using base image: kairin/001:04-python
+Generating fixed tag: kairin/001:05-h5py
+--------------------------------------------------
+Building image from folder: build/05-h5py
+Image Name: 05-h5py
+Platform: linux/arm64
+Tag: kairin/001:05-h5py
+Base Image (FROM via ARG): kairin/001:04-python
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:05-h5py --build-arg BASE_IMAGE=kairin/001:04-python --no-cache --load build/05-h5py
+[+] Building 49.9s (8/8) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.77kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:04-python                                                                      1.7s
+ => [auth] kairin/001:pull token for registry-1.docker.io                                                                            0.0s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/2] FROM docker.io/kairin/001:04-python@sha256:b74f5564e00ddcdf87795e1eb676c887dd2fc346b330df0584d99d9afdcac716         0.0s
+ => => resolve docker.io/kairin/001:04-python@sha256:b74f5564e00ddcdf87795e1eb676c887dd2fc346b330df0584d99d9afdcac716                0.0s
+ => [2/2] RUN set -ex &&     apt-get update &&     apt-get install -y --no-install-recommends         libhdf5-serial-dev         h  11.4s
+ => exporting to docker image format                                                                                                36.5s 
+ => => exporting layers                                                                                                              0.2s 
+ => => exporting manifest sha256:fde98b75fd83f606596ac0bcca7f71e2acc0cc598ff2c01d48783d08230e1ccd                                    0.0s 
+ => => exporting config sha256:479fdf88a3acd0c2a729aefaf7b61e00a4c350a5ee6e069a3e20fc46a1011751                                      0.0s 
+ => => sending tarball                                                                                                              36.3s 
+ => importing to docker                                                                                                              1.2s 
+ => => loading layer 62183d050934 191B / 191B                                                                                        1.2s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)
+Skipped pulling image kairin/001:05-h5py as push was skipped.
+Verifying image kairin/001:05-h5py exists locally...
+Image kairin/001:05-h5py verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:05-h5py
+Next base image will be: kairin/001:05-h5py
+Processing numbered directory: build/06-rust
+Using base image: kairin/001:05-h5py
+Generating fixed tag: kairin/001:06-rust
+--------------------------------------------------
+Building image from folder: build/06-rust
+Image Name: 06-rust
+Platform: linux/arm64
+Tag: kairin/001:06-rust
+Base Image (FROM via ARG): kairin/001:05-h5py
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:06-rust --build-arg BASE_IMAGE=kairin/001:05-h5py --no-cache --load build/06-rust
+[+] Building 42.5s (8/8) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.38kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:05-h5py                                                                        0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:05-h5py@sha256:2bb0d42d79b9ca366d7a570664aee3f07163c22af06edf021e02319b35d54d23           0.0s
+ => => resolve docker.io/kairin/001:05-h5py@sha256:2bb0d42d79b9ca366d7a570664aee3f07163c22af06edf021e02319b35d54d23                  0.0s
+ => [2/3] RUN curl https://sh.rustup.rs -sSf | sh -s -- -y                                                                           1.5s
+ => [3/3] RUN rustc --version &&     pip3 install setuptools-rust                                                                    1.8s 
+ => exporting to docker image format                                                                                                38.0s 
+ => => exporting layers                                                                                                              1.2s 
+ => => exporting manifest sha256:93402d7ca3bfd5e10575631f881bc5cf4a5114b467cee0811e44d175b408635a                                    0.0s 
+ => => exporting config sha256:8c56b98f2ae719943e4eaa425388df7a377c9e0f621c8821a7ad35781bbe9e78                                      0.0s 
+ => => sending tarball                                                                                                              36.7s 
+ => importing to docker                                                                                                              1.4s 
+ => => loading layer 84788eaad25e 7.70MB / 7.70MB                                                                                    1.4s
+ => => loading layer 5f70bf18a086 32B / 32B                                                                                          1.2s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)
+Skipped pulling image kairin/001:06-rust as push was skipped.
+Verifying image kairin/001:06-rust exists locally...
+Image kairin/001:06-rust verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:06-rust
+Next base image will be: kairin/001:06-rust
+Processing numbered directory: build/07-protobuf_apt
+Using base image: kairin/001:06-rust
+Generating fixed tag: kairin/001:07-protobuf_apt
+--------------------------------------------------
+Building image from folder: build/07-protobuf_apt
+Image Name: 07-protobuf_apt
+Platform: linux/arm64
+Tag: kairin/001:07-protobuf_apt
+Base Image (FROM via ARG): kairin/001:06-rust
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:07-protobuf_apt --build-arg BASE_IMAGE=kairin/001:06-rust --no-cache --load build/07-protobuf_apt
+[+] Building 37.8s (7/7) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.64kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:06-rust                                                                        1.0s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/2] FROM docker.io/kairin/001:06-rust@sha256:317f9a11045a112a9e72f6752c797773eff6e23935ac71e5e2696f6f55979589           0.0s
+ => => resolve docker.io/kairin/001:06-rust@sha256:317f9a11045a112a9e72f6752c797773eff6e23935ac71e5e2696f6f55979589                  0.0s
+ => [2/2] RUN if [ -z "$(which protoc)" ]; then         apt-get update;     apt-get install -y --no-install-recommends         prot  0.1s
+ => exporting to docker image format                                                                                                36.5s
+ => => exporting layers                                                                                                              0.2s
+ => => exporting manifest sha256:2e413bd348610cef27bfd78d9a42d71ddc935670751b7c5b5c8016b3b8ea7d37                                    0.0s
+ => => exporting config sha256:5634291ccf394f2fe521fea56ff16519c631009bbed85d3657f3cffb8cf4f63f                                      0.0s
+ => => sending tarball                                                                                                              36.3s
+ => importing to docker                                                                                                              1.1s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Skipped pulling image kairin/001:07-protobuf_apt as push was skipped.
+Verifying image kairin/001:07-protobuf_apt exists locally...
+Image kairin/001:07-protobuf_apt verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:07-protobuf_apt
+Next base image will be: kairin/001:07-protobuf_apt
+Processing numbered directory: build/08-protobuf_cpp
+Using base image: kairin/001:07-protobuf_apt
+Generating fixed tag: kairin/001:08-protobuf_cpp
+--------------------------------------------------
+Building image from folder: build/08-protobuf_cpp
+Image Name: 08-protobuf_cpp
+Platform: linux/arm64
+Tag: kairin/001:08-protobuf_cpp
+Base Image (FROM via ARG): kairin/001:07-protobuf_apt
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:08-protobuf_cpp --build-arg BASE_IMAGE=kairin/001:07-protobuf_apt --no-cache --load build/08-protobuf_cpp
+[+] Building 54.6s (8/8) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.42kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:07-protobuf_apt                                                                0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:07-protobuf_apt@sha256:f5d03f745b375535ecb559e798ced337ee32dc0806dd3a6ec00482ab041dad9a   0.0s
+ => => resolve docker.io/kairin/001:07-protobuf_apt@sha256:f5d03f745b375535ecb559e798ced337ee32dc0806dd3a6ec00482ab041dad9a          0.0s
+ => [2/3] RUN apt-get update && apt-get install -y --no-install-recommends python3-pip                                              10.1s
+ => [3/3] RUN pip install --upgrade protobuf                                                                                         2.7s
+ => exporting to docker image format                                                                                                40.6s 
+ => => exporting layers                                                                                                              3.4s 
+ => => exporting manifest sha256:0d079d74e624bc9a75ef761cd7a6a8c4688fc4189859d8f9627e02bf1f62bc70                                    0.0s 
+ => => exporting config sha256:652de02de5b73aee0fa9a1995f8b9bb08067c38f2e78a98170af87a37a268d16                                      0.0s 
+ => => sending tarball                                                                                                              37.1s 
+ => importing to docker                                                                                                              1.7s 
+ => => loading layer a8615900ec52 33.28MB / 33.28MB                                                                                  1.7s
+ => => loading layer 1f8bfabaacf2 568.35kB / 568.35kB                                                                                1.3s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Skipped pulling image kairin/001:08-protobuf_cpp as push was skipped.
+Verifying image kairin/001:08-protobuf_cpp exists locally...
+Image kairin/001:08-protobuf_cpp verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:08-protobuf_cpp
+Next base image will be: kairin/001:08-protobuf_cpp
+Processing numbered directory: build/09-opencv
+Using base image: kairin/001:08-protobuf_cpp
+Generating fixed tag: kairin/001:09-opencv
+--------------------------------------------------
+Building image from folder: build/09-opencv
+Image Name: 09-opencv
+Platform: linux/arm64
+Tag: kairin/001:09-opencv
+Base Image (FROM via ARG): kairin/001:08-protobuf_cpp
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:09-opencv --build-arg BASE_IMAGE=kairin/001:08-protobuf_cpp --no-cache --load build/09-opencv
+[+] Building 60.2s (9/9) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.11kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:08-protobuf_cpp                                                                0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 4.33kB                                                                                                  0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:08-protobuf_cpp@sha256:0644517dd695fad855b52aac9df2d0ea814633db3d505bfc0180254f2f8b4141   0.0s
+ => => resolve docker.io/kairin/001:08-protobuf_cpp@sha256:0644517dd695fad855b52aac9df2d0ea814633db3d505bfc0180254f2f8b4141          0.0s
+ => [2/3] COPY build.sh install.sh install_deps.sh install_deb.sh patches.diff /tmp/opencv/                                          0.1s
+ => [3/3] RUN cd /tmp/opencv &&     (./install.sh || ./build.sh || (echo "BUILD FAILED (OpenCV )" && exit 1)) &&     pip3 install   20.2s
+ => exporting to docker image format                                                                                                38.7s
+ => => exporting layers                                                                                                              2.0s
+ => => exporting manifest sha256:1c31b369809819b0218ffb09d5b518d280a1aff690eba432844e1c01f164159e                                    0.0s 
+ => => exporting config sha256:79a94c85fea04fa6dd016565599477d32cbfd208cc44e69a0383cff12a69ec19                                      0.0s 
+ => => sending tarball                                                                                                              36.7s 
+ => importing to docker                                                                                                              1.4s 
+ => => loading layer 9b103135c0e2 4.27kB / 4.27kB                                                                                    1.4s
+ => => loading layer 741214abc6a5 7.37MB / 7.37MB                                                                                    1.4s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)
+Skipped pulling image kairin/001:09-opencv as push was skipped.
+Verifying image kairin/001:09-opencv exists locally...
+Image kairin/001:09-opencv verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:09-opencv
+Next base image will be: kairin/001:09-opencv
+Processing numbered directory: build/10-onnx
+Using base image: kairin/001:09-opencv
+Generating fixed tag: kairin/001:10-onnx
+--------------------------------------------------
+Building image from folder: build/10-onnx
+Image Name: 10-onnx
+Platform: linux/arm64
+Tag: kairin/001:10-onnx
+Base Image (FROM via ARG): kairin/001:09-opencv
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:10-onnx --build-arg BASE_IMAGE=kairin/001:09-opencv --no-cache --load build/10-onnx
+[+] Building 41.4s (7/7) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.59kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 21)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:09-opencv                                                                      0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/2] FROM docker.io/kairin/001:09-opencv@sha256:5c4075d1c23c01d5f3e0ee26765370cca45b4901cb6ee5556ba910378b8bb190         0.0s
+ => => resolve docker.io/kairin/001:09-opencv@sha256:5c4075d1c23c01d5f3e0ee26765370cca45b4901cb6ee5556ba910378b8bb190                0.0s
+ => [2/2] RUN pip3 install onnx ||     pip3 install git+https://github.com/onnx/onnx@${ONNX_VERSION} &&     pip3 show onnx &&     p  3.4s
+ => exporting to docker image format                                                                                                36.9s 
+ => => exporting layers                                                                                                              0.2s 
+ => => exporting manifest sha256:291f78755b19f97e1458231584b08ad503e5e8ea23d5f3a0ad8f194e436a41cb                                    0.0s 
+ => => exporting config sha256:e818f025524c041fa979fe49b33e0249048dfad7bff9b6bc33433863d6ab377e                                      0.0s 
+ => => sending tarball                                                                                                              36.7s 
+ => importing to docker                                                                                                              1.1s 
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 21)
+Skipped pulling image kairin/001:10-onnx as push was skipped.
+Verifying image kairin/001:10-onnx exists locally...
+Image kairin/001:10-onnx verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:10-onnx
+Next base image will be: kairin/001:10-onnx
+Processing numbered directory: build/10-onnxruntime
+Using base image: kairin/001:10-onnx
+Generating fixed tag: kairin/001:10-onnxruntime
+--------------------------------------------------
+Building image from folder: build/10-onnxruntime
+Image Name: 10-onnxruntime
+Platform: linux/arm64
+Tag: kairin/001:10-onnxruntime
+Base Image (FROM via ARG): kairin/001:10-onnx
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:10-onnxruntime --build-arg BASE_IMAGE=kairin/001:10-onnx --no-cache --load build/10-onnxruntime
+[+] Building 2.2s (8/8) FINISHED                                                                          docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.15kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 22)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:10-onnx                                                                        1.7s
+ => [auth] kairin/001:pull token for registry-1.docker.io                                                                            0.0s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 60B                                                                                                     0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:10-onnx@sha256:b3f6bde77fe21993e7f22593b6ea3c333aad7caad4a98af22ea6c780c65fd59f           0.0s
+ => => resolve docker.io/kairin/001:10-onnx@sha256:b3f6bde77fe21993e7f22593b6ea3c333aad7caad4a98af22ea6c780c65fd59f                  0.0s
+ => [2/3] COPY install.sh build.sh /tmp/onnxruntime/                                                                                 0.1s
+ => ERROR [3/3] RUN /tmp/onnxruntime/install.sh || /tmp/onnxruntime/build.sh                                                         0.2s
+------                                                                                                                                    
+ > [3/3] RUN /tmp/onnxruntime/install.sh || /tmp/onnxruntime/build.sh:                                                                    
+0.109 + '[' off == on ']'
+0.109 + tarpack install onnxruntime-gpu-
+0.113 + COMMAND=install
+0.113 + PACKAGE=onnxruntime-gpu-
+0.113 + : /usr/local
+0.113 + : /tmp/tarpack
+0.113 + : '--quiet --show-progress --progress=bar:force:noscroll'
+0.113 + mkdir -p /tmp/tarpack/uploads
+0.116 + '[' install == install ']'
+0.116 + cd /tmp/tarpack
+0.116 + wget --quiet --show-progress --progress=bar:force:noscroll /onnxruntime-gpu-.tar.gz
+0.124 + echo 'Building onnxruntime  (branch=, flags=)'
+0.124 Building onnxruntime  (branch=, flags=)
+0.125 ++ uname -m
+0.127 + '[' '!' -d /usr/lib/aarch64-linux-gnu ']'
+0.127 ++ uname -m
+0.128 + export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:
+0.128 + LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:
+0.129 ++ uname -m
+0.131 + '[' '!' -f /usr/lib/aarch64-linux-gnu/libnvinfer.so ']'
+0.131 ++ uname -m
+0.132 + '[' '!' -f /usr/lib/aarch64-linux-gnu/libnvdla_compiler.so ']'
+0.132 + echo 'TensorRT NVDLA compiler library not found'
+0.132 + exit 1
+0.132 TensorRT NVDLA compiler library not found
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 22)
+Dockerfile:31
+--------------------
+  29 |     COPY install.sh build.sh /tmp/onnxruntime/
+  30 |     
+  31 | >>> RUN /tmp/onnxruntime/install.sh || /tmp/onnxruntime/build.sh
+  32 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c /tmp/onnxruntime/install.sh || /tmp/onnxruntime/build.sh" did not complete successfully: exit code: 1
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 10-onnxruntime (build/10-onnxruntime).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/10-onnxruntime. Subsequent dependent builds might fail.
+Build process for build/10-onnxruntime exited with code 1
+Continuing with next build...
+Processing numbered directory: build/10-triton
+Using base image: kairin/001:10-onnx
+Generating fixed tag: kairin/001:10-triton
+--------------------------------------------------
+Building image from folder: build/10-triton
+Image Name: 10-triton
+Platform: linux/arm64
+Tag: kairin/001:10-triton
+Base Image (FROM via ARG): kairin/001:10-onnx
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:10-triton --build-arg BASE_IMAGE=kairin/001:10-onnx --no-cache --load build/10-triton
+[+] Building 30.3s (8/8) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.10kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 25)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:10-onnx                                                                        0.4s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/4] FROM docker.io/kairin/001:10-onnx@sha256:b3f6bde77fe21993e7f22593b6ea3c333aad7caad4a98af22ea6c780c65fd59f           0.0s
+ => => resolve docker.io/kairin/001:10-onnx@sha256:b3f6bde77fe21993e7f22593b6ea3c333aad7caad4a98af22ea6c780c65fd59f                  0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 60B                                                                                                     0.0s
+ => [2/4] RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     python3-dev     python3  27.1s
+ => [3/4] COPY build.sh install.sh /tmp/triton/                                                                                      0.1s 
+ => ERROR [4/4] RUN chmod +x /tmp/triton/build.sh /tmp/triton/install.sh &&     if [ "off" == "on" ]; then         echo "Forcing bu  2.6s 
+------                                                                                                                                    
+ > [4/4] RUN chmod +x /tmp/triton/build.sh /tmp/triton/install.sh &&     if [ "off" == "on" ]; then         echo "Forcing build of triton ${TRITON_VERSION}";         /tmp/triton/build.sh;     else         (pip3 install triton==${TRITON_VERSION} && echo "Installed triton ${TRITON_VERSION} from PyPI") ||         (echo "Building triton ${TRITON_VERSION} from source" && /tmp/triton/build.sh);     fi &&     python3 -c 'import triton; print(f"Triton version: {triton.__version__}")' &&     rm -rf /tmp/triton:                                             
+0.631 Using pip 25.0.1 from /opt/venv/lib/python3.12/site-packages/pip (python 3.12)                                                      
+0.894 ERROR: Invalid requirement: 'triton==': Expected end or semicolon (after name and no valid version specifier)
+0.894     triton==
+0.894           ^
+1.001 Building triton  from source
+1.006 + echo '============ Building triton  (branch=) ============'
+1.006 + pip3 uninstall -y triton
+1.006 ============ Building triton  (branch=) ============
+1.749 DEPRECATION: Loading egg at /usr/local/lib/python3.12/dist-packages/looseversion-1.3.0-py3.12.egg is deprecated. pip 25.1 will enforce this behaviour change. A possible replacement is to use pip for package installation. Discussion can be found at https://github.com/pypa/pip/issues/12330
+1.750 DEPRECATION: Loading egg at /usr/local/lib/python3.12/dist-packages/dill-0.3.9-py3.12.egg is deprecated. pip 25.1 will enforce this behaviour change. A possible replacement is to use pip for package installation. Discussion can be found at https://github.com/pypa/pip/issues/12330
+1.751 DEPRECATION: Loading egg at /usr/local/lib/python3.12/dist-packages/lightning_utilities-0.14.0-py3.12.egg is deprecated. pip 25.1 will enforce this behaviour change. A possible replacement is to use pip for package installation. Discussion can be found at https://github.com/pypa/pip/issues/12330
+1.751 DEPRECATION: Loading egg at /usr/local/lib/python3.12/dist-packages/lightning_thunder-0.2.2.dev0-py3.12.egg is deprecated. pip 25.1 will enforce this behaviour change. A possible replacement is to use pip for package installation. Discussion can be found at https://github.com/pypa/pip/issues/12330
+1.752 DEPRECATION: Loading egg at /usr/local/lib/python3.12/dist-packages/opt_einsum-3.4.0-py3.12.egg is deprecated. pip 25.1 will enforce this behaviour change. A possible replacement is to use pip for package installation. Discussion can be found at https://github.com/pypa/pip/issues/12330
+1.752 DEPRECATION: Loading egg at /usr/local/lib/python3.12/dist-packages/nvfuser-0.2.26a0+c5e1555-py3.12-linux-aarch64.egg is deprecated. pip 25.1 will enforce this behaviour change. A possible replacement is to use pip for package installation. Discussion can be found at https://github.com/pypa/pip/issues/12330
+1.771 WARNING: Skipping triton as it is not installed.
+1.869 + git clone --branch --depth=1 --recursive https://github.com/triton-lang/triton /opt/triton
+1.873 Cloning into '/opt/triton'...
+2.514 fatal: Remote branch --depth=1 not found in upstream origin
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 25)
+Dockerfile:46
+--------------------
+  45 |     # Use a single RUN command for better caching
+  46 | >>> RUN chmod +x /tmp/triton/build.sh /tmp/triton/install.sh && \
+  47 | >>>     if [ "$FORCE_BUILD" == "on" ]; then \
+  48 | >>>         echo "Forcing build of triton ${TRITON_VERSION}"; \
+  49 | >>>         /tmp/triton/build.sh; \
+  50 | >>>     else \
+  51 | >>>         (pip3 install triton==${TRITON_VERSION} && echo "Installed triton ${TRITON_VERSION} from PyPI") || \
+  52 | >>>         (echo "Building triton ${TRITON_VERSION} from source" && /tmp/triton/build.sh); \
+  53 | >>>     fi && \
+  54 | >>>     python3 -c 'import triton; print(f"Triton version: {triton.__version__}")' && \
+  55 | >>>     rm -rf /tmp/triton
+  56 |     
+--------------------
+ERROR: failed to solve: process "/bin/sh -c chmod +x /tmp/triton/build.sh /tmp/triton/install.sh &&     if [ \"$FORCE_BUILD\" == \"on\" ]; then         echo \"Forcing build of triton ${TRITON_VERSION}\";         /tmp/triton/build.sh;     else         (pip3 install triton==${TRITON_VERSION} && echo \"Installed triton ${TRITON_VERSION} from PyPI\") ||         (echo \"Building triton ${TRITON_VERSION} from source\" && /tmp/triton/build.sh);     fi &&     python3 -c 'import triton; print(f\"Triton version: {triton.__version__}\")' &&     rm -rf /tmp/triton" did not complete successfully: exit code: 128
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 10-triton (build/10-triton).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/10-triton. Subsequent dependent builds might fail.
+Build process for build/10-triton exited with code 1
+Continuing with next build...
+Processing numbered directory: build/11-diffusers
+Using base image: kairin/001:10-onnx
+Generating fixed tag: kairin/001:11-diffusers
+--------------------------------------------------
+Building image from folder: build/11-diffusers
+Image Name: 11-diffusers
+Platform: linux/arm64
+Tag: kairin/001:11-diffusers
+Base Image (FROM via ARG): kairin/001:10-onnx
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:11-diffusers --build-arg BASE_IMAGE=kairin/001:10-onnx --no-cache --load build/11-diffusers
+[+] Building 45.8s (9/9) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 1.82kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:10-onnx                                                                        0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 60B                                                                                                     0.0s
+ => CACHED [1/3] FROM docker.io/kairin/001:10-onnx@sha256:b3f6bde77fe21993e7f22593b6ea3c333aad7caad4a98af22ea6c780c65fd59f           0.0s
+ => => resolve docker.io/kairin/001:10-onnx@sha256:b3f6bde77fe21993e7f22593b6ea3c333aad7caad4a98af22ea6c780c65fd59f                  0.0s
+ => [2/3] COPY build.sh install.sh /tmp/DIFFUSERS/                                                                                   0.1s
+ => [3/3] RUN rm -rf /opt/diffusers &&     export DIFFUSERS_VERSION=0.24.0 &&     (bash -x /tmp/DIFFUSERS/install.sh || bash -x /tm  5.5s
+ => exporting to docker image format                                                                                                39.0s 
+ => => exporting layers                                                                                                              1.8s 
+ => => exporting manifest sha256:a58a14efb4ace331c4b026cbe70c859928a246c4cf4e25f0b915a9d78618cd77                                    0.0s 
+ => => exporting config sha256:907ad8dbbcd1d46e348ad9d643207ba436589b2738d4dd0896b5a0e54f10985f                                      0.0s 
+ => => sending tarball                                                                                                              37.2s 
+ => importing to docker                                                                                                              1.7s 
+ => => loading layer 6108369bf0f3 697B / 697B                                                                                        1.7s
+ => => loading layer ee4fdc612e52 3.97MB / 3.97MB                                                                                    1.5s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)
+Skipped pulling image kairin/001:11-diffusers as push was skipped.
+Verifying image kairin/001:11-diffusers exists locally...
+Image kairin/001:11-diffusers verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:11-diffusers
+Next base image will be: kairin/001:11-diffusers
+Processing numbered directory: build/12-huggingface_hub
+Using base image: kairin/001:11-diffusers
+Generating fixed tag: kairin/001:12-huggingface_hub
+--------------------------------------------------
+Building image from folder: build/12-huggingface_hub
+Image Name: 12-huggingface_hub
+Platform: linux/arm64
+Tag: kairin/001:12-huggingface_hub
+Base Image (FROM via ARG): kairin/001:11-diffusers
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:12-huggingface_hub --build-arg BASE_IMAGE=kairin/001:11-diffusers --no-cache --load build/12-huggingface_hub
+[+] Building 68.2s (11/11) FINISHED                                                                       docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 3.67kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:11-diffusers                                                                   0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/5] FROM docker.io/kairin/001:11-diffusers@sha256:e82a59922c46e8e28a7b04ace2e067e20ff0674697b166200cd705acee77fe81      0.0s
+ => => resolve docker.io/kairin/001:11-diffusers@sha256:e82a59922c46e8e28a7b04ace2e067e20ff0674697b166200cd705acee77fe81             0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 89B                                                                                                     0.0s
+ => [2/5] RUN set -ex     && mkdir -p /data/models/huggingface         && apt-get update     && apt-get install -y --no-install-re  26.2s
+ => [3/5] COPY huggingface-downloader /usr/local/bin/                                                                                0.1s 
+ => [4/5] COPY huggingface-downloader.py /usr/local/bin/_huggingface-downloader.py                                                   0.1s 
+ => [5/5] RUN huggingface-downloader --help                                                                                          0.7s 
+ => exporting to docker image format                                                                                                40.0s 
+ => => exporting layers                                                                                                              2.8s 
+ => => exporting manifest sha256:b6f3f5fa442c64be6e1e09c144479c2d4ce241b4fb649b9542000a81ef7a7114                                    0.0s 
+ => => exporting config sha256:c24c5431cd0886c646bac388d8ab8e7c4dc4ae53aeb943a84b7548c512789015                                      0.0s 
+ => => sending tarball                                                                                                              37.1s 
+ => importing to docker                                                                                                              1.7s 
+ => => loading layer 86b71bbbca8b 13.78MB / 13.78MB                                                                                  1.7s
+ => => loading layer f69eb9f1c4bd 487B / 487B                                                                                        1.4s
+ => => loading layer 819759777350 1.41kB / 1.41kB                                                                                    1.3s
+ => => loading layer 5f70bf18a086 32B / 32B                                                                                          1.3s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Skipped pulling image kairin/001:12-huggingface_hub as push was skipped.
+Verifying image kairin/001:12-huggingface_hub exists locally...
+Image kairin/001:12-huggingface_hub verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:12-huggingface_hub
+Next base image will be: kairin/001:12-huggingface_hub
+Processing numbered directory: build/13-transformers
+Using base image: kairin/001:12-huggingface_hub
+Generating fixed tag: kairin/001:13-transformers
+--------------------------------------------------
+Building image from folder: build/13-transformers
+Image Name: 13-transformers
+Platform: linux/arm64
+Tag: kairin/001:13-transformers
+Base Image (FROM via ARG): kairin/001:12-huggingface_hub
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:13-transformers --build-arg BASE_IMAGE=kairin/001:12-huggingface_hub --no-cache --load build/13-transformers
+[+] Building 74.0s (10/10) FINISHED                                                                       docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 2.07kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 18)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:12-huggingface_hub                                                             0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/4] FROM docker.io/kairin/001:12-huggingface_hub@sha256:d737d13d8583cfeff1196771b4db4c42262294b8a41836c1f4cc0df0ba88c4  0.0s
+ => => resolve docker.io/kairin/001:12-huggingface_hub@sha256:d737d13d8583cfeff1196771b4db4c42262294b8a41836c1f4cc0df0ba88c4ad       0.0s
+ => [internal] load build context                                                                                                    0.0s
+ => => transferring context: 46B                                                                                                     0.0s
+ => [2/4] RUN set -ex     && echo "Installing transformers version 4.36.2"     && pip3 install --no-cache-dir accelerate sentencep  24.0s
+ => [3/4] COPY huggingface-benchmark.py /usr/local/bin                                                                               0.2s 
+ => [4/4] RUN chmod +x /usr/local/bin/huggingface-benchmark.py     && echo "check_cmd huggingface-benchmark 'huggingface-benchmark.  0.1s 
+ => exporting to docker image format                                                                                                48.5s 
+ => => exporting layers                                                                                                              8.9s 
+ => => exporting manifest sha256:8fe123e6b255141bdaf94e29394b8698f0c001dcbf0d45ff01c7682299053e5a                                    0.0s 
+ => => exporting config sha256:29baf2fdc274013e928e1fe33c3c11b80038408c01e8e1db5947a66bf2277be7                                      0.1s 
+ => => sending tarball                                                                                                              39.4s
+ => importing to docker                                                                                                              4.3s
+ => => loading layer 6b22f07f609c 34.07MB / 34.07MB                                                                                  4.3s
+ => => loading layer 447b8ff2a035 2.06kB / 2.06kB                                                                                    1.2s
+ => => loading layer ba1f2d9f4ac5 361B / 361B                                                                                        1.2s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 18)
+Skipped pulling image kairin/001:13-transformers as push was skipped.
+Verifying image kairin/001:13-transformers exists locally...
+Image kairin/001:13-transformers verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:13-transformers
+Next base image will be: kairin/001:13-transformers
+Processing numbered directory: build/14-xformers
+Using base image: kairin/001:13-transformers
+Generating fixed tag: kairin/001:14-xformers
+--------------------------------------------------
+Building image from folder: build/14-xformers
+Image Name: 14-xformers
+Platform: linux/arm64
+Tag: kairin/001:14-xformers
+Base Image (FROM via ARG): kairin/001:13-transformers
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:14-xformers --build-arg BASE_IMAGE=kairin/001:13-transformers --no-cache --load build/14-xformers
+[+] Building 202.8s (7/7) FINISHED                                                                        docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 3.38kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:13-transformers                                                                0.9s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/2] FROM docker.io/kairin/001:13-transformers@sha256:3c3ad2799dda4d9353a2342845535d0bf028f457fe90f5bb75348ae6e8059414   0.0s
+ => => resolve docker.io/kairin/001:13-transformers@sha256:3c3ad2799dda4d9353a2342845535d0bf028f457fe90f5bb75348ae6e8059414          0.0s
+ => [2/2] RUN set -ex     && rm -rf /opt/xformers     && CUDA_MAJOR=$(echo ${CUDA_VERSION} | cut -d. -f1)     && CUDA_MINOR=$(ech  122.7s
+ => exporting to docker image format                                                                                                79.0s 
+ => => exporting layers                                                                                                             28.5s 
+ => => exporting manifest sha256:c88f592d5e59945c815af574d3b487e145b077e7841128fb4d5ad617177599d6                                    0.0s 
+ => => exporting config sha256:3bd750671aa55b97918afb46ba7409718a4f8177fdffff33be97953d53b6ecd6                                      0.0s 
+ => => sending tarball                                                                                                              50.4s 
+ => importing to docker                                                                                                             12.9s 
+ => => loading layer cb5e9bcbf23a 262.86MB / 262.86MB                                                                               12.9s
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)
+Skipped pulling image kairin/001:14-xformers as push was skipped.
+Verifying image kairin/001:14-xformers exists locally...
+Image kairin/001:14-xformers verified locally.
+Successfully built, pushed, and pulled numbered image: kairin/001:14-xformers
+Next base image will be: kairin/001:14-xformers
+Processing numbered directory: build/15-flash-attention
+Using base image: kairin/001:14-xformers
+Generating fixed tag: kairin/001:15-flash-attention
+--------------------------------------------------
+Building image from folder: build/15-flash-attention
+Image Name: 15-flash-attention
+Platform: linux/arm64
+Tag: kairin/001:15-flash-attention
+Base Image (FROM via ARG): kairin/001:14-xformers
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:15-flash-attention --build-arg BASE_IMAGE=kairin/001:14-xformers --no-cache --load build/15-flash-attention
+[+] Building 1737.2s (5/6)                                                                                docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                 0.0s
+ => => transferring dockerfile: 3.28kB                                                                                               0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)                0.0s
+ => [internal] load metadata for docker.io/kairin/001:14-xformers                                                                    1.7s
+ => [auth] kairin/001:pull token for registry-1.docker.io                                                                            0.0s
+ => [internal] load .dockerignore                                                                                                    0.0s
+ => => transferring context: 2B                                                                                                      0.0s
+ => CACHED [1/2] FROM docker.io/kairin/001:14-xformers@sha256:9f2744e385fa1758cf33296f1a45537eca25e5fd828e75ae41cca052e193fc45       0.0s
+ => => resolve docker.io/kairin/001:14-xformers@sha256:9f2744e385fa1758cf33296f1a45537eca25e5fd828e75ae41cca052e193fc45              0.0s
+ => [2/2] RUN set -ex     && apt-get update     && apt-get install -y --no-install-recommends         python3-pip python3-setupt  1735.4s
+ => => # emp.linux-aarch64-cpython-312/csrc/flash_attn/src/flash_bwd_hdim64_fp16_sm80.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CON
+ => => # VERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options ''"'"'-f
+ => => # PIC'"'"'' -O3 -std=c++17 -U__CUDA_NO_HALF_OPERATORS__ -U__CUDA_NO_HALF_CONVERSIONS__ -U__CUDA_NO_HALF2_OPERATORS__ -U__CUDA_NO_B
+ => => # FLOAT16_CONVERSIONS__ --expt-relaxed-constexpr --expt-extended-lambda --use_fast_math -gencode arch=compute_80,code=sm_80 -genco
+ => => # de arch=compute_90,code=sm_90 --threads 4 -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="
+ => => # _libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1016"' -DTORCH_EXTENSION_NAME=flash_attn_2_cuda -D_GLIBCXX_USE_CXX11_ABI=1           
+^C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 15-flash-attention (build/15-flash-attention).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/15-flash-attention. Subsequent dependent builds might fail.
+Build process for build/15-flash-attention exited with code 1
+Continuing with next build...
+Processing numbered directory: build/16-stable-diffusion
+Using base image: kairin/001:14-xformers
+Generating fixed tag: kairin/001:16-stable-diffusion
+--------------------------------------------------
+Building image from folder: build/16-stable-diffusion
+Image Name: 16-stable-diffusion
+Platform: linux/arm64
+Tag: kairin/001:16-stable-diffusion
+Base Image (FROM via ARG): kairin/001:14-xformers
+Skip Intermediate Push/Pull: y
+--------------------------------------------------
+Using --load instead of --push
+Running: docker buildx build --platform linux/arm64 -t kairin/001:16-stable-diffusion --build-arg BASE_IMAGE=kairin/001:14-xformers --no-cache --load build/16-stable-diffusion
+^C
+❯ git pull
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 5 (delta 3), reused 5 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (5/5), 3.84 KiB | 982.00 KiB/s, done.
+From https://github.com/kairin/jetc
+   3e5f8b4..1dfba5b  main       -> origin/main
+Updating 3e5f8b4..1dfba5b
+Fast-forward
+ buildx/scripts/setup_env.sh | 197 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 192 insertions(+), 5 deletions(-)
+❯ ls -a
+.  ..  build  build.sh  jetcrun.sh  logs  scripts
+❯ git pull
+Already up to date.
+❯ ./build.sh
+./scripts/setup_env.sh: line 109: syntax error near unexpected token `}'
+./scripts/setup_env.sh: line 109: `    }'
+Found .env file in ../.vscode directory
+Using existing buildx builder: jetson-builder
+./build.sh: line 52: get_user_preferences: command not found
+
+╭─░▒▓      /media/kkk/Apps/jetc/buildx  on    main *3 !5 ▓▒░·········································░▒▓ 1 ✘  at 02:29:37   ▓▒░─╮
+╰─                                                                                                                                     ─╯
+
