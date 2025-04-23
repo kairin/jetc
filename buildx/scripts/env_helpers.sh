@@ -10,12 +10,33 @@ ENV_CANONICAL="$(cd "$SCRIPT_DIR_ENV/.." && pwd)/.env"
 # Arguments: 1: Username, 2: Registry, 3: Prefix, 4: Base Image Tag
 # =========================================================================
 update_env_file() {
-    local new_username="$1"
-    local new_registry="$2"
-    local new_prefix="$3"
-    local new_base_image="$4"
-    local env_file="$ENV_CANONICAL"
-    # ...existing code from build_ui.sh update_env_file...
+    # Read the current .env file
+    if [ -f "$ENV_CANONICAL" ]; then
+        source "$ENV_CANONICAL"
+    fi
+
+    # Update the values
+    DOCKER_USERNAME="$1"
+    DOCKER_REGISTRY="$2"
+    DOCKER_REPO_PREFIX="$3"
+    DEFAULT_BASE_IMAGE="$4"
+
+    # Write the updated values back to the .env file
+    temp_file=$(mktemp)
+    trap 'rm -f "$temp_file"' EXIT
+
+    # Preserve comments and update values
+    while IFS= read -r line; do
+        case "$line" in
+            DOCKER_USERNAME=*) echo "DOCKER_USERNAME=$DOCKER_USERNAME" ;;
+            DOCKER_REGISTRY=*) echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" ;;
+            DOCKER_REPO_PREFIX=*) echo "DOCKER_REPO_PREFIX=$DOCKER_REPO_PREFIX" ;;
+            DEFAULT_BASE_IMAGE=*) echo "DEFAULT_BASE_IMAGE=$DEFAULT_BASE_IMAGE" ;;
+            *) echo "$line" ;;
+        esac
+    done < "$ENV_CANONICAL" > "$temp_file"
+
+    mv "$temp_file" "$ENV_CANONICAL"
 }
 
 # =========================================================================
@@ -24,8 +45,9 @@ update_env_file() {
 # Returns: 0 (always succeeds, variables might be empty if file not found)
 # =========================================================================
 load_env_variables() {
-    local env_file="$ENV_CANONICAL"
-    # ...existing code from build_ui.sh load_env_variables...
+    if [ -f "$ENV_CANONICAL" ]; then
+        export $(grep -v '^#' "$ENV_CANONICAL" | xargs)
+    fi
 }
 
 # File location diagram:
