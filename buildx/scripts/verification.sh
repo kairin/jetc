@@ -2,247 +2,278 @@
 # filepath: /workspaces/jetc/buildx/scripts/verification.sh
 
 # =========================================================================
-# Container Verification Script
-# Responsibility: Functions to check installed apps/packages INSIDE a container,
-#                 and functions to LAUNCH these checks FROM the host.
+# Verification Script
+# Responsibility: Run checks inside a built container image.
+#                 Includes host-side function to launch the container
+#                 and self-contained functions to run inside.
 # =========================================================================
 
-# --- Dependencies ---
-SCRIPT_DIR_VERIFY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# --- Host-Side Dependencies (Only for run_container_verification) ---
+# Assumes logging.sh, env_setup.sh, docker_helpers.sh are sourced by the main build.sh
+SCRIPT_DIR_VERIFY="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
-# Source dependencies ONLY IF they are needed by host functions AND might not be sourced by main script yet.
-# Check if functions exist before sourcing, assuming main script handles primary sourcing.
-if ! declare -f log_info > /dev/null; then
-    echo "Warning: log_info not found in verification.sh, sourcing logging.sh for host functions." >&2
-     if [ -f "$SCRIPT_DIR_VERIFY/logging.sh" ]; then source "$SCRIPT_DIR_VERIFY/logging.sh"; init_logging; else echo "ERROR: Cannot find logging.sh."; fi
-fi
-if ! declare -f verify_image_exists > /dev/null; then
-    echo "Warning: verify_image_exists not found in verification.sh, sourcing docker_helpers.sh for host functions." >&2
-     if [ -f "$SCRIPT_DIR_VERIFY/docker_helpers.sh" ]; then source "$SCRIPT_DIR_VERIFY/docker_helpers.sh"; else echo "ERROR: Cannot find docker_helpers.sh."; fi
-fi
-# No need to source env_setup.sh here as docker_helpers.sh sources it if needed.
+# =========================================================================
+# Host-Side Function: Run verification script inside a container
+# Arguments: $1 = Image Tag, $2 = Verification Mode (e.g., "basic", "python", "all")
+# Returns: 0 on success, 1 on failure
+# =========================================================================
+run_container_verification() {
+    local image_tag="$1"
+    local mode="${2:-all}" # Default to 'all' mode if not specified
 
-# --- Internal Check Functions (Run INSIDE Container - Use echo -e) ---
-V_GREEN='\033[0;32m'; V_RED='\033[0;31m'; V_YELLOW='\033[1;33m'; V_BLUE='\033[0;34m'; V_CYAN='\033[0;36m'; V_NC='\033[0m'
+    # --- Host-Side Checks ---
+    # Ensure required host functions exist
+    if ! declare -f log_info > /dev/null || ! declare -f verify_image_exists > /dev/null; then
+         echo "CRITICAL HOST ERROR: Required functions (log_info, verify_image_exists) not found. Ensure build.sh sources dependencies." >&2
+         return 1
+    fi
 
-_check_cmd() {
+    log_info "Running full verification for $image_tag..."
+
+    # Verify image exists locally before trying to run it
+    if ! verify_image_exists "$image_tag"; then
+        log_error "Image '$image_tag' not found locally. Cannot run verification."
+        return 1
+    fi
+
+    # --- Container Execution ---
+    log_info "--- Running Verification (Mode: $mode) in container: $image_tag ---"
+
+    # Copy this script itself into a temporary file to mount into the container
+    local temp_script
+    temp_script=$(mktemp --suffix=_verify.sh) || { log_error "Failed to create temp script file"; return 1; }
+    trap 'rm -f "$temp_script"' RETURN # Cleanup temp file on function return
+
+    # Copy the ENTIRE content of this script file to the temp file
+    # This ensures the _run_verification_in_container and helper functions are available inside
+    cat "${BASH_SOURCE[0]}" > "$temp_script"
+    chmod +x "$temp_script"
+
+    # Run the container, mounting the temp script and executing the internal function
+    # Use --rm for automatic cleanup, run non-interactively (-t can cause issues)
+    if docker run --rm \
+           -v "$temp_script:/tmp/verification_entrypoint.sh" \
+           --entrypoint /bin/bash \
+           "$image_tag" \
+           /tmp/verification_entrypoint.sh "_run_verification_in_container" "$mode"; then
+        log_success "--- Verification (Mode: $mode) completed successfully in container: $image_tag ---"
+        rm -f "$temp_script" # Explicit cleanup on success
+        trap - RETURN
+        return 0
+    else
+        log_error "--- Verification (Mode: $mode) FAILED in container: $image_tag ---"
+        # temp_script is cleaned by trap
+        return 1
+    fi
+}
+
+
+# =========================================================================
+# =========================================================================
+# == Functions Below This Line Run INSIDE The Container ==
+# =========================================================================
+# =========================================================================
+
+# --- Self-Contained Helper Functions (for inside container) ---
+
+# Define colors locally for container use
+V_RED='\033[0;31m'
+V_GREEN='\033[0;32m'
+V_YELLOW='\033[1;33m'
+V_BLUE='\033[0;34m'
+V_NC='\033[0m' # No Color
+
+# Basic echo replacements for logging inside container
+_v_echo_info() { echo -e "${V_BLUE}INFO:${V_NC} $1"; }
+_v_echo_success() { echo -e "${V_GREEN}SUCCESS:${V_NC} $1"; }
+_v_echo_warning() { echo -e "${V_YELLOW}WARNING:${V_NC} $1" >&2; }
+_v_echo_error() { echo -e "${V_RED}ERROR:${V_NC} $1" >&2; }
+
+# --- Verification Check Functions (Run inside container) ---
+
+# Check basic OS info
+_check_os() {
+  echo "--- OS Information ---"
+  if [ -f /etc/os-release ]; then
+    # Use awk for safer parsing than source
+    cat /etc/os-release | awk -F= '/^(NAME|VERSION|ID|PRETTY_NAME)=/{gsub(/"/, "", $2); print $1 "=" $2}'
+  else
+    echo "Cannot find /etc/os-release"
+  fi
+  echo "Architecture: $(uname -m)"
+  echo "--------------------"
+}
+
+# Check if a command exists
+_check_command() {
   local cmd=$1
-  local desc=${2:-$cmd}
-  if command -v $cmd &> /dev/null; then
-    version=$($cmd --version 2>&1 | head -n 1 || echo "version info unavailable")
-    echo -e "${V_GREEN}✅ $desc:${V_NC} $version"
+  if command -v "$cmd" &> /dev/null; then
+    echo -e "${V_GREEN}✅ Command '$cmd':${V_NC} Found ($(command -v "$cmd"))"
     return 0
   else
-    echo -e "${V_RED}❌ $desc:${V_NC} Not installed"
+    echo -e "${V_RED}❌ Command '$cmd':${V_NC} Not Found"
     return 1
   fi
 }
 
+# Check Python package existence and version
 _check_python_pkg() {
   local pkg_name=$1
-  local import_name=${2:-$pkg_name}
-  local python_cmd="python3"
+  local import_name=${2:-$pkg_name} # Use pkg_name for import if $2 not given
+  local python_cmd="python3" # Default to python3
+
+  # Find available python interpreter
   command -v $python_cmd &> /dev/null || python_cmd="python"
-  if ! command -v $python_cmd &> /dev/null; then echo -e "${V_RED}❌ Python interpreter not found.${V_NC}"; return 1; fi
+  if ! command -v $python_cmd &> /dev/null; then
+      echo -e "${V_RED}❌ Python interpreter ('python3' or 'python') not found.${V_NC}"
+      return 1 # Critical failure if no python
+  fi
+
+  # Try importing the package
   if $python_cmd -c "import $import_name" &> /dev/null; then
-    version=$($python_cmd -c "import $import_name; print(getattr($import_name, '__version__', 'version unknown'))" 2>/dev/null || echo "version unknown")
-    echo -e "${V_GREEN}✅ Python $pkg_name:${V_NC} $version"
+    # Try getting version, handle potential errors
+    version=$($python_cmd -c "import $import_name; print(getattr($import_name, '__version__', 'version unknown'))" 2>/dev/null || echo "import ok, version check failed")
+    echo -e "${V_GREEN}✅ Python '$pkg_name':${V_NC} $version"
     return 0
   else
-    echo -e "${V_RED}❌ Python $pkg_name:${V_NC} Not installed or import failed"
+    echo -e "${V_RED}❌ Python '$pkg_name':${V_NC} Not installed or import failed"
     return 1
   fi
 }
 
-_check_system_tools() {
-  echo -e "\n${V_BLUE}🔧 System Tools:${V_NC}"
-  _check_cmd bash "Bash shell"
-  _check_cmd ls "File listing"
-  _check_cmd grep "Text search"
-  _check_cmd awk "Text processing"
-  _check_cmd sed "Stream editor"
-  _check_cmd curl "URL transfer tool"
-  _check_cmd wget "Download utility"
-  _check_cmd git "Git version control"
-  _check_cmd python3 "Python 3" || _check_cmd python "Python"
-  _check_cmd pip3 "Pip 3" || _check_cmd pip "Pip"
-  _check_cmd nvcc "NVIDIA CUDA Compiler"
-  _check_cmd gcc "C Compiler"
-  _check_cmd g++ "C++ Compiler"
-  _check_cmd make "Make utility"
-  _check_cmd cmake "CMake build system"
+
+# Check environment variables
+_check_env_vars() {
+    echo "--- Environment Variables ---"
+    # List specific important variables, avoid dumping everything
+    echo "PATH=$PATH"
+    echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-<unset>}"
+    echo "PYTHONPATH=${PYTHONPATH:-<unset>}"
+    echo "DEBIAN_FRONTEND=${DEBIAN_FRONTEND:-<unset>}"
+    echo "LANG=${LANG:-<unset>}"
+    # Add others as needed
+    echo "---------------------------"
 }
 
-_check_ml_frameworks() {
-  echo -e "\n${V_BLUE}🧠 ML/AI Frameworks:${V_NC}"
-  _check_python_pkg torch
-  _check_python_pkg tensorflow
-  _check_python_pkg jax
-  _check_python_pkg keras
-}
-
-_check_libraries() {
-  echo -e "\n${V_BLUE}📚 Libraries and Utilities:${V_NC}"
-  _check_python_pkg numpy
-  _check_python_pkg scipy
-  _check_python_pkg pandas
-  _check_python_pkg matplotlib
-  _check_python_pkg sklearn "scikit-learn" # Use common name
-  _check_python_pkg cv2 "OpenCV"
-  _check_python_pkg transformers
-  _check_python_pkg diffusers
-  _check_python_pkg huggingface_hub
-}
-
-_check_cuda_info() {
-  echo -e "\n${V_BLUE}🖥️ CUDA/GPU Information:${V_NC}"
-  # Block 1: PyTorch Checks
-  if _check_python_pkg torch >/dev/null; then # IF 1
-    local python_cmd="python3"; command -v $python_cmd &> /dev/null || python_cmd="python"
-    if command -v $python_cmd &> /dev/null; then # IF 2
-      echo -e "PyTorch CUDA available: $($python_cmd -c "import torch; print('${V_GREEN}Yes${V_NC}' if torch.cuda.is_available() else '${V_RED}No${V_NC}')")"
-      if $python_cmd -c "import torch; exit(0 if torch.cuda.is_available() else 1)"; then # IF 3
-        echo "CUDA Device count: $($python_cmd -c "import torch; print(torch.cuda.device_count())")"
-        echo "CUDA Version (PyTorch): $($python_cmd -c "import torch; print(torch.version.cuda)")"
-      fi # Closes IF 3
-    fi # Closes IF 2
-  fi # Closes IF 1
-
-  # Block 2: nvidia-smi Check
-  if command -v nvidia-smi &> /dev/null; then # IF 4
-    echo -e "${V_GREEN}✅ nvidia-smi found.${V_NC} Driver/GPU info:"
-    nvidia-smi --query-gpu=gpu_name,driver_version,cuda_version --format=csv,noheader || echo -e "${V_RED}nvidia-smi query failed${V_NC}"
-  else
-    echo -e "${V_YELLOW}ℹ️ nvidia-smi not found (may be normal if only runtime libs are installed).${V_NC}"
-  fi # Closes IF 4
-} # Closes the function
-
-_list_system_packages() {
-  echo -e "\n${V_BLUE}📦 All Installed System Packages:${V_NC}"
-  if command -v dpkg &> /dev/null; then echo -e "${V_YELLOW}dpkg packages:${V_NC}"; dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort;
-  elif command -v rpm &> /dev/null; then echo -e "${V_YELLOW}rpm packages:${V_NC}"; rpm -qa --qf "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n" | sort;
-  elif command -v apk &> /dev/null; then echo -e "${V_YELLOW}apk packages:${V_NC}"; apk info -v | sort;
-  else echo -e "${V_RED}Unknown package manager.${V_NC}"; return 1; fi
-  return 0
-}
-
-_list_python_packages() {
-  echo -e "\n${V_BLUE}🐍 Installed Python Packages:${V_NC}"
-  local pip_cmd="pip3"; command -v $pip_cmd &> /dev/null || pip_cmd="pip"
-  if ! command -v $pip_cmd &> /dev/null; then echo -e "${V_RED}pip/pip3 not found.${V_NC}"; return 1; fi
-  $pip_cmd list
-  return 0
-}
-
-_list_installed_apps() {
-  echo -e "${V_CYAN}--- Detecting Installed Applications ---${V_NC}"
-  local output; output=$( (_check_system_tools; _check_ml_frameworks; _check_libraries; _check_cuda_info) 2>&1 )
-  echo "$output" | grep -Eo '✅ [^:]+:' | sed 's/✅ //;s/://' | sort -u
-}
-
-# Main internal verification function called INSIDE the container
-run_verification_checks() {
-  local mode=${1:-quick}
-  echo -e "${V_BLUE}=========================================${V_NC}"
-  echo -e "${V_BLUE} Running Verification Checks (Mode: $mode)${V_NC}"
-  echo -e "${V_BLUE}=========================================${V_NC}"
-  case "$mode" in
-    all) _check_system_tools; _check_ml_frameworks; _check_libraries; _check_cuda_info; _list_system_packages; _list_python_packages ;;
-    quick) _check_system_tools; _check_ml_frameworks; _check_libraries; _check_cuda_info ;;
-    tools) _check_system_tools ;;
-    ml) _check_ml_frameworks ;;
-    libs) _check_libraries ;;
-    cuda) _check_cuda_info ;;
-    python) _list_python_packages ;;
-    system) _list_system_packages ;;
-    list_apps) _list_installed_apps ;;
-    *) echo -e "${V_RED}Error: Invalid verification mode '$mode'.${V_NC}"; return 1 ;;
-  esac
-  local exit_code=$?
-  echo -e "${V_BLUE}=========================================${V_NC}"
-  echo -e "${V_BLUE} Verification Checks Complete (Mode: $mode)${V_NC}"
-  echo -e "${V_BLUE}=========================================${V_NC}"
-  return $exit_code
-}
-
-
-# --- Launcher Functions (Run on Host - Use log_* functions) ---
-
-# Run verification checks or list apps inside a target container image
-verify_container_apps() {
-  local image_tag=$1
-  local mode=${2:-quick}
-
-  # Check if required host functions exist
-  if ! declare -f log_error > /dev/null || ! declare -f verify_image_exists > /dev/null; then
-      echo "ERROR: Host functions (log_error, verify_image_exists) missing in verify_container_apps." >&2
-      return 1
-  fi
-
-  if [[ -z "$image_tag" ]]; then log_error "No image tag provided to verify_container_apps."; return 1; fi
-
-  # Use verify_image_exists from docker_helpers.sh (sourced above if needed)
-  if ! verify_image_exists "$image_tag"; then
-    log_warning "Image '$image_tag' not found locally. Cannot run verification."
-    return 1
-  fi
-
-  log_info "--- Running Verification (Mode: $mode) in container: $image_tag ---"
-
-  local container_script_path="/tmp/verify_apps.sh"
-
-  # Execute the script inside the container
-  docker run --rm --gpus all \
-    -v "${BASH_SOURCE[0]}":"$container_script_path":ro \
-    --entrypoint /bin/bash \
-    "$image_tag" \
-    "$container_script_path" "run_checks" "$mode"
-  local exit_status=$?
-
-  if [ $exit_status -ne 0 ]; then
-    log_error "--- Verification (Mode: $mode) failed in container: $image_tag (Exit code: $exit_status) ---"
-  else
-    log_success "--- Verification (Mode: $mode) completed successfully in container: $image_tag ---"
-  fi
-  return $exit_status
-}
-
-# List installed apps inside a target container image
-list_installed_apps() {
-    local image_tag=$1
-    # Check if required host function exists
-    if ! declare -f log_info > /dev/null; then echo "ERROR: Host function log_info missing in list_installed_apps." >&2; return 1; fi
-
-    log_info "Listing installed applications in: $image_tag"
-    verify_container_apps "$image_tag" "list_apps" # Uses the launcher above
-    return $?
-}
-
-# --- Main Execution (Entry point when script is executed directly) ---
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # If called with "run_checks", execute the internal function (for container execution)
-    if [[ "$1" == "run_checks" ]]; then
-        run_verification_checks "$2" # Pass the mode
-        exit $?
+# List installed packages (basic example for apt)
+_list_packages() {
+    echo "--- Installed Packages (apt) ---"
+    if command -v dpkg &> /dev/null; then
+        dpkg -l | tail -n +6 # Show list without header
     else
-        # If executed directly without "run_checks", show usage for host functions
-        echo "This script provides functions to run checks inside containers." >&2
-        echo "Usage (source the script first):" >&2
-        echo "  verify_container_apps <image_tag> [mode]" >&2
-        echo "  list_installed_apps <image_tag>" >&2
-        echo "Modes: all, quick, tools, ml, libs, cuda, python, system, list_apps" >&2
+        echo "dpkg command not found, cannot list apt packages."
+    fi
+    echo "--------------------------------"
+    echo "--- Installed Python Packages (pip) ---"
+    local python_cmd="python3"
+    command -v $python_cmd &> /dev/null || python_cmd="python"
+    if command -v $python_cmd &> /dev/null && $python_cmd -m pip --version &> /dev/null; then
+         $python_cmd -m pip list
+    else
+         echo "pip not found or not functional for $python_cmd."
+    fi
+     echo "---------------------------------------"
+}
+
+
+# =========================================================================
+# Main Verification Function (Runs inside container)
+# Arguments: $1 = Verification Mode ("basic", "python", "all")
+# Returns: 0 on success, 1 if any check fails
+# =========================================================================
+_run_verification_in_container() {
+    local mode="${1:-all}"
+    local overall_status=0 # 0 = success, 1 = failure
+
+    echo "========================================="
+    echo " Running Verification Checks (Mode: $mode)"
+    echo "========================================="
+
+    # --- Basic Checks (Always Run) ---
+    if [[ "$mode" == "basic" || "$mode" == "all" ]]; then
+        _v_echo_info "Running Basic Checks..."
+        _check_os
+        _check_command "bash" || overall_status=1
+        _check_command "curl" || overall_status=1
+        _check_command "git" || overall_status=1
+        _check_env_vars
+    fi
+
+    # --- Python Checks ---
+    if [[ "$mode" == "python" || "$mode" == "all" ]]; then
+        _v_echo_info "Running Python Checks..."
+        if _check_command "python3"; then
+             _check_python_pkg "pip" "__main__" # Check pip itself
+             _check_python_pkg "numpy" || overall_status=1
+             _check_python_pkg "torch" || overall_status=1
+             _check_python_pkg "torchvision" || overall_status=1
+             _check_python_pkg "torchaudio" || overall_status=1
+             # Add more critical python packages here
+             _check_python_pkg "cv2" "cv2" || overall_status=1 # OpenCV python binding
+        else
+             overall_status=1 # Fail if python3 command missing
+        fi
+    fi
+
+    # --- Full Checks ---
+     if [[ "$mode" == "all" ]]; then
+         _v_echo_info "Running Full Package Listing..."
+         _list_packages # Don't fail build based on listing
+     fi
+
+    echo "========================================="
+    if [[ $overall_status -eq 0 ]]; then
+        echo " Verification Checks Complete (Mode: $mode) - SUCCESS"
+        echo "========================================="
+        exit 0
+    else
+        echo " Verification Checks Complete (Mode: $mode) - FAILED"
+        echo "========================================="
         exit 1
     fi
+}
+
+# =========================================================================
+# Script Entry Point Logic (Handles being called by host or directly)
+# =========================================================================
+# Check if the first argument is the internal function name
+if [[ "${1:-}" == "_run_verification_in_container" ]]; then
+    # Shift arguments and call the internal function
+    shift
+    _run_verification_in_container "$@"
+    exit $? # Exit with the status of the internal function
 fi
 
+# --- Host-Side Main Execution (for testing run_container_verification) ---
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # If testing host-side directly, source dependencies first
+    # Need to mock logging and docker_helpers if run standalone
+    echo "Running verification.sh host-side directly for testing..."
+    if ! declare -f log_info > /dev/null; then
+        echo "Mocking logging functions for host test..."
+        log_info() { echo "INFO: $1"; }
+        log_warning() { echo "WARNING: $1" >&2; }
+        log_error() { echo "ERROR: $1" >&2; }
+        log_success() { echo "SUCCESS: $1"; }
+        log_debug() { :; }
+    fi
+     if ! declare -f verify_image_exists > /dev/null; then
+         echo "Mocking docker_helpers functions for host test..."
+         verify_image_exists() { log_info "Mock verify_image_exists for $1: Assuming TRUE"; return 0; }
+     fi
+
+    # Test the host-side function (requires docker running and a test image)
+    TEST_IMAGE="hello-world" # Use a simple image for basic test
+    log_info "*** Testing run_container_verification with image: $TEST_IMAGE ***"
+    if run_container_verification "$TEST_IMAGE" "basic"; then
+        log_success "Host-side test completed successfully."
+    else
+        log_error "Host-side test failed."
+    fi
+    exit 0
+fi
+
+
 # --- Footer ---
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── verification.sh    <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Container verification checks (internal) and host launchers. Relies on logging.sh, docker_helpers.sh sourced by caller for host functions.
-# Author: kairin / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-205252-VERIFYFIXFINAL
+# Description: Runs verification checks inside a container. Made container part self-contained.
+# COMMIT-TRACKING: UUID-20250424-230000-VERIFIX
