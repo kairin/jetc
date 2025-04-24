@@ -3,77 +3,98 @@
 
 # =========================================================================
 # System Checks Script
-# Responsibility: Check for required system tools.
+# Responsibility: Verify essential system tools are installed.
 # =========================================================================
 
-# Source logging functions if available (assuming env_setup.sh was sourced by caller)
-if declare -f log_info > /dev/null; then
-    : # Functions already loaded
+# Source logging functions if available (optional, depends on execution context)
+if [ -f "$(dirname "${BASH_SOURCE[0]}")/env_setup.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$(dirname "${BASH_SOURCE[0]}")/env_setup.sh"
 else
-    # Basic fallback logging if not sourced
-    log_info() { echo "INFO: $1"; }
+    # Define basic logging fallbacks if env_setup isn't sourced
+    log_info() { echo "INFO: $1" >&2; }
     log_warning() { echo "WARNING: $1" >&2; }
     log_error() { echo "ERROR: $1" >&2; }
 fi
 
-# --- Check Functions ---
-check_command() {
-    local cmd="$1"
-    local critical=${2:-false} # Is this command critical?
-    local package_name=${3:-$cmd} # Package name for installation hint
+# =========================================================================
+# Function: Check for required command-line tools
+# Arguments: None
+# Returns: 0 if all essential tools are found, 1 otherwise
+# =========================================================================
+check_system_tools() {
+    local missing_tools=0
+    local tools_to_check=("docker" "git") # Essential tools
+    local optional_tools=("dialog") # Optional tools
 
-    log_info "Checking for command: $cmd..."
-    if command -v "$cmd" &> /dev/null; then
-        log_info " -> Found: $(command -v "$cmd")"
-        return 0
-    else
-        if [[ "$critical" == "true" ]]; then
-            log_error " -> Command '$cmd' not found. This is required."
-            log_error "    Please install '$package_name' (e.g., using 'sudo apt update && sudo apt install $package_name') and try again."
-            return 1
+    log_info "Checking for essential system tools..."
+    for tool in "${tools_to_check[@]}"; do
+        if ! command -v "$tool" &> /dev/null; then
+            log_error "Essential tool '$tool' is not installed or not in PATH."
+            missing_tools=1
         else
-            log_warning " -> Command '$cmd' not found. Some features might be unavailable (e.g., interactive UI)."
-            log_warning "    Consider installing '$package_name' for the best experience."
-            return 0 # Non-critical, allow script to continue
+            log_info " -> Found: $tool"
         fi
-    fi
-}
+    done
 
-check_docker_buildx() {
-    log_info "Checking for Docker Buildx plugin..."
-    if docker buildx version &> /dev/null; then
-        log_info " -> Found: $(docker buildx version | head -n 1)"
-        return 0
-    else
-        log_error " -> Docker Buildx plugin not found or not working."
-        log_error "    Buildx is required. Ensure Docker is installed correctly and buildx is enabled."
-        log_error "    See: https://docs.docker.com/build/buildx/install/"
+    log_info "Checking for optional system tools..."
+    for tool in "${optional_tools[@]}"; do
+        if ! command -v "$tool" &> /dev/null; then
+            log_warning "Optional tool '$tool' is not installed. Some UI features might be disabled."
+            # Set an environment variable to indicate dialog is missing
+            export DIALOG_MISSING=true
+        else
+            log_info " -> Found: $tool"
+            export DIALOG_MISSING=false
+        fi
+    done
+
+    if [ $missing_tools -ne 0 ]; then
+        log_error "One or more essential tools are missing. Please install them and try again."
         return 1
     fi
+
+    # Check Docker daemon status
+    log_info "Checking Docker daemon status..."
+    if ! docker info > /dev/null 2>&1; then
+        log_error "Docker daemon is not running or inaccessible. Please start Docker."
+        # Attempt to start Docker if possible (requires sudo/permissions)
+        # if command -v systemctl &> /dev/null; then
+        #     log_info "Attempting to start Docker service via systemctl..."
+        #     sudo systemctl start docker
+        #     sleep 5 # Give it time to start
+        #     if ! docker info > /dev/null 2>&1; then
+        #         log_error "Failed to start Docker service."
+        #         return 1
+        #     fi
+        # else
+             return 1 # Cannot automatically start
+        # fi
+    else
+        log_info " -> Docker daemon is running."
+    fi
+
+    # Check for Docker Buildx plugin
+    log_info "Checking for Docker Buildx plugin..."
+    if ! docker buildx version &> /dev/null; then
+        log_error "Docker Buildx plugin is not available. Please install or enable it."
+        # Instructions or link to docs could be added here.
+        return 1
+    else
+        log_info " -> Docker Buildx plugin found."
+    fi
+
+    log_success "All essential system checks passed."
+    return 0
 }
 
-# --- Perform Checks ---
-log_info "Performing system checks..."
-
-all_checks_passed=true
-
-check_command "docker" true || all_checks_passed=false
-if [[ "$all_checks_passed" == "true" ]]; then
-    # Only check buildx if docker command exists
-    check_docker_buildx || all_checks_passed=false
-fi
-check_command "dialog" false "dialog" # Not critical, provides better UI
-check_command "git" true || all_checks_passed=false
-
-# --- Final Result ---
-if [[ "$all_checks_passed" == "true" ]]; then
-    log_info "System checks passed."
-    exit 0
-else
-    log_error "One or more critical system checks failed. Please install the missing tools."
-    exit 1
+# --- Main Execution (if run directly) ---
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    check_system_tools
+    exit $?
 fi
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -81,6 +102,6 @@ fi
 # │       └── system_checks.sh   <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Checks for essential system tools (docker, buildx, dialog, git) required by the build system.
+# Description: Checks for essential system tools (docker, buildx, git) and optional tools (dialog). Verifies Docker daemon status.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-090500-SYSCHK
+# COMMIT-TRACKING: UUID-20250424-100500-SYSCHECKS
