@@ -25,3 +25,13 @@ qt-online-installer-linux-arm64-4.9.0.run
 # Local tracking and instruction files
 *.copilot_instructions
 buildx/.env
+/tmp/build_prefs.sh # Temporary file for build preferences
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── .gitignore                 <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Git ignore rules. Added temporary build preferences file.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250424-223000-GITIGNORE
