@@ -73,6 +73,97 @@ get_system_datetime() {
   return 0
 }
 
+# In /workspaces/jetc/buildx/scripts/utils.sh
+
+# =========================================================================
+# Function: Check if scrot is installed, optionally install it.
+# Returns: 0 if scrot is available, 1 otherwise.
+# Exports: SCREENSHOT_TOOL_MISSING (true/false)
+# =========================================================================
+check_install_screenshot_tool() {
+  export SCREENSHOT_TOOL_MISSING="false"
+  _log_debug "Checking for 'scrot' command..."
+  echo "Checking for screenshot tool 'scrot'..." >&2
+  if (! command -v scrot &> /dev/null); then
+    _log_debug "'scrot' not found. Attempting installation..."
+    echo "'scrot' not found. Attempting installation..." >&2
+    # Try common package managers
+    if command -v apt-get &> /dev/null; then
+      sudo apt-get update -y && sudo apt-get install -y scrot || { _log_debug "Failed to install scrot via apt-get."; echo "Failed to install scrot via apt-get." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+    elif command -v yum &> /dev/null; then
+      sudo yum install -y scrot || { _log_debug "Failed to install scrot via yum."; echo "Failed to install scrot via yum." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+    elif command -v dnf &> /dev/null; then
+      sudo dnf install -y scrot || { _log_debug "Failed to install scrot via dnf."; echo "Failed to install scrot via dnf." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+    elif command -v pacman &> /dev/null; then
+      sudo pacman -S --noconfirm scrot || { _log_debug "Failed to install scrot via pacman."; echo "Failed to install scrot via pacman." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+    else
+      _log_debug "Could not attempt scrot installation: Unsupported package manager."
+      echo "Could not attempt scrot installation: Unsupported package manager." >&2
+      export SCREENSHOT_TOOL_MISSING="true"
+      return 1
+    fi
+    # Verify installation succeeded
+    if (! command -v scrot &> /dev/null); then
+       _log_debug "Installation command ran, but 'scrot' still not found."
+       echo "Installation command ran, but 'scrot' still not found." >&2
+       export SCREENSHOT_TOOL_MISSING="true"
+       return 1
+    fi
+    _log_debug "'scrot' installed successfully."
+    echo "'scrot' installed successfully." >&2
+  else
+    _log_debug "'scrot' command found."
+    echo "'scrot' command found." >&2
+  fi
+  return 0
+}
+
+# Add this call within setup_build_environment or call it early in build.sh
+# check_install_screenshot_tool
+
+
+# In /workspaces/jetc/buildx/scripts/utils.sh
+
+# =========================================================================
+# Function: Capture a screenshot if scrot is available
+# Arguments: $1 = Descriptive name suffix (e.g., "step0_docker_info")
+# Returns: 0 on success or if tool missing, 1 on error during capture
+# =========================================================================
+capture_screenshot() {
+    local name_suffix="$1"
+    # Check if the tool is available (using the exported variable)
+    if [[ "${SCREENSHOT_TOOL_MISSING}" == "true" ]]; then
+        _log_debug "Screenshot tool missing, skipping capture for '$name_suffix'."
+        return 0
+    fi
+
+    # Define screenshot directory relative to the script's parent (buildx/)
+    local screenshot_dir
+    screenshot_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/screenshots"
+    mkdir -p "$screenshot_dir" || {
+        _log_debug "Failed to create screenshot directory: $screenshot_dir"
+        echo "Warning: Failed to create screenshot directory: $screenshot_dir" >&2
+        return 1
+    }
+
+    local timestamp
+    timestamp=$(date +"%Y%m%d-%H%M%S")
+    local filename="${screenshot_dir}/screenshot_${name_suffix}_${timestamp}.png"
+
+    _log_debug "Capturing screenshot: $filename"
+    # Add a small delay to ensure the dialog is fully rendered (optional)
+    # sleep 0.5
+    if scrot "$filename"; then
+        _log_debug "Screenshot captured successfully."
+        return 0
+    else
+        _log_debug "Failed to capture screenshot using scrot."
+        echo "Warning: Failed to capture screenshot: $filename" >&2
+        return 1
+    fi
+}
+
+
 # =========================================================================
 # Function: Setup basic build environment variables (ARCH, PLATFORM, DATE)
 # Exports: ARCH, PLATFORM, CURRENT_DATE_TIME
@@ -93,6 +184,8 @@ store_current_datetime() {
   export JETC_RUN_DATETIME="$(date +"%Y-%m-%d %H:%M:%S")"
   echo "$JETC_RUN_DATETIME"
 }
+
+
 
 # File location diagram:
 # jetc/                          <- Main project folder
