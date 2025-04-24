@@ -491,13 +491,6 @@ echo "Starting container..."
 # Combine RUN_CMD (which might have --user kkk) with FINAL_RUN_OPTS
 $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 
-# Automatically update commit tracking UUID timestamp in this file after run
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")/scripts"
-if [ -f "$SCRIPT_DIR/commit_tracking.sh" ]; then
-  source "$SCRIPT_DIR/commit_tracking.sh"
-  update_commit_tracking_footer "$0"
-fi
-
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
@@ -505,6 +498,6 @@ fi
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Added comment explaining pull fallback.
+# Description: Interactive script to launch Jetson containers. Removed auto commit tracking update.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-180000-PULLDOC
+# COMMIT-TRACKING: UUID-20250424-190000-RMHOOKTRIG

@@ -98,15 +98,15 @@ if [[ -n "$FINAL_IMAGE_TAG" ]]; then
   verify_container_apps "$FINAL_IMAGE_TAG" "quick"
 fi
 
-# Automatically update commit tracking UUID timestamp in this file and scripts after build
-for f in "$0" "$SCRIPT_DIR"/*.sh; do
-  if grep -q "COMMIT-TRACKING: UUID-" "$f"; then
-    source "$SCRIPT_DIR/commit_tracking.sh"
-    update_commit_tracking_footer "$f"
-  fi
-done
+# Remove automatic commit tracking update - This will be handled by Git hooks
+# for f in "$0" "$SCRIPT_DIR"/*.sh; do
+#   if grep -q "COMMIT-TRACKING: UUID-" "$f"; then
+#     source "$SCRIPT_DIR/commit_tracking.sh"
+#     update_commit_tracking_footer "$f"
+#   fi
+# done
 
-# COMMIT-TRACKING: UUID-20240805-221000-BLDX
+# COMMIT-TRACKING: UUID-20240805-221000-BLDX # Keep existing UUID for now
 generate_error_summary
 
 # File location diagram:
@@ -116,6 +116,6 @@ generate_error_summary
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Main build orchestrator. Removed redundant update_available_images_in_env function.
+# Description: Main build orchestrator. Removed auto commit tracking update.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-130500-RMVREDUND
+# COMMIT-TRACKING: UUID-20250424-190000-RMHOOKTRIG
