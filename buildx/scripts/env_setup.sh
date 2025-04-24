@@ -3,28 +3,25 @@
 
 # =========================================================================
 # Environment Setup Script
-# Responsibility: Initialize logging, load .env, set global variables,
-#                 and provide basic utility functions if others fail.
+# Responsibility: Load .env, set defaults, validate essential variables,
+#                 initialize logging, and determine platform.
 # =========================================================================
 
-# Set strict mode early
+# Set strict mode
 set -euo pipefail
 
-# --- Basic Setup ---
-export SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-export PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)" # Assuming scripts is one level down from buildx
-export BUILD_DIR="$PROJECT_ROOT/build"
-export LOG_DIR="$PROJECT_ROOT/logs"
-export ENV_FILE="$PROJECT_ROOT/.env"
+# --- Script Path ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env" # Path to the .env file relative to this script
 
 # --- Source Core Utilities FIRST ---
-# Source utils.sh for core functions like validate_variable
+# Source utils.sh for core functions like validate_variable and logging helpers
 if [ -f "$SCRIPT_DIR/utils.sh" ]; then
     # shellcheck disable=SC1091
     source "$SCRIPT_DIR/utils.sh"
 else
+    # Minimal fallbacks ONLY if utils.sh is missing
     echo "CRITICAL ERROR: utils.sh not found. Essential functions missing." >&2
-    # Define minimal fallbacks ONLY if utils.sh is missing
     validate_variable() { echo "WARNING: validate_variable (fallback): Checking $1" >&2; [[ -n "$2" ]]; }
     get_system_datetime() { date +"%Y%m%d-%H%M%S"; }
     # Minimal logging fallbacks if utils.sh (and thus logging) is missing
@@ -33,29 +30,30 @@ else
     log_error() { echo "ERROR: $1" >&2; }
     log_success() { echo "SUCCESS: $1"; }
     log_debug() { if [[ "${JETC_DEBUG:-0}" == "1" ]]; then echo "[DEBUG] $1" >&2; fi; }
+    # Define capture_screenshot fallback if utils.sh is missing
+    capture_screenshot() { log_warning "capture_screenshot: utils.sh not loaded, cannot capture."; return 1; }
 fi
 
 # --- Logging Initialization ---
-# Source logging.sh (which might be part of utils.sh or separate)
-# If logging.sh is separate and needed:
-# if [ -f "$SCRIPT_DIR/logging.sh" ]; then
-#     # shellcheck disable=SC1091
-#     source "$SCRIPT_DIR/logging.sh"
-# else
-#     echo "WARNING: logging.sh not found. Using basic logging." >&2
-# fi
-# Initialize logging (assuming init_logging is defined in utils.sh or logging.sh)
+# Initialize logging using functions potentially defined in utils.sh
+# If utils.sh was missing, minimal fallbacks are used.
+# init_logging function should be defined in logging.sh (sourced by utils.sh or main script)
 if command -v init_logging &> /dev/null; then
     init_logging # Call the initialization function
 else
-    log_warning "init_logging function not found. Logging might be incomplete."
+    log_warning "init_logging function not found. Logging might be basic or uninitialized."
 fi
+log_info "--- Initializing Environment Setup ---"
 
 # --- Debug Mode ---
-export JETC_DEBUG="${JETC_DEBUG:-0}" # Default to 0 (off) if not set
-if [[ "$JETC_DEBUG" == "1" || "$JETC_DEBUG" == "true" ]]; then
-    log_debug "Debug mode enabled."
-    set -x # Enable command tracing in debug mode
+# Check JETC_DEBUG environment variable (set externally or in .env)
+if [[ "${JETC_DEBUG:-0}" == "1" || "${JETC_DEBUG,,}" == "true" ]]; then
+    export JETC_DEBUG=1
+    log_info "Debug mode enabled."
+    set -x # Enable command tracing
+else
+    export JETC_DEBUG=0
+    log_debug "Debug mode disabled." # This won't show unless JETC_DEBUG was already 1
 fi
 
 # --- Load .env file ---
@@ -88,16 +86,30 @@ load_dotenv() {
 
 # --- Default Values ---
 # Set defaults BEFORE loading .env, so .env can override them
-export DOCKER_USERNAME="${DOCKER_USERNAME:-default_user}"
-export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-jetson-container}"
-export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}" # Default empty (Docker Hub)
-export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-nvcr.io/nvidia/l4t-base:r35.4.1}" # Example default
+export DOCKER_USERNAME="${DOCKER_USERNAME:-jetson}"
+export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-jetc}"
+export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}" # Default to Docker Hub
+export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3}"
 export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}"
-export PLATFORM="${PLATFORM:-linux/arm64}"
+export LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/../logs}"
+export LOG_LEVEL="${LOG_LEVEL:-INFO}" # Default log level
 export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}" # Initialize as empty string
 
 # Load the primary .env file using the robust method
 load_dotenv "$ENV_FILE"
+
+# --- Platform Detection ---
+# Determine the host architecture and set the PLATFORM variable
+HOST_ARCH=$(uname -m)
+if [[ "$HOST_ARCH" == "aarch64" ]]; then
+    export PLATFORM="linux/arm64"
+elif [[ "$HOST_ARCH" == "x86_64" ]]; then
+    export PLATFORM="linux/amd64"
+else
+    log_warning "Unsupported host architecture: $HOST_ARCH. Defaulting to linux/arm64."
+    export PLATFORM="linux/arm64"
+fi
+log_info "Detected platform: $PLATFORM"
 
 # --- Validate Essential Variables ---
 # Now call validate_variable AFTER utils.sh is sourced and .env is loaded
@@ -111,8 +123,17 @@ validate_variable "PLATFORM" "$PLATFORM" "Target platform is required." || exit 
 export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
 log_debug "Final AVAILABLE_IMAGES after load: '${AVAILABLE_IMAGES}'"
 
+# --- Source Core Utilities --- # REMOVED - Moved to top
+
 # --- Final Checks ---
-log_debug "Environment setup script completed."
+# Ensure log directory exists
+if [ -n "$LOG_DIR" ]; then
+    mkdir -p "$LOG_DIR" || log_warning "Could not create log directory: $LOG_DIR"
+else
+    log_warning "LOG_DIR variable is not set. Logs might not be saved correctly."
+fi
+
+log_info "--- Environment Setup Complete ---"
 
 # --- Footer ---
 # File location diagram:
@@ -122,6 +143,6 @@ log_debug "Environment setup script completed."
 # │       └── env_setup.sh       <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Initializes environment variables and loads .env file.
+# Description: Loads .env, sets defaults, validates variables, initializes logging.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-083500-ENVFIX3 # New UUID for this fix
+# COMMIT-TRACKING: UUID-20250425-083500-ENVFIX3 # Keeping previous fix UUID

@@ -56,14 +56,15 @@ declare -gA skip_apps_map=()
 # Relies on global variables: ORDERED_FOLDERS, SELECTED_USE_CACHE, DOCKER_USERNAME,
 #                             SELECTED_USE_SQUASH, SELECTED_SKIP_INTERMEDIATE,
 #                             LAST_SUCCESSFUL_TAG, DOCKER_REPO_PREFIX, DOCKER_REGISTRY,
-#                             SELECTED_USE_BUILDER
+#                             SELECTED_USE_BUILDER, SELECTED_BASE_IMAGE, PLATFORM
 # Exports: LAST_SUCCESSFUL_TAG (updated on success)
 # Returns: 0 if all selected stages build successfully, 1 otherwise
 # =========================================================================
 build_selected_stages() {
     log_info "--- Starting Build Stages ---"
     local overall_status=0
-    export LAST_SUCCESSFUL_TAG="${LAST_SUCCESSFUL_TAG:-}" # Ensure it's exported and initialized
+    # Use SELECTED_BASE_IMAGE loaded from prefs as the initial base
+    export LAST_SUCCESSFUL_TAG="${LAST_SUCCESSFUL_TAG:-$SELECTED_BASE_IMAGE}"
 
     if [ ${#ORDERED_FOLDERS[@]} -eq 0 ]; then
         log_warning "No build stages found or selected in ORDERED_FOLDERS. Nothing to build."
@@ -79,23 +80,23 @@ build_selected_stages() {
         echo "DEBUG ECHO: Processing $folder_name" # Added for visibility
 
         # Determine the base image for the current stage
+        # Use LAST_SUCCESSFUL_TAG if set, otherwise fall back to SELECTED_BASE_IMAGE
         local current_base_image="${LAST_SUCCESSFUL_TAG:-$SELECTED_BASE_IMAGE}"
         log_debug "Using base image for '$folder_name': $current_base_image"
 
-        # Call build_folder_image with all required arguments from global scope
+        # Call build_folder_image with SELECTED_* arguments from global scope (sourced from prefs file)
         # Ensure the order matches the function definition in docker_helpers.sh
         # build_folder_image "$folder_path" "$use_cache" "$docker_username" "$use_squash" "$skip_intermediate" "$base_image_tag" "$docker_repo_prefix" "$docker_registry" "$use_builder"
-        # REVERTED: Pass potentially incorrect global vars instead of SELECTED_*
         if build_folder_image \
             "$folder_path" \
-            "${use_cache:-y}" \
+            "${SELECTED_USE_CACHE:-n}" \
             "${DOCKER_USERNAME}" \
-            "${use_squash:-n}" \
-            "${skip_intermediate_push_pull:-n}" \
+            "${SELECTED_USE_SQUASH:-n}" \
+            "${SELECTED_SKIP_INTERMEDIATE:-y}" \
             "$current_base_image" \
             "${DOCKER_REPO_PREFIX}" \
             "${DOCKER_REGISTRY:-}" \
-            "${use_builder:-y}"; then # Pass potentially incorrect global use_builder
+            "${SELECTED_USE_BUILDER:-y}"; then # Pass SELECTED_USE_BUILDER
 
             # On success, update LAST_SUCCESSFUL_TAG with the tag just built (fixed_tag is exported by build_folder_image)
             if [[ -n "${fixed_tag:-}" ]]; then
@@ -165,19 +166,20 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         log_debug() { echo "[DEBUG] build_stages_test: $1" >&2; } # Make debug visible in test
      fi
 
-    # Set mock global variables
-    ORDERED_FOLDERS=( "/tmp/build/01-first" "/tmp/build/02-second-fails" "/tmp/build/03-third" )
-    declare -gA SELECTED_FOLDERS_MAP=( ["01-first"]=1 ["02-second-fails"]=1 ["03-third"]=1 )
+    # Set mock global SELECTED_* variables for testing
     SELECTED_BASE_IMAGE="mock/repo:initial-base"
     DOCKER_USERNAME="mockuser"
     DOCKER_REPO_PREFIX="mockrepo"
     DOCKER_REGISTRY=""
-    use_cache="n"
-    use_squash="n"
-    skip_intermediate_push_pull="y"
-    use_builder="y"
+    SELECTED_USE_CACHE="n"
+    SELECTED_USE_SQUASH="n"
+    SELECTED_SKIP_INTERMEDIATE="y"
+    SELECTED_USE_BUILDER="y"
     PLATFORM="linux/arm64"
     SELECTED_FOLDERS_LIST="01-first 02-second-fails 03-third"
+    ORDERED_FOLDERS=( "/tmp/build/01-first" "/tmp/build/02-second-fails" "/tmp/build/03-third" )
+    declare -gA SELECTED_FOLDERS_MAP=( ["01-first"]=1 ["02-second-fails"]=1 ["03-third"]=1 )
+
 
     # --- Test Cases --- #
     log_info ""
@@ -209,4 +211,4 @@ fi
 #
 # Description: Manages the execution of build stages in the correct order.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250425-090000-BUILDSTAGESFIX # New UUID for this fix

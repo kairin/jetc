@@ -61,17 +61,17 @@ verify_image_exists() {
 
 
 # =========================================================================
-# Function: Build a Docker image from a specific folder
+# Function: Build a Docker image from a specified folder
 # Arguments:
-#   $1: folder_path - Path to the build context folder
-#   $2: use_cache - 'y' or 'n'
-#   $3: docker_username - Docker username
-#   $4: use_squash - 'y' or 'n'
-#   $5: skip_intermediate - 'y' or 'n' (y=local build only, n=push/pull)
-#   $6: base_image_tag - Tag of the base image to use (passed as BASE_IMAGE build-arg)
-#   $7: docker_repo_prefix - Prefix for the image repository
-#   $8: docker_registry - Optional Docker registry hostname
-#   $9: use_builder - 'y' or 'n' (whether to use buildx builder)
+#   $1: folder_path - Path to the build context folder containing Dockerfile
+#   $2: use_cache - 'y' or 'n' (passed as --no-cache if 'n')
+#   $3: docker_username - Docker username for tagging
+#   $4: use_squash - 'y' or 'n' (passed as --squash if 'y')
+#   $5: skip_intermediate - 'y' or 'n' (determines --load or --push for buildx, ignored for docker build)
+#   $6: base_image_tag - Tag of the base image to use (passed as --build-arg BASE_IMAGE)
+#   $7: docker_repo_prefix - Prefix for the image repository name
+#   $8: docker_registry - Docker registry (optional, prepended if provided)
+#   $9: use_builder - 'y' or 'n' (determines whether to use 'docker buildx build' or 'docker build')
 # Exports: fixed_tag - The final tag of the successfully built image
 # Returns: 0 on success, 1 on failure
 # =========================================================================
@@ -80,105 +80,135 @@ build_folder_image() {
     local use_cache="$2"
     local docker_username="$3"
     local use_squash="$4"
-    local skip_intermediate="$5" # 'y' means skip push/pull (local build)
+    local skip_intermediate="$5"
     local base_image_tag="$6"
     local docker_repo_prefix="$7"
-    local docker_registry="${8:-}" # Default to empty if not provided
-    local use_builder="$9"         # Use buildx builder?
+    local docker_registry="$8"
+    local use_builder="$9"
 
-    # --- Validate required arguments AFTER assigning to locals ---
-    # This is where the error likely triggers if an argument is truly missing
-    if [ -z "$folder_path" ]; then log_error "build_folder_image: Validation Failed - Missing \$1 (folder_path)."; return 1; fi
-    if [ -z "$use_cache" ]; then log_error "build_folder_image: Validation Failed - Missing \$2 (use_cache)."; return 1; fi
-    if [ -z "$docker_username" ]; then log_error "build_folder_image: Validation Failed - Missing \$3 (docker_username)."; return 1; fi
-    if [ -z "$use_squash" ]; then log_error "build_folder_image: Validation Failed - Missing \$4 (use_squash)."; return 1; fi
-    if [ -z "$skip_intermediate" ]; then log_error "build_folder_image: Validation Failed - Missing \$5 (skip_intermediate)."; return 1; fi
-    if [ -z "$base_image_tag" ]; then log_error "build_folder_image: Validation Failed - Missing \$6 (base_image_tag)."; return 1; fi
-    if [ -z "$docker_repo_prefix" ]; then log_error "build_folder_image: Validation Failed - Missing \$7 (docker_repo_prefix)."; return 1; fi
+    local folder_name
+    folder_name=$(basename "$folder_path")
+    export fixed_tag="" # Clear or initialize exported variable
 
-    local folder_basename
-    folder_basename=$(basename "$folder_path") # Line 72 approx in original file context
+    log_info "Attempting to build image for stage: $folder_name"
+    log_debug "Build context: $folder_path"
+    log_debug "Base image ARG: $base_image_tag"
+    log_debug "User options: use_cache=$use_cache, use_squash=$use_squash, skip_intermediate=$skip_intermediate, use_builder=$use_builder"
 
-    # --- Construct Tag ---
-    local registry_prefix=""
-    [[ -n "$docker_registry" ]] && registry_prefix="${docker_registry}/"
-    export fixed_tag="${registry_prefix}${docker_username}/${docker_repo_prefix}:${folder_basename}"
-    fixed_tag=$(echo "$fixed_tag" | tr '[:upper:]' '[:lower:]')
+    # Validate inputs
+    if [[ ! -d "$folder_path" ]]; then log_error "Build context '$folder_path' not found."; return 1; fi
+    if [[ ! -f "$folder_path/Dockerfile" ]]; then log_error "Dockerfile not found in '$folder_path'."; return 1; fi
+    if [[ -z "$docker_username" ]]; then log_error "Docker username is required."; return 1; fi
+    if [[ -z "$docker_repo_prefix" ]]; then log_error "Docker repo prefix is required."; return 1; fi
+    if [[ -z "$base_image_tag" ]]; then log_error "Base image tag is required."; return 1; fi
 
-    log_info "--------------------------------------------------"
-    log_info "Building image from folder: $folder_path"
-    log_info "Image Name: $folder_basename"
-    log_info "Platform: ${PLATFORM:-linux/arm64}"
-    log_info "Tag: $fixed_tag"
-    log_info "Base Image (FROM via ARG): \"$base_image_tag\""
-    log_info "Skip Intermediate Push/Pull: $skip_intermediate" # Log the received value
-    log_info "Use Buildx Builder: $use_builder"                 # Log the received value
-    log_info "Use Cache: $use_cache"
-    log_info "Use Squash: $use_squash"
-    log_info "--------------------------------------------------"
+    # Generate the target image tag
+    local target_tag
+    target_tag=$(generate_image_tag "$docker_username" "$docker_repo_prefix" "$folder_name" "$docker_registry")
+    log_info "Target image tag: $target_tag"
 
-    local build_cmd_base="docker buildx build" # Assume buildx initially
-    local build_args=("--platform" "$platform" "-t" "$full_tag" "--build-arg" "BASE_IMAGE=$base_image_tag")
-    local push_flag=""
+    # --- Construct Build Command ---
+    local build_cmd_base=""
+    local build_cmd_args=()
 
-    # REVERTED: Simplified logic, potentially ignoring use_builder='n' from UI
-    if [[ "$skip_intermediate" == "n" ]]; then
-        push_flag="--push"
-        log_info "Using --push (buildx)"
-    else
-        # If not pushing, assume buildx load or standard build (logic was complex, reverting to simpler state)
-        # This might incorrectly use --load even if use_builder was 'n'
-        if [[ "$use_builder" == "y" ]]; then
-             push_flag="--load"
-             log_info "Using --load (buildx)"
+    # Platform (always needed for buildx, good practice for docker build)
+    # PLATFORM should be globally available from env_setup.sh
+    build_cmd_args+=( "--platform=${PLATFORM:-linux/arm64}" )
+
+    # Cache option
+    if [[ "$use_cache" == "n" ]]; then
+        build_cmd_args+=( "--no-cache" )
+    fi
+
+    # Squash option (only applicable to 'docker build' or 'docker buildx build' without --push?)
+    # Note: Buildx might handle squash differently or ignore it with certain drivers/outputs.
+    # Let's add it conditionally based on builder usage for now.
+    if [[ "$use_builder" != "y" && "$use_squash" == "y" ]]; then
+        build_cmd_args+=( "--squash" )
+        log_warning "Using --squash with 'docker build'. This is experimental."
+    elif [[ "$use_builder" == "y" && "$use_squash" == "y" ]]; then
+         # Buildx squash might depend on the driver and output type.
+         # It might be implicitly handled or require specific setup.
+         # For now, let's add it but log a warning.
+         build_cmd_args+=( "--squash" )
+         log_warning "Using --squash with 'docker buildx build'. Behavior depends on builder setup."
+    fi
+
+
+    # Build arguments (Base image + any from .buildargs)
+    build_cmd_args+=( "--build-arg" "BASE_IMAGE=${base_image_tag}" )
+    local buildargs_file="$folder_path/.buildargs"
+    if [[ -f "$buildargs_file" ]]; then
+        log_debug "Loading build arguments from $buildargs_file"
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            # Remove leading/trailing whitespace and skip comments/empty lines
+            line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [[ -z "$line" || "$line" =~ ^# ]]; then continue; fi
+            # Ensure it's a valid VAR=value pair before adding
+            if [[ "$line" =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
+                log_debug "  Adding build arg: $line"
+                build_cmd_args+=( "--build-arg" "$line" )
+            else
+                log_warning "Ignoring invalid line in $buildargs_file: $line"
+            fi
+        done < "$buildargs_file"
+    fi
+
+    # Tag
+    build_cmd_args+=( "-t" "$target_tag" )
+
+    # Build context path
+    build_cmd_args+=( "$folder_path" )
+
+    # --- Choose Build Command (build vs buildx) ---
+    if [[ "$use_builder" == "y" ]]; then
+        # Use buildx
+        build_cmd_base="docker buildx build"
+        # Add --load or --push based on skip_intermediate
+        if [[ "$skip_intermediate" == "y" ]]; then
+            build_cmd_args+=( "--load" ) # Load image into local docker images
+            log_info "Using 'docker buildx build --load'..."
         else
-             log_info "Using standard 'docker build' (implied by no --push/--load)"
-             build_cmd_base="docker build" # Switch command if not using builder explicitly? Reverting this part is tricky. Let's keep buildx build base for now.
+            build_cmd_args+=( "--push" ) # Push image to registry
+            log_info "Using 'docker buildx build --push'..."
+            # Attempt login before pushing
+            if ! docker_login_interactive "$docker_registry" "$docker_username"; then
+                log_error "Docker login failed. Cannot push image."
+                return 1
+            fi
+        fi
+        # Add builder instance name if BUILDER_NAME is set
+        if [[ -n "${BUILDER_NAME:-}" ]]; then
+             build_cmd_args+=( "--builder" "$BUILDER_NAME" )
+        fi
+
+    else
+        # Use standard docker build
+        build_cmd_base="docker build"
+        log_info "Using standard 'docker build'..."
+        # --load/--push are not applicable here
+        if [[ "$skip_intermediate" != "y" ]]; then
+             log_warning "'skip_intermediate=n' selected but not using buildx. Image will only be built locally."
         fi
     fi
 
-    if [[ "$use_cache" == "n" ]]; then
-        build_args+=("--no-cache")
-        log_info "Using --no-cache"
-    fi
 
-    if [[ "$use_squash" == "y" ]]; then
-        # Reverted: Simple squash logic, might conflict with buildx
-        build_args+=("--squash")
-        log_info "Using --squash"
-    fi
+    # --- Execute Build ---
+    log_info "Executing build command:"
+    # Use printf for safer command logging, especially with spaces/quotes
+    printf "  %s" "$build_cmd_base"
+    printf " '%s'" "${build_cmd_args[@]}"
+    printf "\n"
 
-    # Add push/load flag if determined
-    if [[ -n "$push_flag" ]]; then
-        build_args+=("$push_flag")
-    fi
-
-    # Add build context
-    build_args+=("$folder_path")
-
-    # Execute the build command
-    log_info "Running Build Command:"
-    echo "CMD: $build_cmd_base ${build_args[*]}" # Log the exact command
-    if ! $build_cmd_base "${build_args[@]}"; then
-        log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        log_error "Error: Failed to build image for $image_name ($folder_path)."
-        log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    # Run the command
+    if "$build_cmd_base" "${build_cmd_args[@]}"; then
+        log_success "Successfully built image: $target_tag"
+        export fixed_tag="$target_tag" # Export the successful tag
+        return 0
+    else
+        log_error "Failed to build image for stage: $folder_name"
         return 1
     fi
-
-    # Reverted: Simplified pull-back logic
-    if [[ "$skip_intermediate" == "n" ]]; then
-        log_info "Pulling back pushed image to verify: $full_tag"
-        if ! pull_docker_image "$full_tag"; then
-            log_error "Pull-back verification failed for $full_tag."
-            # return 1 # Reverted: Don't fail build on pull-back error
-        else
-            log_success "Pull-back verification successful."
-        fi
-    fi
-
-    log_success "Build process completed successfully for: $full_tag"
-    return 0
 }
 
 # =========================================================================
@@ -220,4 +250,4 @@ fi
 #
 # Description: Helper functions for Docker operations (build, pull, etc.).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250425-090000-DOCKERHELPERFIX # New UUID for this fix

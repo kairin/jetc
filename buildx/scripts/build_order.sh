@@ -52,18 +52,31 @@ determine_build_order() {
         return 1
     fi
 
-    # REVERTED: Find only top-level numbered folders
+    # Find potential stage directories (numbered, depth 1 or 2) that contain a Dockerfile
     local potential_stage_dirs=()
-    mapfile -t potential_stage_dirs < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
+    local found_dirs=()
+    # Find all numbered dirs up to depth 2
+    mapfile -t found_dirs < <(find "$build_dir" -maxdepth 2 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
+
+    # Filter: Keep only those containing a Dockerfile
+    for dir_path in "${found_dirs[@]}"; do
+        if [[ -f "$dir_path/Dockerfile" ]]; then
+            potential_stage_dirs+=("$dir_path")
+            log_debug "Found valid stage directory: $dir_path"
+        else
+            log_debug "Skipping directory (no Dockerfile): $dir_path"
+        fi
+    done
+
 
     if [ ${#potential_stage_dirs[@]} -eq 0 ]; then
-        log_warning "No numbered build stage folders found in $build_dir (checked depth 1)."
+        log_warning "No numbered build stage folders containing a Dockerfile found in $build_dir (checked depth 2)."
         return 0
     fi
 
-    # REVERTED: Populate map based only on selection list or all found folders (no Dockerfile check here)
+    # Populate selection map based on user input or build all found stages
     if [[ -z "$selected_folders_list" ]]; then
-        log_info "No specific stages selected by user. Preparing to build all found numbered stages."
+        log_info "No specific stages selected by user. Preparing to build all found valid stages."
         for folder_path in "${potential_stage_dirs[@]}"; do
             local folder_name
             folder_name=$(basename "$folder_path")
@@ -82,7 +95,7 @@ determine_build_order() {
         log_debug "Selection map populated."
     fi
 
-    # REVERTED: Iterate through sorted potential folders and add to ORDERED_FOLDERS if selected (no Dockerfile check)
+    # Iterate through sorted potential folders and add to ORDERED_FOLDERS if selected
     for folder_path in "${potential_stage_dirs[@]}"; do
         local folder_name
         folder_name=$(basename "$folder_path")
@@ -117,7 +130,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
     # --- Test Setup --- #
     test_build_dir="/tmp/test_build_order_$$"
-    mkdir -p "$test_build_dir"/{01-first,05-middle,10-last,non-numbered,02-second}
+    # Create dirs with and without Dockerfiles, including subdirs
+    mkdir -p "$test_build_dir"/{01-first,05-middle/001-sub,10-last,non-numbered,02-second-no-dockerfile,06-parent-only}
+    touch "$test_build_dir/01-first/Dockerfile"
+    touch "$test_build_dir/05-middle/001-sub/Dockerfile" # Subdir has Dockerfile
+    touch "$test_build_dir/10-last/Dockerfile"
+    # 02-second-no-dockerfile intentionally lacks Dockerfile
+    # 06-parent-only intentionally lacks Dockerfile
     log_info "Created dummy build dir: $test_build_dir"
 
     # Helper to run and print results
@@ -183,4 +202,4 @@ fi
 #
 # Description: Determines the correct build order for Docker stages.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250425-090000-BUILDORDERFIX # New UUID for this fix
