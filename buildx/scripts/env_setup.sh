@@ -15,34 +15,61 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/../.env" # Path to the .env file relative to this script
 
 # --- Source Core Utilities FIRST ---
-# Source utils.sh for core functions like validate_variable and logging helpers
+# Source utils.sh for core functions like validate_variable
 UTILS_PATH="$SCRIPT_DIR/utils.sh"
 if [ -f "$UTILS_PATH" ]; then
     # shellcheck disable=SC1091
     source "$UTILS_PATH"
     # Explicitly check if the crucial function is now defined
     if ! command -v validate_variable &> /dev/null; then
+        # Use echo for critical bootstrap errors before logging is confirmed
         echo "CRITICAL ERROR: Sourced '$UTILS_PATH' but 'validate_variable' function is still not defined. Check '$UTILS_PATH' for errors." >&2
         exit 1
     fi
-    log_debug "'$UTILS_PATH' sourced successfully, 'validate_variable' is defined." # Use log_debug from utils.sh
+    # Use internal utils logger for this bootstrap message
+    _utils_log_debug "'$UTILS_PATH' sourced successfully, core utils defined."
 else
-    # If utils.sh is fundamentally missing, exit immediately. Fallbacks are unreliable.
+    # If utils.sh is fundamentally missing, exit immediately.
     echo "CRITICAL ERROR: '$UTILS_PATH' not found. Essential functions missing. Cannot continue." >&2
     exit 1
-    # --- Fallback logic removed - exit immediately if utils.sh is missing ---
 fi
 
 # --- Logging Initialization ---
-# Initialize logging using functions potentially defined in utils.sh
-# If utils.sh was missing, minimal fallbacks are used.
-# init_logging function should be defined in logging.sh (sourced by utils.sh or main script)
-if command -v init_logging &> /dev/null; then
-    init_logging # Call the initialization function
+# Now attempt to source logging.sh and initialize the main logging system
+LOGGING_PATH="$SCRIPT_DIR/logging.sh"
+if [ -f "$LOGGING_PATH" ]; then
+    # Use source_script (defined in utils.sh) to safely source logging.sh
+    if source_script "$LOGGING_PATH" "Logging System"; then
+        # Attempt to initialize logging if sourcing succeeded
+        if command -v init_logging &> /dev/null; then
+            init_logging # Call the initialization function from logging.sh
+            log_info "--- Initializing Environment Setup (using main logger) ---"
+        else
+            log_warning "init_logging function not found after sourcing logging.sh. Logging might be incomplete." # Use main logger
+        fi
+    else
+        # Sourcing logging.sh failed, rely on utils fallbacks
+         _utils_log_warning "Failed to source '$LOGGING_PATH'. Using basic fallback logging."
+         # Define main log functions as fallbacks if they weren't defined by failed source
+         if ! command -v log_info &> /dev/null; then log_info() { _utils_log_info "$@"; }; fi
+         if ! command -v log_warning &> /dev/null; then log_warning() { _utils_log_warning "$@"; }; fi
+         if ! command -v log_error &> /dev/null; then log_error() { _utils_log_error "$@"; }; fi
+         if ! command -v log_success &> /dev/null; then log_success() { echo "SUCCESS (env_setup fallback): $1"; }; fi # Add success fallback
+         if ! command -v log_debug &> /dev/null; then log_debug() { _utils_log_debug "$@"; }; fi
+         log_info "--- Initializing Environment Setup (using fallback logger) ---" # Use the (potentially fallback) log_info
+    fi
 else
-    log_warning "init_logging function not found. Logging might be basic or uninitialized."
+    # logging.sh not found, rely on utils fallbacks
+    _utils_log_warning "'$LOGGING_PATH' not found. Using basic fallback logging."
+    # Define main log functions as fallbacks
+    log_info() { _utils_log_info "$@"; }
+    log_warning() { _utils_log_warning "$@"; }
+    log_error() { _utils_log_error "$@"; }
+    log_success() { echo "SUCCESS (env_setup fallback): $1"; }
+    log_debug() { _utils_log_debug "$@"; }
+    log_info "--- Initializing Environment Setup (using fallback logger) ---" # Use the fallback log_info
 fi
-log_info "--- Initializing Environment Setup ---"
+
 
 # --- Debug Mode ---
 # Check JETC_DEBUG environment variable (set externally or in .env)
@@ -112,7 +139,7 @@ log_info "Detected platform: $PLATFORM"
 
 # --- Validate Essential Variables ---
 # Now call validate_variable AFTER utils.sh is sourced and verified
-log_debug "Validating essential variables..."
+log_debug "Validating essential variables..." # This uses the main logger (or fallback)
 validate_variable "DOCKER_USERNAME" "$DOCKER_USERNAME" "Docker username is required." || exit 1
 validate_variable "DOCKER_REPO_PREFIX" "$DOCKER_REPO_PREFIX" "Docker repository prefix is required." || exit 1
 validate_variable "DEFAULT_BASE_IMAGE" "$DEFAULT_BASE_IMAGE" "Default base image is required." || exit 1
@@ -142,4 +169,4 @@ log_info "--- Environment Setup Complete ---"
 #
 # Description: Loads .env, sets defaults, validates variables, initializes logging.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-093000-ENVFIX4 # New UUID for this more robust fix
+# COMMIT-TRACKING: UUID-20250425-094500-UTILSDECOUPLE # Use same UUID
