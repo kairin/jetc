@@ -44,6 +44,8 @@ show_message() {
   fi
 }
 
+# In /workspaces/jetc/buildx/scripts/interactive_ui.sh
+
 # Ask a yes/no question, returns 0 for Yes, 1 for No/Cancel
 confirm_action() {
   local question="${1:-Are you sure?}"
@@ -53,16 +55,37 @@ confirm_action() {
   log_debug "Confirming action: Question='$question', DefaultYes=$default_yes"
 
   if _is_dialog_available; then
-    local default_opt=""
-    [[ "$default_yes" == "true" ]] && default_opt="--defaultno" # Inverted logic for dialog's default button focus
-    
-    dialog --backtitle "Jetson Container System" --title "Confirmation" --yesno "$question" "$height" "$width" $default_opt
+    # --- MODIFICATION START ---
+    # Build command using an array for safety with optional args
+    local dialog_cmd=(
+        dialog
+        --backtitle "Jetson Container System"
+        --title "Confirmation"
+        --yesno "$question"
+        "$height"
+        "$width"
+    )
+
+    # Add --defaultno ONLY if the default should be No (focus No button)
+    # Note: dialog's --defaultno focuses the 'No' button.
+    # So, if our function's default_yes is true, we DON'T add --defaultno.
+    # If default_yes is false, we DO add --defaultno.
+    if [[ "$default_yes" != "true" ]]; then
+        dialog_cmd+=(--defaultno)
+        log_debug "Adding --defaultno to focus 'No' button"
+    fi
+
+    # Execute the command array
+    "${dialog_cmd[@]}"
     local exit_code=$?
+    # --- MODIFICATION END ---
+
     log_debug "Dialog confirm_action exit code: $exit_code" # 0=Yes, 1=No, 255=Esc
     # Map Esc (255) to No (1)
     [[ $exit_code -eq 255 ]] && return 1
     return $exit_code
   else
+    # Text-based fallback (remains the same)
     local prompt_opts="y/N"
     local default_ans="n"
     if [[ "$default_yes" == "true" ]]; then
@@ -125,9 +148,13 @@ get_build_preferences() {
     local temp_username="$DOCKER_USERNAME"
     local temp_prefix="$DOCKER_REPO_PREFIX"
 
+# In /workspaces/jetc/buildx/scripts/interactive_ui.sh
+# Within the get_build_preferences subshell:
+
     # --- Step 0: Docker Info ---
     while true; do
       _log_debug_sub "Displaying Docker Info form."
+      capture_screenshot "build_step0_docker_info" # <--- ADD HERE
       dialog --backtitle "Docker Build Configuration" \
              --title "Step 0: Docker Information" \
              --ok-label "Next: Select Stages" \
@@ -184,8 +211,10 @@ get_build_preferences() {
     fi
 
     local selected_folders_list=""
+    # ... find folders ...
     if [[ $folder_count -gt 0 ]]; then
         _log_debug_sub "Displaying Build Stages checklist."
+        capture_screenshot "build_step0.5_select_stages" # <--- ADD HERE
         dialog --backtitle "Docker Build Configuration" \
                --title "Step 0.5: Select Build Stages" \
                --ok-label "Next: Build Options" \
