@@ -111,7 +111,6 @@ init_logging() {
             echo -e "${C_ERROR}Error: Failed to create log directory: $log_dir${C_RESET}" >&2 # Direct echo before logging is fully setup
             return 1
         }
-    }
     
     # Initialize log files
     > "$main_log" || {
