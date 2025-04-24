@@ -114,44 +114,50 @@ check_install_screenshot_tool() {
 # In /workspaces/jetc/buildx/scripts/utils.sh
 
 # =========================================================================
-# Function: Capture a screenshot if scrot is available
-# Arguments: $1 = Descriptive name suffix (e.g., "step0_docker_info")
-# Returns: 0 on success or if tool missing, 1 on error during capture
+# Function: Capture a screenshot (requires 'scrot')
+# Arguments: $1 = base_filename (e.g., "step1_options")
+# Returns: 0 on success, 1 on failure or if scrot is not installed
+# Saves screenshot to LOG_DIR with timestamp.
 # =========================================================================
 capture_screenshot() {
-    local name_suffix="$1"
-    # Check if the tool is available (using the exported variable)
-    if [[ "${SCREENSHOT_TOOL_MISSING}" == "true" ]]; then
-        _log_debug "Screenshot tool missing, skipping capture for '$name_suffix'."
-        return 0 # Skip silently if tool is missing
+    local base_filename="$1"
+    if [ -z "$base_filename" ]; then
+        log_warning "capture_screenshot: No base filename provided."
+        return 1
     fi
 
-    # Define screenshot directory relative to the script's parent (buildx/)
-    local screenshot_dir
-    screenshot_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/screenshots"
-    mkdir -p "$screenshot_dir" || {
-        _log_debug "Failed to create screenshot directory: $screenshot_dir"
-        echo "Warning: Failed to create screenshot directory: $screenshot_dir" >&2
-        return 1 # Return error if directory creation fails
-    }
+    # Check if scrot is installed
+    if ! command -v scrot &> /dev/null; then
+        log_warning "scrot command not found. Cannot capture screenshot. Please install scrot (sudo apt-get install scrot)."
+        return 1
+    fi
+
+    # Ensure LOG_DIR is set and exists (should be from env_setup.sh)
+    if [ -z "${LOG_DIR:-}" ] || [ ! -d "$LOG_DIR" ]; then
+        log_warning "LOG_DIR not set or not a directory. Cannot save screenshot."
+        # Fallback to /tmp if LOG_DIR is invalid
+        LOG_DIR="/tmp"
+        log_warning "Saving screenshot to /tmp instead."
+    fi
 
     local timestamp
-    timestamp=$(date +"%Y%m%d-%H%M%S")
-    local filename="${screenshot_dir}/screenshot_${name_suffix}_${timestamp}.png"
+    timestamp=$(get_system_datetime) # Use existing function
+    local screenshot_filename="${base_filename}_${timestamp}.png"
+    local screenshot_path="$LOG_DIR/$screenshot_filename"
 
-    _log_debug "Capturing screenshot: $filename"
-    # Add a small delay to ensure the dialog is fully rendered (optional)
-    # sleep 0.5
-    if scrot "$filename"; then
-        _log_debug "Screenshot captured successfully."
+    log_debug "Attempting to capture screenshot to: $screenshot_path"
+
+    # Capture the screenshot using scrot
+    # Add a small delay to ensure the dialog is fully rendered (optional, adjust as needed)
+    sleep 0.5
+    if scrot "$screenshot_path"; then
+        log_debug "Screenshot captured successfully: $screenshot_filename"
         return 0
     else
-        _log_debug "Failed to capture screenshot using scrot."
-        echo "Warning: Failed to capture screenshot: $filename" >&2
-        return 1 # Return error if scrot command fails
+        log_error "Failed to capture screenshot using scrot."
+        return 1
     fi
 }
-
 
 # =========================================================================
 # Function: Setup basic build environment variables (ARCH, PLATFORM, DATE)

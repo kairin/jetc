@@ -261,7 +261,7 @@ show_main_menu() {
         break
       fi
     done
-    capture_screenshot "step0_docker_info"
+    capture_screenshot "step0_docker_info" # RE-ADDED
 
     # --- Step 0.5: Select Build Stages ---
     local build_dir="$SCRIPT_DIR_DLG/../build"
@@ -300,7 +300,7 @@ show_main_menu() {
             if [ $checklist_exit_status -ne 0 ]; then
               exit 1 # Exit subshell on cancel
             fi
-            capture_screenshot "step0.5_select_stages"
+            capture_screenshot "step0.5_select_stages" # RE-ADDED
         else
             dialog --msgbox "No numbered build stage folders found in '$build_dir' (checked depth 2)." 6 60
         fi
@@ -340,8 +340,7 @@ show_main_menu() {
            "local_build" "Build locally only (--load if on, --push if off)" "${skip_intermediate_push_pull}" \
            "use_builder" "Use Buildx builder (jetson-builder)"             "${use_builder}" \
            2> "$temp_options"
-
-    capture_screenshot "step1_build_options"
+    capture_screenshot "step1_build_options" # RE-ADDED
     local checklist_exit_status=$?
     if [ $checklist_exit_status -ne 0 ]; then
       exit 1 # Exit subshell on cancel
@@ -369,8 +368,7 @@ show_main_menu() {
            "specify_custom" "Specify a custom image tag" "off" \
            "list_available" "Choose from previously built images" "off" \
            2> "$temp_base_choice"
-
-    capture_screenshot "step2_base_image_selection"
+    capture_screenshot "step2_base_image_selection" # RE-ADDED
     local menu_exit_status=$?
     if [ $menu_exit_status -ne 0 ]; then
       exit 1 # Exit subshell on cancel
@@ -470,11 +468,10 @@ show_main_menu() {
 
     # Dynamically calculate height? Maybe later. Use 25 for now.
     if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then
-        capture_screenshot "final_confirmation_cancel"
         echo "Build canceled by user at confirmation screen. Exiting." >&2
         exit 1 # Exit subshell on cancel
     fi
-    capture_screenshot "final_confirmation_proceed"
+    capture_screenshot "final_confirmation_proceed" # RE-ADDED
 
     # Write selected preferences to the temp file for the main script to source
     # Ensure PLATFORM uses the globally determined value from env_setup.sh
