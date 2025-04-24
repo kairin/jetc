@@ -57,7 +57,7 @@ update_env_file() {
 # =========================================================================
 load_env_variables() {
     # Unset potentially problematic variables before loading to avoid persistence from previous runs
-    unset DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE AVAILABLE_IMAGES DEFAULT_IMAGE_NAME DEFAULT_ENABLE_X11 DEFAULT_ENABLE_GPU DEFAULT_MOUNT_WORKSPACE DEFAULT_USER_ROOT LOCAL_DOCKER_IMAGES
+    unset DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE AVAILABLE_IMAGES DEFAULT_IMAGE_NAME DEFAULT_ENABLE_X11 DEFAULT_ENABLE_GPU DEFAULT_MOUNT_WORKSPACE DEFAULT_USER_ROOT
 
     if [ -f "$ENV_CANONICAL" ]; then
         # Read the file line by line, exporting valid assignments
@@ -89,7 +89,6 @@ load_env_variables() {
     export DEFAULT_ENABLE_GPU="${DEFAULT_ENABLE_GPU:-on}"
     export DEFAULT_MOUNT_WORKSPACE="${DEFAULT_MOUNT_WORKSPACE:-on}"
     export DEFAULT_USER_ROOT="${DEFAULT_USER_ROOT:-on}"
-    export LOCAL_DOCKER_IMAGES="${LOCAL_DOCKER_IMAGES:-}" # Ensure this is also handled
     # Add any other variables expected from .env here
 }
 

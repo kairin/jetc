@@ -124,16 +124,15 @@ If the build process stops after the Docker information dialog or does not proce
 
 ### Required .env Variables
 
-Your `buildx/.env` file is the **canonical source** for all build and run configuration, image tracking, and persistent state. It should include at least:
+The `buildx/.env` file stores configuration. Key variables include:
 
-```ini
-DOCKER_USERNAME=your-dockerhub-username
-DOCKER_REPO_PREFIX=your-repo-prefix
-DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3
-AVAILABLE_IMAGES=
-```
-
-The `DOCKER_REGISTRY` variable is optional and can be left blank for Docker Hub.
+*   `DOCKER_REGISTRY`: (Optional) Your Docker registry URL (default: Docker Hub).
+*   `DOCKER_USERNAME`: Your Docker username (required).
+*   `DOCKER_REPO_PREFIX`: Prefix for your image repository (required, e.g., `jetc`).
+*   `DEFAULT_BASE_IMAGE`: Base image used if not specified otherwise (updated on selection).
+*   `AVAILABLE_IMAGES`: Semicolon-separated list of built/known images (managed by scripts).
+*   `DEFAULT_IMAGE_NAME`: Last image used by `jetcrun.sh`.
+*   `DEFAULT_ENABLE_X11`, `DEFAULT_ENABLE_GPU`, `DEFAULT_MOUNT_WORKSPACE`, `DEFAULT_USER_ROOT`: Default runtime options for `jetcrun.sh`.
 
 All scripts (build, run, tagging, verification) read and update `.env` for configuration and image state. Do not edit `.env` while a build or run is in progress.
 
@@ -181,7 +180,7 @@ This project is licensed under the Creative Commons Attribution-NonCommercial 4.
 # │   └── copilot-instructions.md<- Coding standards and commit tracking
 # └── ...                        <- Other project files
 #
-# Description: Short main README for Jetson Container project, with links to modular docs.
+# Description: Main README. Removed LOCAL_DOCKER_IMAGES from .env description. Added JETC_DEBUG note.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240805-210000-RDMESHORT
+# COMMIT-TRACKING: UUID-20250424-140000-RMVLOCALIMG
 -->
