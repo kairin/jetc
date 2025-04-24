@@ -3,13 +3,12 @@
 
 # =========================================================================
 # Build Order Determination Script
-# Responsibility: Determine the sequence of build stages based on folder names
-#                 and user selection.
+# Responsibility: Determine the correct order of build stages based on
+#                 folder names and user selections.
 # =========================================================================
 
 # --- Dependencies ---
 SCRIPT_DIR_ORDER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUILD_DIR="$(realpath "$SCRIPT_DIR_ORDER/../build")"
 
 # Source required scripts (use fallbacks if sourcing fails)
 if [ -f "$SCRIPT_DIR_ORDER/env_setup.sh" ]; then
@@ -24,87 +23,93 @@ else
     log_debug() { :; }
 fi
 
-# --- Functions --- #
+# --- Constants ---
+BUILD_DIR="$(realpath "$SCRIPT_DIR_ORDER/../build")" # Assumes build dir is one level up
 
-# Determine the build order based on numbered folders and user selection.
-# Input: $1 = SELECTED_FOLDERS_LIST (space-separated string of folder basenames, optional)
-# Exports: ORDERED_FOLDERS (array of full paths)
-# Exports: SELECTED_FOLDERS_MAP (associative array: [folder_basename]=1)
-# Return: 0 on success, 1 if build directory not found.
+# =========================================================================
+# Function: Determine the build order based on numbered folders
+# Arguments: $1 = selected_folders_list (space-separated string of folder basenames from user interaction, or empty/null to build all)
+# Returns: Echoes the ordered list of full folder paths, one per line. Exit code 0 on success, 1 on error.
+# =========================================================================
 determine_build_order() {
-    local selected_list="$1"
+    local selected_folders_list="${1:-}" # Capture selected folders, default to empty
+    local ordered_build_folders=()
+
     log_info "--- Determining Build Order ---"
-    log_debug "Selected folders list input: '$selected_list'"
+    log_debug "Build directory: $BUILD_DIR"
+    log_debug "Raw selected folders list: '$selected_folders_list'"
 
     if [ ! -d "$BUILD_DIR" ]; then
         log_error "Build directory not found: $BUILD_DIR"
         return 1
     fi
 
-    # Find all numbered directories and sort them naturally
-    local all_folders=()
-    mapfile -t all_folders < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
-    log_debug "Found ${#all_folders[@]} potential build stages."
+    # Find all numbered directories (e.g., 01-*, 10-*)
+    # Use mapfile for safer handling of paths with spaces/special chars
+    local numbered_folders=()
+    mapfile -t numbered_folders < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
 
-    if [ ${#all_folders[@]} -eq 0 ]; then
-        log_warning "No numbered build stage directories found in $BUILD_DIR."
-        export ORDERED_FOLDERS=()
-        declare -gA SELECTED_FOLDERS_MAP=()
-        export SELECTED_FOLDERS_MAP
+    if [ ${#numbered_folders[@]} -eq 0 ]; then
+        log_warning "No numbered build stage folders found in $BUILD_DIR."
+        # Echo nothing, return success (nothing to build)
         return 0
     fi
 
-    log_debug "Found ${#all_folders[@]} potential build stages:"
-    for folder in "${all_folders[@]}"; do
-        log_debug "  - $(basename "$folder")"
-    done
-
-    # Filter based on user selection if provided
-    declare -gA temp_selected_map # Use a temporary map
-    local use_all=1 # Assume all folders are used unless a specific list is given
-
-    if [ -n "$selected_list" ]; then
-        use_all=0
-        log_info "User selected specific stages: $selected_list"
-        for folder_name in $selected_list; do
-            temp_selected_map["$folder_name"]=1
+    # If no specific folders were selected, build all numbered folders found
+    if [[ -z "$selected_folders_list" ]]; then
+        log_info "No specific stages selected by user. Building all found numbered stages."
+        # Add all found folders to the ordered list
+        for folder_path in "${numbered_folders[@]}"; do
+            ordered_build_folders+=("$folder_path")
         done
     else
-        log_info "No specific stages selected by user, including all found numbered stages."
-    fi
+        log_info "User selected specific stages: $selected_folders_list"
+        # Use an associative array for efficient lookup of selected folders
+        declare -A temp_selected_map # <-- FIX: Declare the associative array
 
-    # Build the final ordered list and the map
-    local final_ordered_folders=()
-    declare -gA final_selected_map # Use -gA to make it globally available
+        # Populate the map with selected folder names
+        log_debug "Populating selection map..."
+        for sel_folder in $selected_folders_list; do
+            if [[ -n "$sel_folder" ]]; then # Avoid adding empty strings if list had extra spaces
+                 log_debug "Adding '$sel_folder' to selection map."
+                 temp_selected_map["$sel_folder"]=1
+            fi
+        done
+        log_debug "Selection map populated."
 
-    for folder_path in "${all_folders[@]}"; do
-        local folder_name
-        folder_name=$(basename "$folder_path")
-        if [[ $use_all -eq 1 || -n "${temp_selected_map[$folder_name]}" ]]; then
-            final_ordered_folders+=("$folder_path")
-            final_selected_map["$folder_name"]=1
-            log_debug " -> Including stage: $folder_name"
-        else
-            log_debug " -> Excluding stage (not selected): $folder_name"
-        fi
-    done
 
-    # Export the results
-    export ORDERED_FOLDERS=("${final_ordered_folders[@]}")
-    # Exporting associative arrays requires careful handling; declare -p is one way
-    # However, simply declaring it with -gA makes it available to sourced scripts
-    export SELECTED_FOLDERS_MAP # Make the name known
-    # The actual map 'final_selected_map' is now globally available as SELECTED_FOLDERS_MAP
-    # due to the naming convention and -gA. Let's rename for clarity.
-    declare -gA SELECTED_FOLDERS_MAP="${final_selected_map[@]@A}" # Copy content
+        # Iterate through the *sorted* list of all found numbered folders
+        for folder_path in "${numbered_folders[@]}"; do
+            local folder_name
+            folder_name=$(basename "$folder_path")
 
-    log_success "Build order determined. ${#ORDERED_FOLDERS[@]} stages selected."
-    if [ ${#ORDERED_FOLDERS[@]} -gt 0 ]; then
-        log_debug "Final build order:"
-        for folder in "${ORDERED_FOLDERS[@]}"; do
-            log_debug "  - $(basename "$folder")"
+            # Check if this folder name exists in the selected map
+            # Use [[ -v ... ]] which is the correct way to check key existence in bash 4.3+
+            # Use [[ ${temp_selected_map[$folder_name]+_} ]] for older bash versions (safer)
+            # if [[ -v temp_selected_map[$folder_name] ]]; then # Bash 4.3+
+            if [[ ${temp_selected_map[$folder_name]+_} ]]; then # <-- FIX: Check if key exists
+                log_debug "Stage '$folder_name' is selected. Adding to build order."
+                ordered_build_folders+=("$folder_path")
+            else
+                log_debug "Stage '$folder_name' is NOT selected. Skipping."
+            fi
         done
     fi
+
+    if [ ${#ordered_build_folders[@]} -eq 0 ]; then
+         log_warning "No build stages selected or matched. Nothing to build."
+         # Echo nothing, return success
+         return 0
+    fi
+
+
+    log_info "Final determined build order (${#ordered_build_folders[@]} stages):"
+    # Echo the full paths, one per line
+    for folder in "${ordered_build_folders[@]}"; do
+        echo "$folder"
+        log_info "  - $(basename "$folder")" # Log just the basename for readability
+    done
+    log_info "--- Build Order Determined ---"
 
     return 0
 }
@@ -114,40 +119,45 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     log_info "Running build_order.sh directly for testing..."
 
     # --- Test Setup --- #
-    # Create dummy build directories
-    test_build_dir="/tmp/test_build_order_$$/build"
-    mkdir -p "$test_build_dir/01-first-stage"
-    mkdir -p "$test_build_dir/10-last-stage"
-    mkdir -p "$test_build_dir/02-second-stage"
-    mkdir -p "$test_build_dir/non-numbered-stage"
+    test_build_dir="/tmp/test_build_order_$$"
+    mkdir -p "$test_build_dir"/{01-first,05-middle,10-last,non-numbered,02-second}
     log_info "Created dummy build dir: $test_build_dir"
     export BUILD_DIR="$test_build_dir" # Override for testing
 
     # --- Test Cases --- #
-    log_info "Test 1: No specific selection (should include all numbered)"
-    determine_build_order ""
-    echo "ORDERED_FOLDERS: ${ORDERED_FOLDERS[*]}"
-    declare -p SELECTED_FOLDERS_MAP
-    echo "--------------------"
+    log_info ""
+    log_info "*** Test 1: Build all ***"
+    determine_build_order "" # Pass empty string for 'build all'
 
-    log_info "Test 2: Specific selection"
-    determine_build_order "01-first-stage 10-last-stage"
-    echo "ORDERED_FOLDERS: ${ORDERED_FOLDERS[*]}"
-    declare -p SELECTED_FOLDERS_MAP
-    echo "--------------------"
+    log_info ""
+    log_info "*** Test 2: Select specific stages (01-first 10-last) ***"
+    determine_build_order "01-first 10-last"
 
-    log_info "Test 3: Selection with non-existent stage"
-    determine_build_order "01-first-stage non-existent-stage"
-    echo "ORDERED_FOLDERS: ${ORDERED_FOLDERS[*]}"
-    declare -p SELECTED_FOLDERS_MAP
-    echo "--------------------"
+    log_info ""
+    log_info "*** Test 3: Select specific stages (out of order: 05-middle 01-first) ***"
+    determine_build_order "05-middle 01-first"
+
+    log_info ""
+    log_info "*** Test 4: Select non-existent stage (03-missing) ***"
+    determine_build_order "03-missing"
+
+    log_info ""
+    log_info "*** Test 5: Select mixed existent and non-existent (01-first 03-missing 10-last) ***"
+    determine_build_order "01-first 03-missing 10-last"
+
+    log_info ""
+    log_info "*** Test 6: Select non-numbered stage (should be ignored) ***"
+    determine_build_order "non-numbered"
+
 
     # --- Cleanup --- #
-    log_info "Cleaning up test directory: $(dirname "$test_build_dir")"
-    rm -rf "$(dirname "$test_build_dir")"
+    log_info ""
+    log_info "Cleaning up test directory: $test_build_dir"
+    rm -rf "$test_build_dir"
     log_info "Build order script test finished."
     exit 0
 fi
+
 
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -157,5 +167,6 @@ fi
 # └── ...                        <- Other project files
 #
 # Description: Determines the build order of stages based on folder names and user selection.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-094000-BLDORD
+#              Fixed unbound variable error by declaring and populating associative map.
+# Author: Mr K / GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250424-194646-ORDERFIX
