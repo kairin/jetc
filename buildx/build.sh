@@ -28,19 +28,6 @@ handle_build_error() {
 }
 
 # =========================================================================
-# Function to update AVAILABLE_IMAGES in .env
-# =========================================================================
-# Note: This function seems redundant as build_stages.sh now handles updating AVAILABLE_IMAGES directly.
-# Consider removing this function if it's not used elsewhere.
-update_available_images_in_env() {
-    local new_tag="$1"
-    local env_file="$(dirname "$0")/.env"
-    # ...existing code...
-    echo "  Updated AVAILABLE_IMAGES in $env_file with tag '$new_tag'."
-    return 0
-}
-
-# =========================================================================
 # Main Build Process
 # =========================================================================
 
@@ -129,6 +116,6 @@ generate_error_summary
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Main build orchestrator for Jetson container buildx system. Uses build stages and updates .env.
+# Description: Main build orchestrator. Removed redundant update_available_images_in_env function.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC
+# COMMIT-TRACKING: UUID-20250424-130500-RMVREDUND

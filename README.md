@@ -137,6 +137,20 @@ The `DOCKER_REGISTRY` variable is optional and can be left blank for Docker Hub.
 
 All scripts (build, run, tagging, verification) read and update `.env` for configuration and image state. Do not edit `.env` while a build or run is in progress.
 
+### Additional Troubleshooting Tips
+
+*   **.env File:** Ensure the `.env` file exists in the `buildx/` directory and contains valid `DOCKER_USERNAME` and `DOCKER_REPO_PREFIX`. The script will prompt if missing, but defaults might not be ideal.
+*   **Buildx Builder:** The scripts attempt to create and use a `jetson-builder` buildx instance. If you encounter errors like `ERROR: docker-container driver requires remote context or docker server running with experimental mode`, ensure Docker Desktop or your Docker daemon is running correctly and buildx is set up. You might need to manually run `docker buildx create --name jetson-builder --use` or troubleshoot your Docker installation.
+*   **Dialog Errors:** If `dialog` isn't installed, the scripts should fall back to basic text prompts. If dialog installation fails or prompts don't appear, check permissions and package manager status.
+*   **Debug Output:** For more detailed output during builds or runs, set the `JETC_DEBUG` environment variable:
+    ```bash
+    export JETC_DEBUG=true
+    ./buildx/build.sh
+    # or
+    JETC_DEBUG=1 ./buildx/jetcrun.sh
+    ```
+*   **Pull Errors:** If pulling base images fails, check your network connection, registry URL (if not Docker Hub), and authentication (`docker login`).
+
 ---
 
 ## More Information
