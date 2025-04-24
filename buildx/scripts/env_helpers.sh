@@ -10,7 +10,7 @@ SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR_ENV/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
 # Source logging functions if available (might be sourced later by main script)
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR_ENV/env_setup.sh" 2>/dev/null || true
+# source "$SCRIPT_DIR_ENV/env_setup.sh" 2>/dev/null || true
 
 
 # =========================================================================
