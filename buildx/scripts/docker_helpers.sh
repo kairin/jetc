@@ -1,9 +1,12 @@
 #!/bin/bash
 
+# Source utilities (needed for logging)
+SCRIPT_DIR_DOCKER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_DOCKER/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
+
 # =========================================================================
 # Function: Setup Docker buildx builder for Jetson
-# Returns: 0 if successful, 1 if not
-# =========================================================================
 setup_buildx_builder() {
   local builder_name="jetson-builder"
   if ! docker buildx inspect "$builder_name" &>/dev/null; then
@@ -70,6 +73,154 @@ pull_image() {
     echo "Error: Failed to pull $tag_to_pull" >&2
     return 1
   fi
+}
+
+# =========================================================================
+# Function: Check if image exists locally, pull if not (with fallback)
+# Arguments: $1 = image tag
+# Returns: 0 if image exists locally (after potential pull), 1 on failure
+# =========================================================================
+check_or_pull_image() {
+    local image_tag="$1"
+    if [[ -z "$image_tag" ]]; then
+        _log_debug "Error: check_or_pull_image called with empty tag."
+        return 1
+    fi
+
+    _log_debug "Checking for image locally: $image_tag"
+    if verify_image_exists "$image_tag"; then
+        _log_debug "Image $image_tag found locally."
+        return 0
+    fi
+
+    _log_debug "Image $image_tag not found locally. Attempting pull..."
+    if pull_image "$image_tag"; then
+        _log_debug "Successfully pulled $image_tag."
+        return 0
+    fi
+
+    # If pull failed, try fallback (e.g., adding -py3 suffix)
+    # NOTE: This fallback is specific and might need adjustment
+    local fallback_tag="${image_tag}-py3"
+    _log_debug "Pull failed for $image_tag. Attempting fallback pull: $fallback_tag..."
+    if pull_image "$fallback_tag"; then
+        _log_debug "Successfully pulled fallback $fallback_tag."
+        # Tag the pulled image with the original name for consistency
+        _log_debug "Tagging $fallback_tag as $image_tag"
+        if docker tag "$fallback_tag" "$image_tag"; then
+            _log_debug "Successfully tagged."
+            return 0
+        else
+            _log_debug "Error: Failed to tag $fallback_tag as $image_tag."
+            return 1
+        fi
+    else
+        _log_debug "Error: Failed to pull image $image_tag or fallback $fallback_tag."
+        return 1
+    fi
+}
+
+# =========================================================================
+# Function: Construct the 'docker run' command string with options
+# Arguments:
+#   $1: image_name
+#   $2: x11_enabled ('true'/'false')
+#   $3: gpu_enabled ('true'/'false')
+#   $4: ws_enabled ('true'/'false')
+#   $5: run_as_root ('true'/'false')
+#   $6: non_root_user (optional, defaults to 'kkk' if run_as_root is false)
+# Returns: Prints the fully constructed command string
+# =========================================================================
+construct_docker_run_command() {
+    local image_name="$1"
+    local x11_enabled="${2:-false}"
+    local gpu_enabled="${3:-true}" # Default GPU to true
+    local ws_enabled="${4:-true}"  # Default WS to true
+    local run_as_root="${5:-false}" # Default to non-root
+    local non_root_user="${6:-kkk}" # Default non-root user
+
+    local run_cmd="docker run -it --rm" # Basic interactive flags
+    local user_arg=""
+    local final_opts=""
+
+    # GPU Option
+    if [[ "$gpu_enabled" == "true" ]]; then
+        final_opts+=" --gpus all"
+    fi
+
+    # Workspace Mount Option
+    if [[ "$ws_enabled" == "true" ]]; then
+        # Ensure these paths are correct for your system
+        final_opts+=" -v /media/kkk:/workspace"
+        final_opts+=" -v /run/jtop.sock:/run/jtop.sock"
+    fi
+
+    # X11 Forwarding Option
+    if [[ "$x11_enabled" == "true" ]]; then
+        final_opts+=" -v /tmp/.X11-unix:/tmp/.X11-unix"
+        final_opts+=" -e DISPLAY=$DISPLAY"
+        # Optionally add --ipc=host if needed
+        # final_opts+=" --ipc=host"
+    fi
+
+    # User Option
+    if [[ "$run_as_root" == "true" ]]; then
+        user_arg="--user root"
+        _log_debug "Run option: --user root"
+    else
+        user_arg="--user $non_root_user"
+        _log_debug "Run option: --user $non_root_user"
+    fi
+
+    # Assemble the command string
+    # Order: docker run [user] [other opts] image [command]
+    echo "$run_cmd $user_arg $final_opts $image_name /bin/bash"
+}
+
+# =========================================================================
+# Function: Run a container using specified options
+# Arguments:
+#   $1: image_name
+#   $2: x11_enabled ('true'/'false')
+#   $3: gpu_enabled ('true'/'false')
+#   $4: ws_enabled ('true'/'false')
+#   $5: run_as_root ('true'/'false')
+# Returns: Exit status of the 'docker run' command
+# =========================================================================
+run_container() {
+    local image_name="$1"
+    local x11_enabled="${2:-false}"
+    local gpu_enabled="${3:-true}"
+    local ws_enabled="${4:-true}"
+    local run_as_root="${5:-false}"
+
+    _log_debug "Attempting to run container: $image_name"
+    _log_debug "Options: X11=$x11_enabled, GPU=$gpu_enabled, WS=$ws_enabled, Root=$run_as_root"
+
+    # 1. Ensure image exists locally (pull if necessary)
+    if ! check_or_pull_image "$image_name"; then
+        _log_debug "Error: Image '$image_name' could not be found or pulled."
+        # Consider using show_message here if UI interaction is desired on failure
+        return 1
+    fi
+    _log_debug "Image '$image_name' is available locally."
+
+    # 2. Construct the command
+    local docker_command
+    docker_command=$(construct_docker_run_command "$image_name" "$x11_enabled" "$gpu_enabled" "$ws_enabled" "$run_as_root")
+    _log_debug "Constructed command: $docker_command"
+
+    # 3. Execute the command
+    # Note: Confirmation should ideally happen in the orchestrator *before* calling this function.
+    echo "Executing command:"
+    echo "$docker_command"
+    echo "--- Starting Container ---"
+    # Use eval carefully, ensure variables are controlled/sanitized upstream
+    eval "$docker_command"
+    local exit_status=$?
+    echo "--- Container Exited (Code: $exit_status) ---"
+
+    return $exit_status
 }
 
 # =========================================================================
@@ -173,7 +324,7 @@ generate_cache_args() {
     echo "--no-cache"
   else
     echo ""
-  fi
+  }
 }
 
 # =========================================================================
@@ -343,6 +494,6 @@ build_folder_image() {
 # │       └── docker_helpers.sh  <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Docker build, tag, push, pull, and verification helpers for modular Jetson container builds.
+# Description: Docker build, tag, run, pull, and verification helpers. Added run_container logic.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-DOCK
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR

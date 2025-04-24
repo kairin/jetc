@@ -455,7 +455,7 @@ get_user_preferences_basic() {
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
 # │   └── scripts/               <- Current directory
-# │       └── dialog_ui.sh       <- THIS FILE
+# │       └── interactive_ui.sh  <- THIS FILE
 # └── ...                        <- Other project files
 #
 # Description: Dialog UI logic for Jetson Container build system (user preferences, build options, folder selection).

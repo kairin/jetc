@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Description: UI functions for the build process (dialogs, prompts, .env handling).
+# Description: UI functions bridge for the build process. Sources interactive_ui.sh.
 # Author: Mr K / GitHub Copilot
 # COMMIT-TRACKING: UUID-20250421-020700-REFA
 
@@ -14,72 +14,27 @@ source "$SCRIPT_DIR_BUI/docker_helpers.sh" || { echo "Error: docker_helpers.sh n
 source "$SCRIPT_DIR_BUI/verification.sh" || { echo "Error: verification.sh not found."; exit 1; }
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_BUI/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
+# Source the consolidated interactive UI script
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR_BUI/dialog_ui.sh" || { echo "Error: dialog_ui.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_BUI/post_build_menu.sh" || { echo "Error: post_build_menu.sh not found."; exit 1; }
+source "$SCRIPT_DIR_BUI/interactive_ui.sh" || { echo "Error: interactive_ui.sh not found."; exit 1; }
+# post_build_menu.sh is now part of interactive_ui.sh
+# dialog_ui.sh is now interactive_ui.sh
 
-# Always resolve .env to canonical location (same as build.sh and jetcrun.sh)
-# ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env" # Removed - Defined in utils.sh
+# Always resolve .env to canonical location (defined in utils.sh)
 
-# COMMIT-TRACKING: UUID-20250423-232231-BUIU
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── build_ui.sh        <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
-# Author: Mr K / GitHub Copilot
-
-# Function for conditional debug logging
+# Function for conditional debug logging (copied from original)
 _log_debug() {
   if [[ "${JETC_DEBUG}" == "true" || "${JETC_DEBUG}" == "1" ]]; then
-    echo "DEBUG: $1" >&2
+    echo "DEBUG (build_ui.sh): $1" >&2
   fi
 }
 
-# Set PREFS_FILE before calling get_user_preferences
-PREFS_FILE="/tmp/build_prefs.sh"
-_log_debug "PREFS_FILE set to $PREFS_FILE"
+# This script now primarily acts as a source aggregator if needed,
+# but build.sh sources interactive_ui.sh directly.
+# The logic previously here for calling get_user_preferences is removed
+# as build.sh handles it directly.
 
-# Always load .env before calling get_user_preferences
-_log_debug "Loading .env variables before preference check..."
-load_env_variables
-
-# Only call get_user_preferences if PREFS_FILE does not exist or is empty
-if [ ! -s "$PREFS_FILE" ]; then
-  _log_debug "$PREFS_FILE does not exist or is empty. Calling get_user_preferences..."
-  get_user_preferences
-  prefs_exit_code=$?
-  _log_debug "get_user_preferences exited with code $prefs_exit_code"
-  if [ $prefs_exit_code -ne 0 ]; then
-    echo "User cancelled or error in preferences dialog/prompts. Exiting build." >&2
-    exit 1
-  fi
-else
-  _log_debug "$PREFS_FILE exists and is not empty. Skipping get_user_preferences."
-fi
-
-# Always source the exported preferences so all variables are available for the build process
-_log_debug "Sourcing preferences from $PREFS_FILE..."
-if [ -f "$PREFS_FILE" ]; then
-  # shellcheck disable=SC1090
-  source "$PREFS_FILE"
-  # Reload .env to get any updates from update_env_file
-  _log_debug "Reloading .env variables after sourcing preferences..."
-  load_env_variables
-  # Export lowercase 'platform' for compatibility with build_stages.sh
-  if [ -n "$PLATFORM" ]; then
-    export platform="$PLATFORM"
-    _log_debug "Exported lowercase platform=$platform"
-  fi
-else
-  echo "Error: Preferences file $PREFS_FILE not found after get_user_preferences check. Cannot proceed." >&2
-  exit 1
-fi
-_log_debug "Finished build_ui.sh execution."
+_log_debug "build_ui.sh sourced."
 
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -88,6 +43,6 @@ _log_debug "Finished build_ui.sh execution."
 # │       └── build_ui.sh        <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: UI functions for build process. Removed local ENV_CANONICAL definition (uses utils.sh).
+# Description: UI functions bridge. Updated to source interactive_ui.sh. Role reduced.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR

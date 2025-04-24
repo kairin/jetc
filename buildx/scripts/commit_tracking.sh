@@ -198,4 +198,4 @@ generate_file_header() {
 #
 # Description: Functions for managing commit tracking UUIDs/footers. Added set_commit_tracking_uuid for hooks.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-200000-SETHOOKUUID
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR # Updated UUID to match refactor

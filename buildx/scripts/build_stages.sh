@@ -181,7 +181,6 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Script to build selected Docker stages in order. Improved AVAILABLE_IMAGES update logic.
+# Description: Script to build selected Docker stages in order. Uses helpers for build and logging.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC
-# COMMIT-TRACKING: UUID-20250423-100000-APPSKP
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR # Updated UUID to match refactor

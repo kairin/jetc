@@ -87,6 +87,6 @@ store_current_datetime() {
 # │       └── utils.sh           <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: General utility functions. Centralized ENV_CANONICAL definition.
+# Description: General utility functions. Centralized ENV_CANONICAL definition. Added _log_debug.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR # Updated UUID to match refactor
