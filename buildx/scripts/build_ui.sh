@@ -42,3 +42,12 @@ if [ ! -s "$PREFS_FILE" ]; then
     exit 1
   fi
 fi
+
+# Source the exported preferences so all variables are available for the build process
+if [ -f "$PREFS_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$PREFS_FILE"
+else
+  echo "Error: Preferences file $PREFS_FILE not found after get_user_preferences."
+  exit 1
+fi
