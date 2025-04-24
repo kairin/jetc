@@ -36,14 +36,11 @@ ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env"
 # Always load .env before calling get_user_preferences
 load_env_variables
 
-# Only call get_user_preferences if PREFS_FILE does not exist or is empty
-PREFS_FILE="/tmp/build_prefs.sh"
-if [ ! -s "$PREFS_FILE" ]; then
-  get_user_preferences
-  if [ $? -ne 0 ]; then
-    echo "User cancelled or error in preferences dialog. Exiting build."
-    exit 1
-  fi
+# Always call get_user_preferences (do not skip if PREFS_FILE exists)
+get_user_preferences
+if [ $? -ne 0 ]; then
+  echo "User cancelled or error in preferences dialog. Exiting build."
+  exit 1
 fi
 
 # Always source the exported preferences so all variables are available for the build process

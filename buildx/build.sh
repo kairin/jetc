@@ -45,13 +45,13 @@ update_available_images_in_env() {
 # Define the temporary file path for preferences
 PREFS_FILE="/tmp/build_prefs.sh"
 
-# --- Request user preferences BEFORE any build logic ---
+# --- Request user preferences BEFORE any build logic or builder setup ---
 source "$SCRIPT_DIR/build_ui.sh" || exit 1
 
 # Setup basic build environment and load initial .env variables
 load_env_variables
 
-# Setup builder *before* getting preferences that might depend on it
+# Setup builder *after* preferences are set
 ensure_buildx_builder_running
 
 # --- Source the exported preferences so all variables are available ---
