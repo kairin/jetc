@@ -36,8 +36,7 @@ source "$SCRIPT_DIR/scripts/build_order.sh" || { echo "Error: build_order.sh not
 source "$SCRIPT_DIR/scripts/build_stages.sh" || { echo "Error: build_stages.sh not found."; exit 1; }
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/tagging.sh" || { echo "Error: tagging.sh not found."; exit 1; }
-# shellcheck disable=SC1091 # Commenting out the source for the deprecated script
-# source "$SCRIPT_DIR/scripts/post_build_menu.sh" || { echo "Error: post_build_menu.sh not found."; exit 1; }
+# REMOVED source for deprecated post_build_menu.sh
 
 
 # --- Configuration ---\
@@ -197,6 +196,6 @@ main
 exit $?
 
 # --- Footer ---
-# Description: Main build script orchestrator. Commented out deprecated post-build menu call. Added final verification step.
+# Description: Main build script orchestrator. Removed sourcing and call for deprecated post_build_menu.sh. Added final verification step.
 # Author: kairin / GitHub Copilot
 # COMMIT-TRACKING: UUID-20250424-223000-SKIPPOSTBUILD
