@@ -60,6 +60,7 @@ get_user_preferences() {
              "Repository Prefix (required):"          3 1 "$temp_prefix" 3 40 70 0 \
              2>"$temp_docker_info"
 
+      capture_screenshot "step0_docker_info" # <-- ADDED
       local form_exit_status=$?
       if [ $form_exit_status -ne 0 ]; then
         # Only exit if user pressed Cancel or Esc, not if defaults are present
@@ -79,6 +80,7 @@ get_user_preferences() {
       # Accept pre-filled or default values as valid if non-empty
       if [[ -z "$temp_username" || -z "$temp_prefix" ]]; then
         dialog --msgbox "Validation Error:\\n\\nUsername and Repository Prefix are required.\\nPlease correct the entries." 10 $DIALOG_WIDTH
+        capture_screenshot "step0_docker_info_validation_error" # <-- ADDED (Optional)
         continue
       fi
 
@@ -112,6 +114,7 @@ get_user_preferences() {
                "${folder_checklist_items[@]}" \
                2>"$temp_folders"
         local folders_exit_status=$?
+        capture_screenshot "step0.5_select_stages" # <-- ADDED
         if [ $folders_exit_status -ne 0 ]; then
             echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
             exit 1
@@ -137,6 +140,7 @@ get_user_preferences() {
            "use_builder"   "Use Optimized Jetson Builder (Recommended)"            "$([ "$use_builder" == "y" ] && echo "on" || echo "off")" \
             2>"$temp_options"
 
+    capture_screenshot "step1_build_options" # <-- ADDED
     local checklist_exit_status=$?
     if [ $checklist_exit_status -ne 0 ]; then
       echo "Build options selection canceled (exit code: $checklist_exit_status). Exiting." >&2
@@ -164,6 +168,7 @@ get_user_preferences() {
            "specify_custom" "Specify Custom Image (will attempt pull)"                "off" \
            2>"$temp_base_choice"
 
+    capture_screenshot "step2_base_image_selection" # <-- ADDED
     local menu_exit_status=$?
     if [ $menu_exit_status -ne 0 ]; then
       echo "Base image selection canceled (exit code: $menu_exit_status). Exiting." >&2
@@ -180,6 +185,7 @@ get_user_preferences() {
                --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$current_default_base_image_display" \
                2>"$temp_custom_image"
         local input_exit_status=$?
+        capture_screenshot "step2a_custom_base_image_input" # <-- ADDED (before potential error/info dialogs)
         if [ $input_exit_status -ne 0 ]; then
           echo "Custom base image input canceled (exit code: $input_exit_status). Exiting." >&2
           exit 1
@@ -188,42 +194,53 @@ get_user_preferences() {
         entered_image=$(cat "$temp_custom_image")
         if [ -z "$entered_image" ]; then
           dialog --msgbox "No custom image entered. Reverting to default:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
+          capture_screenshot "step2a_custom_base_image_revert" # <-- ADDED (Optional)
           if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
           SELECTED_IMAGE_TAG="$current_default_base_image_display"
           BASE_IMAGE_ACTION="use_default"
         else
           SELECTED_IMAGE_TAG="$entered_image"
           dialog --infobox "Attempting to pull custom base image:\\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH
+          capture_screenshot "step2a_custom_base_image_pull_attempt" # <-- ADDED (Optional)
           sleep 1
           if ! pull_image "$SELECTED_IMAGE_TAG"; then
-            if dialog --yesno "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nCheck tag/URL.\\n\\nContinue build using default ($current_default_base_image_display)? Warning: Build might fail." 12 $DIALOG_WIDTH; then
+            if dialog --yesno "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nCheck tag/URL.\\n\\nContinue build using default ($current_default_base_image_display)? Warning: Build might fail." 15 $DIALOG_WIDTH; then
+               capture_screenshot "step2a_custom_base_image_pull_fail_continue" # <-- ADDED (Optional)
                SELECTED_IMAGE_TAG="$current_default_base_image_display"
                BASE_IMAGE_ACTION="use_default"
                dialog --msgbox "Proceeding with default base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+               capture_screenshot "step2a_custom_base_image_pull_fail_revert_msg" # <-- ADDED (Optional)
                if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
             else
+               capture_screenshot "step2a_custom_base_image_pull_fail_exit" # <-- ADDED (Optional)
                echo "User chose to exit after failed custom image pull." >&2
                exit 1
             fi
           else
             dialog --msgbox "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+            capture_screenshot "step2a_custom_base_image_pull_success" # <-- ADDED (Optional)
             if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
           fi
         fi
         ;;
       "pull_default")
         dialog --infobox "Attempting to pull default base image:\\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
+        capture_screenshot "step2_pull_default_attempt" # <-- ADDED (Optional)
         sleep 1
         if ! pull_image "$current_default_base_image_display"; then
            if dialog --yesno "Failed to pull default base image:\\n$current_default_base_image_display.\\nBuild might fail if not local.\\n\\nContinue anyway?" 12 $DIALOG_WIDTH; then
+              capture_screenshot "step2_pull_default_fail_continue" # <-- ADDED (Optional)
               dialog --msgbox "Warning: Default image not pulled. Using local if available." 8 $DIALOG_WIDTH
+              capture_screenshot "step2_pull_default_fail_continue_msg" # <-- ADDED (Optional)
               if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
            else
+              capture_screenshot "step2_pull_default_fail_exit" # <-- ADDED (Optional)
               echo "User chose to exit after failed default image pull." >&2
               exit 1
            fi
         else
           dialog --msgbox "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
+          capture_screenshot "step2_pull_default_success" # <-- ADDED (Optional)
           if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
         fi
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
@@ -231,6 +248,7 @@ get_user_preferences() {
       "use_default")
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
         dialog --msgbox "Using default base image (local version if available):\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+        capture_screenshot "step2_use_default_msg" # <-- ADDED (Optional)
         if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
         ;;
       *)
@@ -261,9 +279,11 @@ get_user_preferences() {
     confirmation_message+="  - Image Tag To Use:   $SELECTED_IMAGE_TAG"
 
     if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then
+        capture_screenshot "final_confirmation_cancel" # <-- ADDED
         echo "Build canceled by user at confirmation screen. Exiting." >&2
         exit 1
     fi
+    capture_screenshot "final_confirmation_proceed" # <-- ADDED
 
     {
       echo "export DOCKER_USERNAME=\"${DOCKER_USERNAME:-}\""
@@ -449,6 +469,6 @@ get_user_preferences_basic() {
 # │       └── dialog_ui.sh       <- THIS FILE (was interactive_ui.sh)
 # └── ...                        <- Other project files
 #
-# Description: Dialog UI logic. Removed direct .env update, now exports prefs to /tmp/build_prefs.sh. Sources docker_helpers.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-095000-DLGUIREF
+# Description: Dialog UI logic. Removed direct .env update, now exports prefs to /tmp/build_prefs.sh. Sources docker_helpers. Added screenshot captures.
+# Author: Mr K / GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250424-193806-SCREENSHT2
