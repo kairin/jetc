@@ -102,6 +102,20 @@ build_selected_stages() {
              log_debug "  Folder Path: $build_folder_path"
              log_debug "  Using Base Image: $current_base_image"
 
+             # <<< --- ADDED DEBUGGING --- >>>
+             log_debug "Arguments PREPARED for build_folder_image:"
+             log_debug "  \$1 (folder_path):                '$build_folder_path'"
+             log_debug "  \$2 (use_cache):                  '${use_cache:-n}'"
+             log_debug "  \$3 (docker_username):            '${DOCKER_USERNAME}'"
+             log_debug "  \$4 (use_squash):                 '${use_squash:-n}'"
+             log_debug "  \$5 (skip_intermediate):          '${skip_intermediate_push_pull:-y}'"
+             log_debug "  \$6 (base_image_tag):             '$current_base_image'"
+             log_debug "  \$7 (docker_repo_prefix):         '${DOCKER_REPO_PREFIX}'"
+             log_debug "  \$8 (docker_registry):            '${DOCKER_REGISTRY:-}'"
+             log_debug "  \$9 (use_builder):                '${use_builder:-y}'"
+             log_debug "  Global PLATFORM (not an arg):     '${PLATFORM:-linux/arm64}'"
+             # <<< --- END DEBUGGING --- >>>
+
              # Call the build function from docker_helpers.sh
              # CORRECTED ARGUMENT ORDER to match build_folder_image definition
              build_folder_image \
@@ -206,7 +220,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         log_warning() { echo "WARNING: $1" >&2; }
         log_error() { echo "ERROR: $1" >&2; }
         log_success() { echo "SUCCESS: $1"; }
-        log_debug() { :; }
+        log_debug() { :; } # Use echo "DEBUG: $1" >&2 for debug output in test
      fi
 
     # Set mock global variables
@@ -273,6 +287,6 @@ fi
 # File location diagram: ... (omitted)
 # Description: Iterates through build stages determined by build_order.sh
 #              and executes the build using docker_helpers.sh functions.
-#              Corrected argument order for build_folder_image call.
+#              Added debugging logs before calling build_folder_image.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-215000-STAGESFIX3
+# COMMIT-TRACKING: UUID-20250424-220000-STAGESDEBUG1
