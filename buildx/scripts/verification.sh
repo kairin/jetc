@@ -29,8 +29,19 @@ _check_python_pkg() { ...omitted for brevity... } # Same as before
 _check_system_tools() { ...omitted for brevity... } # Same as before
 _check_ml_frameworks() { ...omitted for brevity... } # Same as before
 _check_libraries() { ...omitted for brevity... } # Same as before
-_check_cuda_info() { ...omitted for brevity... } # Same as before
-_list_system_packages() { ...omitted for brevity... } # Same as before
+_check_cuda_info() {
+  echo -e "\n${V_BLUE}🖥️ CUDA/GPU Information:${V_NC}"
+  if _check_python_pkg torch >/dev/null; then
+    local python_cmd="python3"; command -v $python_cmd &> /dev/null || python_cmd="python"
+    if command -v $python_cmd &> /dev/null; then
+      echo -e "PyTorch CUDA available: ..."
+      if $python_cmd -c "import torch; exit(0 if torch.cuda.is_available() else 1)"; then
+        echo "CUDA Device count: ..."
+        echo "CUDA Version (PyTorch): ..."
+      fi # Missing closing 'fi' for the inner python check
+    fi # Missing closing 'fi' for the outer python check
+  fi # Missing closing 'fi' for the torch check
+}_list_system_packages() { ...omitted for brevity... } # Same as before
 _list_python_packages() { ...omitted for brevity... } # Same as before
 _list_installed_apps() { ...omitted for brevity... } # Same as before
 run_verification_checks() { ...omitted for brevity... } # Same as before
