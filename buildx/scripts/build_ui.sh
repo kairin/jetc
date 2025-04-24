@@ -33,8 +33,12 @@ ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env"
 # Description: UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
 # Author: Mr K / GitHub Copilot
 
-get_user_preferences
-if [ $? -ne 0 ]; then
-  echo "User cancelled or error in preferences dialog. Exiting build."
-  exit 1
+# Only call get_user_preferences if PREFS_FILE does not exist or is empty
+PREFS_FILE="/tmp/build_prefs.sh"
+if [ ! -s "$PREFS_FILE" ]; then
+  get_user_preferences
+  if [ $? -ne 0 ]; then
+    echo "User cancelled or error in preferences dialog. Exiting build."
+    exit 1
+  fi
 fi
