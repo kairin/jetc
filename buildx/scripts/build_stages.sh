@@ -51,7 +51,7 @@ fi
 # use_cache, use_squash, skip_intermediate_push_pull, use_builder, platform
 
 # Declare global map for skipping specific apps within stages (initialize as empty)
-declare -gA skip_apps_map=() # <-- FIX: Declare the map globally
+declare -gA skip_apps_map=()
 
 # --- Functions ---
 
@@ -67,15 +67,15 @@ build_selected_stages() {
     log_info "=================================================="
 
     # Ensure required global variables are available
-    if [[ ${#ORDERED_FOLDERS[@]} -eq 0 ]]; then
-        # This case should ideally be handled by build_order.sh logging a warning,
-        # but we add an error here just in case.
-        log_error "ORDERED_FOLDERS array is empty or not set. Cannot proceed."
-        return 1
+    # Check if ORDERED_FOLDERS is declared and has elements
+    if ! declare -p ORDERED_FOLDERS &>/dev/null || [[ ${#ORDERED_FOLDERS[@]} -eq 0 ]]; then
+        # Allow proceeding if empty (build_order.sh logs warning), but log here too.
+        log_warning "ORDERED_FOLDERS array is empty or not set. No stages to build."
+        # Set LAST_SUCCESSFUL_TAG to the initial base image if nothing is built
+        export LAST_SUCCESSFUL_TAG="${SELECTED_BASE_IMAGE}"
+        return 0 # Return success as there's nothing to fail on
     fi
      # Check if SELECTED_FOLDERS_MAP is truly available (paranoid check)
-     # Bash 4.3+ check: if ! declare -p SELECTED_FOLDERS_MAP &>/dev/null; then
-     # More compatible check:
      if [[ ! $(declare -p SELECTED_FOLDERS_MAP 2>/dev/null) =~ "declare -A" ]]; then
         log_error "SELECTED_FOLDERS_MAP associative array is not declared globally. Check build_order.sh."
         return 1
@@ -93,33 +93,34 @@ build_selected_stages() {
 
     log_info "Initial base image for build stages: $current_base_image"
 
-    # Iterate through the globally defined ORDERED_FOLDERS array
-    for build_folder_path in "${ORDERED_FOLDERS[@]}"; do
+    # Use process substitution for safer loop iteration
+    while IFS= read -r build_folder_path; do
+        # Skip empty lines potentially introduced by process substitution
+        [[ -z "$build_folder_path" ]] && continue
+
         local build_folder_basename
         build_folder_basename=$(basename "$build_folder_path")
 
         # Double-check if this folder should be built using the map
-        # This check is somewhat redundant if ORDERED_FOLDERS is correctly filtered,
-        # but acts as a safeguard.
-        # Use compatible check for key existence
-        if [[ ${SELECTED_FOLDERS_MAP[$build_folder_basename]+_} ]]; then # <-- Check if key exists in map
+        if [[ ${SELECTED_FOLDERS_MAP[$build_folder_basename]+_} ]]; then
              log_info "--- Processing Stage: $build_folder_basename ---"
              log_debug "  Folder Path: $build_folder_path"
              log_debug "  Using Base Image: $current_base_image"
 
              # Call the build function from docker_helpers.sh
              # Pass all necessary parameters sourced from user interaction / env
+             # *** CORRECTED ARGUMENT ORDER ***
              build_folder_image \
-                "$build_folder_path" \
-                "${use_cache:-n}" \
-                "${DOCKER_USERNAME}" \
-                "${platform:-linux/arm64}" \
-                "${use_squash:-n}" \
-                "${skip_intermediate_push_pull:-y}" \
-                "$current_base_image" \
-                "${DOCKER_REPO_PREFIX}" \
-                "${DOCKER_REGISTRY:-}" \
-                "${use_builder:-y}" # Pass use_builder preference
+                "$build_folder_path"                    # $1: folder_path
+                "${use_cache:-n}"                       # $2: use_cache
+                "${platform:-linux/arm64}"              # $3: platform_arg (ignored by latest func, uses global $PLATFORM)
+                "${use_squash:-n}"                      # $4: use_squash
+                "${skip_intermediate_push_pull:-y}"     # $5: skip_intermediate_push_pull
+                "$current_base_image"                   # $6: base_image_tag
+                "${DOCKER_USERNAME}"                    # $7: docker_username
+                "${DOCKER_REPO_PREFIX}"                 # $8: repo_prefix
+                "${DOCKER_REGISTRY:-}"                  # $9: registry
+             # Removed extra $10: "${use_builder:-y}"
 
             local build_status=$?
             # build_folder_image should export 'fixed_tag' on success
@@ -154,10 +155,20 @@ build_selected_stages() {
     log_info "=================================================="
     if [[ $stage_build_failed -eq 0 ]]; then
         log_success "All selected build stages completed."
+        # If build succeeded but LAST_SUCCESSFUL_TAG is still unset (e.g., no stages selected/run)
+        # set it to the initial base image.
+        if [[ -z "${LAST_SUCCESSFUL_TAG:-}" ]]; then
+             export LAST_SUCCESSFUL_TAG="${SELECTED_BASE_IMAGE}"
+             log_debug "No stages built, setting LAST_SUCCESSFUL_TAG to initial base: $LAST_SUCCESSFUL_TAG"
+        fi
         return 0
     else
         log_error "One or more build stages failed."
         # LAST_SUCCESSFUL_TAG will hold the tag of the last stage that *did* succeed
+        # If the *first* stage failed, LAST_SUCCESSFUL_TAG will be unset.
+        if [[ -z "${LAST_SUCCESSFUL_TAG:-}" ]]; then
+             log_warning "No stages completed successfully."
+        fi
         return 1
     fi
 }
@@ -172,21 +183,21 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
      if ! command -v build_folder_image &> /dev/null; then
         log_warning "Mocking build_folder_image for testing."
         build_folder_image() {
-            local folder="$1"
-            local base_name
+            local folder="$1" base_name repo_prefix="$8" username="$7" # Get correct args
             base_name=$(basename "$folder")
             log_info "Mock build_folder_image called for: $base_name"
+            log_debug "Mock Args: $@" # Log all args passed
             # Simulate success for '01-*', failure for '02-*'
             if [[ "$base_name" == 01-* ]]; then
-                export fixed_tag="mock/repo:${base_name}-success"
+                export fixed_tag="${username}/${repo_prefix}:${base_name}-success" # Use correct args
                 log_success " -> Mock Success: $fixed_tag"
                 return 0
             elif [[ "$base_name" == 02-* ]]; then
-                 export fixed_tag="mock/repo:${base_name}-fail"
+                 export fixed_tag="${username}/${repo_prefix}:${base_name}-fail" # Use correct args
                  log_error " -> Mock Failure"
                  return 1
             else
-                 export fixed_tag="mock/repo:${base_name}-success"
+                 export fixed_tag="${username}/${repo_prefix}:${base_name}-success" # Use correct args
                  log_success " -> Mock Success (default): $fixed_tag"
                  return 0
             fi
@@ -207,7 +218,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     use_cache="n"
     use_squash="n"
     skip_intermediate_push_pull="y"
-    use_builder="y"
+    use_builder="y" # This is unused by the corrected call
     platform="linux/arm64"
     SELECTED_FOLDERS_LIST="01-first 02-second-fails 03-third" # For warning check
 
@@ -243,11 +254,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     SELECTED_FOLDERS_LIST=""
     unset LAST_SUCCESSFUL_TAG
      if build_selected_stages; then
-         log_error "Test 3 Result: build_selected_stages reported SUCCESS (unexpected)."
+         log_success "Test 3 Result: build_selected_stages reported SUCCESS (expected)." # Now expects success
     else
-         log_error "Test 3 Result: build_selected_stages reported FAILURE (expected)."
+         log_error "Test 3 Result: build_selected_stages reported FAILURE (unexpected)."
     fi
-    log_info "Test 3 LAST_SUCCESSFUL_TAG: ${LAST_SUCCESSFUL_TAG:-<unset>}"
+    log_info "Test 3 LAST_SUCCESSFUL_TAG: ${LAST_SUCCESSFUL_TAG:-<unset>}" # Should be initial base
     echo "--------------------"
 
 
@@ -267,6 +278,6 @@ fi
 #
 # Description: Iterates through build stages determined by build_order.sh
 #              and executes the build using docker_helpers.sh functions.
-#              Fixed unbound variable 'skip_apps_map'.
+#              Corrected argument order for build_folder_image call.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-200404-STAGESFIX
+# COMMIT-TRACKING: UUID-20250424-201515-STAGESFIX2
