@@ -94,8 +94,8 @@ main() {
 
         # 2. Setup Buildx Builder
         log_debug "Step 2: Setting up Docker buildx builder..."
-        if ! setup_buildx_builder; then
-            log_error "Failed to setup Docker buildx builder. Cannot proceed."
+        if ! setup_buildx; then
+        log_error "Failed to setup Docker buildx builder. Cannot proceed."
             BUILD_FAILED=1
         else
             log_success "Docker buildx builder setup complete."
