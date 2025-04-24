@@ -5,31 +5,51 @@
 set -euo pipefail # Re-enable -e
 
 # Get the directory where the script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-export SCRIPT_DIR
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "[DEBUG build.sh] Initial SCRIPT_DIR: $SCRIPT_DIR" >&2
 
-# --- Source Core Dependencies (Order Matters!) ---
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
-init_logging
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/env_setup.sh" || { echo "Error: env_setup.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/env_update.sh" || { echo "Error: env_update.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/dialog_ui.sh" || { echo "Error: dialog_ui.sh not found."; exit 1; } # Correct UI script
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/verification.sh" || { echo "Error: verification.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/system_checks.sh" || { echo "Error: system_checks.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/buildx_setup.sh" || { echo "Error: buildx_setup.sh not found."; exit 1; }
+# Define source_script locally ONLY for bootstrapping env_setup.sh
+# This avoids conflicts if utils.sh redefines it later.
+_bootstrap_source_script() {
+    local script_path="$1"
+    local script_name="${2:-Script}"
+    echo "[DEBUG build.sh] Bootstrapping $script_name: $script_path" >&2
+    if [[ -f "$script_path" ]]; then
+        # shellcheck disable=SC1090
+        source "$script_path"
+        local source_status=$?
+        if [[ $source_status -ne 0 ]]; then
+            echo "ERROR: Failed to bootstrap $script_name from $script_path (exit code $source_status)." >&2
+            exit 1 # Exit early if bootstrap fails
+        else
+             echo "[DEBUG build.sh] $script_name bootstrapped successfully." >&2
+             return 0
+        fi
+    else
+        echo "ERROR: Bootstrap $script_name not found at: $script_path" >&2
+        exit 1 # Exit early if bootstrap fails
+    fi
+}
+
+# --- Bootstrap Environment ---
+# Source env_setup.sh using the bootstrap function.
+# env_setup.sh will source utils.sh and logging.sh, making their functions globally available.
+_bootstrap_source_script "$SCRIPT_DIR/scripts/env_setup.sh" "Environment Setup"
+# Now log_* functions and the potentially redefined source_script from utils.sh should be available.
+log_debug "Environment setup bootstrapped. Main logging and utils should be available."
 
 # --- Source Helper Scripts ---
+# Use the source_script function provided by utils.sh (sourced via env_setup.sh)
+# Ensure source_script is defined before proceeding (check added in env_setup.sh)
+if ! command -v source_script &> /dev/null; then
+    log_error "Core 'source_script' function not defined after env_setup. Aborting."
+    exit 1
+fi
+
+# Source buildx setup script
+source_script "$SCRIPT_DIR/scripts/buildx_setup.sh" "Buildx Setup"
+# Source docker helpers script
+source_script "$SCRIPT_DIR/scripts/docker_helpers.sh" "Docker Helpers"
 # Source user interaction script (handles dialog or basic prompts)
 source_script "$SCRIPT_DIR/scripts/user_interaction.sh" "User Interaction"
 # Source build order determination script
@@ -124,4 +144,4 @@ exit 0
 #
 # Description: Main build orchestrator script for the Jetson Container project.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250425-101500-SOURCINGFIX # New UUID for sourcing fix

@@ -169,4 +169,4 @@ _utils_log_debug "utils.sh finished execution."
 #
 # Description: General utility functions for the build system. Added get_system_datetime.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-094500-UTILSDECOUPLE # New UUID for decoupling
+# COMMIT-TRACKING: UUID-20250425-100000-TYPOFIX # New UUID for typo fix
