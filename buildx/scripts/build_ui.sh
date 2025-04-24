@@ -33,6 +33,9 @@ ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env"
 # Description: UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
 # Author: Mr K / GitHub Copilot
 
+# Always load .env before calling get_user_preferences
+load_env_variables
+
 # Only call get_user_preferences if PREFS_FILE does not exist or is empty
 PREFS_FILE="/tmp/build_prefs.sh"
 if [ ! -s "$PREFS_FILE" ]; then
@@ -47,6 +50,8 @@ fi
 if [ -f "$PREFS_FILE" ]; then
   # shellcheck disable=SC1090
   source "$PREFS_FILE"
+  # Reload .env to get any updates from update_env_file
+  load_env_variables
   # Export lowercase 'platform' for compatibility with build_stages.sh
   if [ -n "$PLATFORM" ]; then
     export platform="$PLATFORM"

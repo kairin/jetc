@@ -9,6 +9,9 @@ source "$SCRIPT_DIR_DLG/utils.sh" || { echo "Error: utils.sh not found."; exit 1
 source "$SCRIPT_DIR_DLG/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
 
 get_user_preferences() {
+  # Always load .env before presenting dialogs
+  load_env_variables
+
   # Check if dialog is available, fallback if not
   if ! check_install_dialog; then
     echo "Dialog not available or failed to install. Falling back to basic prompts." >&2
@@ -281,6 +284,9 @@ get_user_preferences() {
 }
 
 get_user_preferences_basic() {
+  # Always load .env before presenting prompts
+  load_env_variables
+
   local PREFS_FILE="/tmp/build_prefs.sh"
   trap 'rm -f "$PREFS_FILE"' EXIT TERM INT
 
