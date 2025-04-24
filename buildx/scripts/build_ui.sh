@@ -20,7 +20,7 @@ source "$SCRIPT_DIR_BUI/dialog_ui.sh" || { echo "Error: dialog_ui.sh not found."
 source "$SCRIPT_DIR_BUI/post_build_menu.sh" || { echo "Error: post_build_menu.sh not found."; exit 1; }
 
 # Always resolve .env to canonical location (same as build.sh and jetcrun.sh)
-ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env"
+# ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env" # Removed - Defined in utils.sh
 
 # COMMIT-TRACKING: UUID-20250423-232231-BUIU
 # File location diagram:
@@ -88,6 +88,6 @@ _log_debug "Finished build_ui.sh execution."
 # │       └── build_ui.sh        <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: UI functions for build process. Added conditional debug logging via JETC_DEBUG=true.
+# Description: UI functions for build process. Removed local ENV_CANONICAL definition (uses utils.sh).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-121500-DBGVAR
+# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH

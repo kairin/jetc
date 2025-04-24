@@ -490,10 +490,6 @@ fi
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Improved AVAILABLE_IMAGES saving logic.
+# Description: Interactive script to launch Jetson containers. Uses ENV_CANONICAL from utils.sh via env_helpers.sh.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC
-# COMMIT-TRACKING: UUID-20250422-083100-DLGF
-# COMMIT-TRACKING: UUID-20250422-083100-IMGV
-# COMMIT-TRACKING: UUID-20250422-083100-X11F
-# COMMIT-TRACKING: UUID-20250422-083100-REFA
+# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH

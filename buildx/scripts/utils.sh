@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define canonical path for .env file relative to this script's parent directory
+export ENV_CANONICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
+
 # =========================================================================
 # Function: Check if dialog is installed, optionally install it.
 # Returns: 0 if dialog is available, 1 otherwise.
@@ -84,6 +87,6 @@ store_current_datetime() {
 # │       └── utils.sh           <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: General utility functions. Added verbose logging to dialog check.
+# Description: General utility functions. Centralized ENV_CANONICAL definition.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-101500-DLGDBG
+# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH

@@ -3,7 +3,11 @@
 # Canonical .env helpers for Jetson Container build system
 
 SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_CANONICAL="$(cd "$SCRIPT_DIR_ENV/.." && pwd)/.env"
+# ENV_CANONICAL="$(cd "$SCRIPT_DIR_ENV/.." && pwd)/.env" # Removed - Defined in utils.sh
+
+# Source utils.sh to get ENV_CANONICAL and other utilities
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_ENV/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
 
 # =========================================================================
 # Function: Update .env file with new values, with backup if no new input
@@ -99,6 +103,6 @@ load_env_variables() {
 # │       └── env_helpers.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: .env file helpers. Reverted load_env_variables to safe line-by-line parsing.
+# Description: .env file helpers. Removed local ENV_CANONICAL definition (uses utils.sh).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-110500-ENVPARSE
+# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH
