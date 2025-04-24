@@ -174,7 +174,8 @@ All scripts (build, run, tagging, verification) read and update `.env` for confi
     # or
     JETC_DEBUG=1 ./buildx/jetcrun.sh
     ```
-*   **Pull Errors:** If pulling base images fails, check your network connection, registry URL (if not Docker Hub), and authentication (`docker login`).
+*   **Pull Errors (`jetcrun.sh`):** If `jetcrun.sh` fails to find an image locally. If the automatic pull fails, verify the correct image tag and pull it manually using `docker pull <correct-image-tag>`.
+*   **Pull Errors (Build):** If pulling base images during the build process fails, check your network connection, registry URL (if not Docker Hub), and authentication (`docker login`).
 
 ---
 

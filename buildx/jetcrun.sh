@@ -471,20 +471,22 @@ fi
 
 # Check if the image exists locally
 if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
-  # Modify image name to add -py3 suffix for pulling
-  PULL_IMAGE="${IMAGE_NAME}-py3"
-  echo "Image $IMAGE_NAME not found locally. Pulling $PULL_IMAGE..."
-  if docker pull "$PULL_IMAGE"; then
+  # If the exact image name isn't found, try pulling with a common suffix as a fallback.
+  # NOTE: This is a heuristic. The actual suffix might vary depending on how the image was built/tagged.
+  # Currently, it tries adding '-py3'. If this fails, manual pulling might be required.
+  PULL_IMAGE_FALLBACK="${IMAGE_NAME}-py3"
+  echo "Image $IMAGE_NAME not found locally. Attempting fallback pull: $PULL_IMAGE_FALLBACK..."
+  if docker pull "$PULL_IMAGE_FALLBACK"; then
     echo "Pull completed successfully."
-    # Tag the pulled image with the original name for consistency
-    docker tag "$PULL_IMAGE" "$IMAGE_NAME"
+    # Tag the pulled image with the original name for consistency in this run
+    docker tag "$PULL_IMAGE_FALLBACK" "$IMAGE_NAME"
   else
-    echo "Error: Failed to pull image $PULL_IMAGE"
+    echo "Error: Failed to pull image $IMAGE_NAME or fallback $PULL_IMAGE_FALLBACK." >&2
+    echo "Please ensure the image exists locally or in the remote registry and try again." >&2
     exit 1
   fi
 fi
 
-# Run the container with the appropriate command and combined options
 echo "Starting container..."
 # Combine RUN_CMD (which might have --user kkk) with FINAL_RUN_OPTS
 $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
@@ -503,6 +505,6 @@ fi
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Consistent user flag handling.
+# Description: Interactive script to launch Jetson containers. Added comment explaining pull fallback.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-170000-USERFLAG
+# COMMIT-TRACKING: UUID-20250424-180000-PULLDOC
