@@ -30,6 +30,8 @@ handle_build_error() {
 # =========================================================================
 # Function to update AVAILABLE_IMAGES in .env
 # =========================================================================
+# Note: This function seems redundant as build_stages.sh now handles updating AVAILABLE_IMAGES directly.
+# Consider removing this function if it's not used elsewhere.
 update_available_images_in_env() {
     local new_tag="$1"
     local env_file="$(dirname "$0")/.env"
@@ -79,6 +81,7 @@ export SELECTED_FOLDERS_MAP
 # Build selected numbered and other directories
 source "$SCRIPT_DIR/build_stages.sh" || exit 1
 build_selected_stages
+BUILD_FAILED=$? # Capture the exit status of build_selected_stages
 
 # Verify contents of the selected base image before building
 if [ -n "$SELECTED_BASE_IMAGE" ]; then
@@ -90,10 +93,12 @@ fi
 source "$SCRIPT_DIR/build_tagging.sh" || exit 1
 
 # Create Final Timestamped Tag
-if [[ -n "$FINAL_FOLDER_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
+# Use LAST_SUCCESSFUL_TAG exported by build_stages.sh
+FINAL_IMAGE_TAG="$LAST_SUCCESSFUL_TAG" # Use the last successfully built tag
+if [[ -n "$FINAL_IMAGE_TAG" ]] && [[ "$BUILD_FAILED" -eq 0 ]]; then
     generate_timestamped_tag "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY" "$CURRENT_DATE_TIME"
     TIMESTAMPED_LATEST_TAG="$timestamped_tag"
-    # ...existing code...
+    # ...existing code... (Tagging and pushing logic in build_tagging.sh should use FINAL_IMAGE_TAG)
 fi
 
 # Post-build menu/options - now integrated into build_ui.sh
@@ -124,6 +129,6 @@ generate_error_summary
 # │   └── build.sh               <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Main build orchestrator for Jetson container buildx system. Modular, interactive, and tracks all build stages and tags.
+# Description: Main build orchestrator for Jetson container buildx system. Uses build stages and updates .env.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-BLDX
+# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC

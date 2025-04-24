@@ -335,24 +335,47 @@ get_run_options() {
     fi
     
     # Update AVAILABLE_IMAGES - ensure unique and non-empty
-    declare -A final_seen_images
-    declare -a final_image_array=()
+    declare -A final_seen_images # Use associative array for quick duplicate check
+    declare -a final_image_array=() # Final array of unique images
+    
+    # Add the currently selected IMAGE_NAME first if it's valid
+    if [[ -n "$IMAGE_NAME" ]] && [[ ! ${final_seen_images["$IMAGE_NAME"]} ]]; then
+        final_image_array+=("$IMAGE_NAME")
+        final_seen_images["$IMAGE_NAME"]=1
+    fi
+
+    # Add images from the potentially updated image_array (includes added custom images)
     for img in "${image_array[@]}"; do
         if [[ -n "$img" ]] && [[ ! ${final_seen_images["$img"]} ]]; then
             final_image_array+=("$img")
             final_seen_images["$img"]=1
         fi
     done
-    AVAILABLE_IMAGES_SAVE_STR=$(IFS=';'; echo "${final_image_array[*]}") # Use the cleaned array
+    
+    # Add images previously stored in AVAILABLE_IMAGES_STR (from initial .env load)
+    IFS=';' read -r -a env_images_orig <<< "$AVAILABLE_IMAGES_STR"
+    for img in "${env_images_orig[@]}"; do
+        if [[ -n "$img" ]] && [[ ! ${final_seen_images["$img"]} ]]; then
+            final_image_array+=("$img")
+            final_seen_images["$img"]=1
+        fi
+    done
+
+    # Join the unique, non-empty images with semicolons
+    AVAILABLE_IMAGES_SAVE_STR=$(IFS=';'; echo "${final_image_array[*]}")
+
+    # Escape for sed
+    local escaped_available_images
+    escaped_available_images=$(printf '%s\n' "$AVAILABLE_IMAGES_SAVE_STR" | sed 's/[&/\]/\\&/g')
 
     if grep -q "^AVAILABLE_IMAGES=" "$ENV_FILE"; then
-      # Replace existing line, use different sed delimiter
-      sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=$AVAILABLE_IMAGES_SAVE_STR|" "$ENV_FILE"
+      # Replace existing line, use different sed delimiter (#)
+      sed -i "s#^AVAILABLE_IMAGES=.*#AVAILABLE_IMAGES=${escaped_available_images}#" "$ENV_FILE"
     else
       # Add new line
       echo "" >> "$ENV_FILE" # Ensure newline
       echo "# Available container images (semicolon-separated)" >> "$ENV_FILE"
-      echo "AVAILABLE_IMAGES=$AVAILABLE_IMAGES_SAVE_STR" >> "$ENV_FILE"
+      echo "AVAILABLE_IMAGES=${escaped_available_images}" >> "$ENV_FILE"
     fi
     
     echo "Settings saved to $ENV_FILE for future use."
@@ -467,9 +490,9 @@ fi
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers with selectable images and runtime options. Reads and updates .env for persistent config.
+# Description: Interactive script to launch Jetson containers. Improved AVAILABLE_IMAGES saving logic.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-JRUN
+# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC
 # COMMIT-TRACKING: UUID-20250422-083100-DLGF
 # COMMIT-TRACKING: UUID-20250422-083100-IMGV
 # COMMIT-TRACKING: UUID-20250422-083100-X11F

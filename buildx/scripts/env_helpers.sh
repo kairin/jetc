@@ -52,29 +52,29 @@ update_env_file() {
 
 # =========================================================================
 # Function: Load environment variables from .env file
-# Exports: DOCKER_USERNAME, DOCKER_REGISTRY, DOCKER_REPO_PREFIX, DEFAULT_BASE_IMAGE, AVAILABLE_IMAGES etc.
+# Exports: DOCKER_USERNAME, DOCKER_REGISTRY, DOCKER_REPO_PREFIX, DEFAULT_BASE_IMAGE, AVAILABLE_IMAGES, DEFAULT_IMAGE_NAME, DEFAULT_ENABLE_X11, DEFAULT_ENABLE_GPU, DEFAULT_MOUNT_WORKSPACE, DEFAULT_USER_ROOT etc.
 # Returns: 0 (always succeeds, variables might be empty if file not found)
 # =========================================================================
 load_env_variables() {
     if [ -f "$ENV_CANONICAL" ]; then
-        # Only export lines that are safe VAR=VALUE (no semicolons, no spaces around =, not commented)
-        while IFS='=' read -r key value; do
-            # Skip comments and empty lines
-            [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
-            # Skip lines with semicolons in key (not a valid var)
-            [[ "$key" =~ ";" ]] && continue
-            # Only allow safe variable names
-            if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
-                export "$key=$value"
-            fi
-        done < <(grep -v '^#' "$ENV_CANONICAL" | grep '=')
+        # Source the file to load variables into the current shell environment
+        set -a # Automatically export sourced variables
+        # shellcheck disable=SC1090
+        source "$ENV_CANONICAL"
+        set +a # Stop automatically exporting
     fi
-    # Always set defaults if missing
-    DOCKER_USERNAME=${DOCKER_USERNAME:-}
-    DOCKER_REGISTRY=${DOCKER_REGISTRY:-}
-    DOCKER_REPO_PREFIX=${DOCKER_REPO_PREFIX:-}
-    DEFAULT_BASE_IMAGE=${DEFAULT_BASE_IMAGE:-"nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3"}
-    export DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE
+    # Ensure required/expected variables are exported, setting defaults if they weren't loaded
+    export DOCKER_USERNAME="${DOCKER_USERNAME:-}"
+    export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}"
+    export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-}"
+    export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3}"
+    export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
+    export DEFAULT_IMAGE_NAME="${DEFAULT_IMAGE_NAME:-}"
+    export DEFAULT_ENABLE_X11="${DEFAULT_ENABLE_X11:-on}"
+    export DEFAULT_ENABLE_GPU="${DEFAULT_ENABLE_GPU:-on}"
+    export DEFAULT_MOUNT_WORKSPACE="${DEFAULT_MOUNT_WORKSPACE:-on}"
+    export DEFAULT_USER_ROOT="${DEFAULT_USER_ROOT:-on}"
+    # Add any other variables expected from .env here
 }
 
 # File location diagram:
@@ -84,6 +84,6 @@ load_env_variables() {
 # │       └── env_helpers.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: .env file helpers for Jetson Container build system (update/load, safe parsing, backup).
+# Description: .env file helpers for Jetson Container build system (update/load, safe parsing, backup). Improved load_env_variables robustness.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240805-220000-ENVSAFE
+# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC

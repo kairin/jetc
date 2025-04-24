@@ -93,17 +93,33 @@ build_selected_stages() {
             local env_file_path="$(dirname "$SCRIPT_DIR_BSTAGES")/.env"
             if [ -f "$env_file_path" ]; then
                 local current_available_images
-                current_available_images=$(grep "^AVAILABLE_IMAGES=" "$env_file_path" | cut -d'=' -f2)
-                # Add the new tag if it's not already present
-                if ! echo "$current_available_images" | grep -q -E "(^|;)${LAST_SUCCESSFUL_TAG}(;|$)"; then
+                # Read the line carefully, handling potential missing line
+                current_available_images=$(grep "^AVAILABLE_IMAGES=" "$env_file_path" | head -n 1 | cut -d'=' -f2-) || current_available_images=""
+
+                # Add the new tag if it's not already present (robust check)
+                if ! echo ";${current_available_images};" | grep -q ";${LAST_SUCCESSFUL_TAG};"; then
                     local updated_images
                     if [ -z "$current_available_images" ]; then
                         updated_images="$LAST_SUCCESSFUL_TAG"
                     else
+                        # Append with semicolon separator
                         updated_images="${current_available_images};${LAST_SUCCESSFUL_TAG}"
                     fi
-                    # Use sed with a different delimiter to avoid issues with slashes in tags
-                    sed -i "s|^AVAILABLE_IMAGES=.*|AVAILABLE_IMAGES=${updated_images}|" "$env_file_path"
+                    # Use sed with a different delimiter (#) and escape potential special chars in tag for safety
+                    local escaped_tag
+                    escaped_tag=$(printf '%s\n' "$LAST_SUCCESSFUL_TAG" | sed 's/[&/\]/\\&/g') # Basic escaping for sed
+                    local escaped_updated_images
+                    escaped_updated_images=$(printf '%s\n' "$updated_images" | sed 's/[&/\]/\\&/g')
+
+                    if grep -q "^AVAILABLE_IMAGES=" "$env_file_path"; then
+                         # Update existing line
+                         sed -i "s#^AVAILABLE_IMAGES=.*#AVAILABLE_IMAGES=${escaped_updated_images}#" "$env_file_path"
+                    else
+                         # Add new line if it doesn't exist
+                         echo "" >> "$env_file_path" # Ensure newline
+                         echo "# Available container images (semicolon-separated)" >> "$env_file_path"
+                         echo "AVAILABLE_IMAGES=${escaped_updated_images}" >> "$env_file_path"
+                    fi
                     echo "Updated AVAILABLE_IMAGES in $env_file_path" | tee -a "${MAIN_LOG}"
                 fi
             fi
@@ -165,7 +181,7 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Script to build selected Docker stages in the correct order, handling dependencies and skipping based on user preference.
+# Description: Script to build selected Docker stages in order. Improved AVAILABLE_IMAGES update logic.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-BSTG
+# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC
 # COMMIT-TRACKING: UUID-20250423-100000-APPSKP
