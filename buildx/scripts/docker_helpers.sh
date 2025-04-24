@@ -62,33 +62,29 @@ verify_image_exists() {
 
 # =========================================================================
 # Function: Build a Docker image from a specific folder
+# Arguments:
+#   $1: folder_path - Path to the build context folder
+#   $2: use_cache - 'y' or 'n'
+#   $3: docker_username - Docker username
+#   $4: use_squash - 'y' or 'n'
+#   $5: skip_intermediate - 'y' or 'n' (y=local build only, n=push/pull)
+#   $6: base_image_tag - Tag of the base image to use (passed as BASE_IMAGE build-arg)
+#   $7: docker_repo_prefix - Prefix for the image repository
+#   $8: docker_registry - Optional Docker registry hostname
+#   $9: use_builder - 'y' or 'n' (whether to use buildx builder)
+# Exports: fixed_tag - The final tag of the successfully built image
+# Returns: 0 on success, 1 on failure
 # =========================================================================
 build_folder_image() {
-    # <<< --- ADDED DEBUGGING --- >>>
-    log_debug "--- Entering build_folder_image ---"
-    log_debug "  Received \$1 (folder_path):         '$1'"
-    log_debug "  Received \$2 (use_cache):           '$2'"
-    log_debug "  Received \$3 (docker_username):     '$3'"
-    log_debug "  Received \$4 (use_squash):          '$4'"
-    log_debug "  Received \$5 (skip_intermediate):   '$5'"
-    log_debug "  Received \$6 (base_image_tag):      '$6'"
-    log_debug "  Received \$7 (docker_repo_prefix):  '$7'"
-    log_debug "  Received \$8 (docker_registry):     '${8:-<empty>}'" # Clarify if empty
-    log_debug "  Received \$9 (use_builder):         '${9:-<empty>}'" # Clarify if empty
-    log_debug "  Global PLATFORM:                  '${PLATFORM:-<unset>}'"
-    log_debug "-------------------------------------"
-    # <<< --- END DEBUGGING --- >>>
-
-    # Assign arguments to local variables WITH DEFAULTS where appropriate
     local folder_path="$1"
     local use_cache="$2"
     local docker_username="$3"
     local use_squash="$4"
-    local skip_intermediate="$5"
+    local skip_intermediate="$5" # 'y' means skip push/pull (local build)
     local base_image_tag="$6"
     local docker_repo_prefix="$7"
-    local docker_registry="${8:-}" # Default to empty if $8 is unset/null
-    local use_builder="${9:-y}"   # Default to 'y' if $9 is unset/null
+    local docker_registry="${8:-}" # Default to empty if not provided
+    local use_builder="$9"         # Use buildx builder?
 
     # --- Validate required arguments AFTER assigning to locals ---
     # This is where the error likely triggers if an argument is truly missing

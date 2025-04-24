@@ -85,6 +85,38 @@ load_env_variables() {
     return 0
 }
 
+# --- Load .env file ---
+# Use set -a to export all variables defined in .env
+# Use set +a to return to default behavior
+load_dotenv() {
+    local dotenv_path="$1"
+    if [ -f "$dotenv_path" ]; then
+        log_debug "Loading environment variables from $dotenv_path"
+        set -a # Automatically export all variables defined from now on
+        # shellcheck disable=SC1090 # Source file dynamically
+        source "$dotenv_path"
+        set +a # Stop automatically exporting variables
+        log_debug ".env file loaded."
+        # Explicitly re-export potentially overwritten critical vars if needed
+        export SCRIPT_DIR LOG_DIR LOG_FILE ERROR_LOG_FILE SUMMARY_LOG_FILE JETC_DEBUG
+    else
+        log_warning "$dotenv_path not found. Using default values."
+    fi
+}
+
+# Load the primary .env file
+load_dotenv "$ENV_FILE"
+
+# --- Validate Essential Variables ---
+# Ensure critical variables loaded from .env or defaults are set
+validate_variable "DOCKER_USERNAME" "$DOCKER_USERNAME" "Docker username is required." || exit 1
+validate_variable "DOCKER_REPO_PREFIX" "$DOCKER_REPO_PREFIX" "Docker repository prefix is required." || exit 1
+validate_variable "DEFAULT_BASE_IMAGE" "$DEFAULT_BASE_IMAGE" "Default base image is required." || exit 1
+# Ensure AVAILABLE_IMAGES is treated as a string, even if empty initially
+export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
+log_debug "Initial AVAILABLE_IMAGES: '${AVAILABLE_IMAGES}'"
+
+
 # =========================================================================
 # Function: Setup basic build environment variables (Non-Logging)
 # Arguments: None

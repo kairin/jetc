@@ -53,10 +53,10 @@ RUN cd ${BUILD_DIR}/arrow-src/cpp && \
       -DARROW_JSON=ON \
       -DARROW_PARQUET=ON \
       # Add optional components as needed
-      -DARROW_PYTHON=OFF \ # Assuming Python bindings handled later \
+      -DARROW_PYTHON=OFF \ # Assuming Python bindings handled later
       -DARROW_FLIGHT=OFF \
       -DARROW_ORC=OFF \ # Disabled ORC as per original comment
-      # --- Moved CMake flags inside RUN instruction ---
+      # --- Moved CMake flags inside cmake command ---
       -DARROW_WITH_BZ2=ON \
       -DARROW_WITH_LZ4=ON \
       -DARROW_WITH_SNAPPY=ON \

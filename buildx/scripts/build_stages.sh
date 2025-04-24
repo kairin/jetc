@@ -79,13 +79,13 @@ build_selected_stages() {
         echo "DEBUG ECHO: Processing $folder_name" # Added for visibility
 
         # Determine the base image for the current stage
-        # Default to the last successful tag, or the initial base if it's the first stage
         local current_base_image="${LAST_SUCCESSFUL_TAG:-$SELECTED_BASE_IMAGE}"
         log_debug "Using base image for '$folder_name': $current_base_image"
 
         # Call build_folder_image with all required arguments from global scope
         # Ensure the order matches the function definition in docker_helpers.sh
         # build_folder_image "$folder_path" "$use_cache" "$docker_username" "$use_squash" "$skip_intermediate" "$base_image_tag" "$docker_repo_prefix" "$docker_registry" "$use_builder"
+        # Pass the SELECTED_* variables directly
         if build_folder_image \
             "$folder_path" \
             "${SELECTED_USE_CACHE:-y}" \
@@ -95,7 +95,7 @@ build_selected_stages() {
             "$current_base_image" \
             "${DOCKER_REPO_PREFIX}" \
             "${DOCKER_REGISTRY:-}" \
-            "${SELECTED_USE_BUILDER:-y}"; then
+            "${SELECTED_USE_BUILDER:-y}"; then # Pass SELECTED_USE_BUILDER
 
             # On success, update LAST_SUCCESSFUL_TAG with the tag just built (fixed_tag is exported by build_folder_image)
             if [[ -n "${fixed_tag:-}" ]]; then
