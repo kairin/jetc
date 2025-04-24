@@ -51,17 +51,32 @@ update_env_file() {
 }
 
 # =========================================================================
-# Function: Load environment variables from .env file
+# Function: Load environment variables from .env file safely
 # Exports: DOCKER_USERNAME, DOCKER_REGISTRY, DOCKER_REPO_PREFIX, DEFAULT_BASE_IMAGE, AVAILABLE_IMAGES, DEFAULT_IMAGE_NAME, DEFAULT_ENABLE_X11, DEFAULT_ENABLE_GPU, DEFAULT_MOUNT_WORKSPACE, DEFAULT_USER_ROOT etc.
 # Returns: 0 (always succeeds, variables might be empty if file not found)
 # =========================================================================
 load_env_variables() {
+    # Unset potentially problematic variables before loading to avoid persistence from previous runs
+    unset DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE AVAILABLE_IMAGES DEFAULT_IMAGE_NAME DEFAULT_ENABLE_X11 DEFAULT_ENABLE_GPU DEFAULT_MOUNT_WORKSPACE DEFAULT_USER_ROOT LOCAL_DOCKER_IMAGES
+
     if [ -f "$ENV_CANONICAL" ]; then
-        # Source the file to load variables into the current shell environment
-        set -a # Automatically export sourced variables
-        # shellcheck disable=SC1090
-        source "$ENV_CANONICAL"
-        set +a # Stop automatically exporting
+        # Read the file line by line, exporting valid assignments
+        # Use grep to filter out comments and empty lines first
+        while IFS='=' read -r key value; do
+            # Trim leading/trailing whitespace from key and value (optional but good practice)
+            key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+            # Check if the key is a valid Bash variable name
+            if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+                # Export the variable. Use eval for value to handle potential quotes, but be cautious.
+                # A safer approach might be direct export if quotes aren't strictly needed or handled later.
+                # Direct export is safer:
+                export "$key=$value"
+                # If values *must* contain quotes preserved, eval is needed but riskier:
+                # eval "export $key=\"\$value\""
+            fi
+        done < <(grep -vE '^\s*#|^\s*$' "$ENV_CANONICAL")
     fi
     # Ensure required/expected variables are exported, setting defaults if they weren't loaded
     export DOCKER_USERNAME="${DOCKER_USERNAME:-}"
@@ -74,6 +89,7 @@ load_env_variables() {
     export DEFAULT_ENABLE_GPU="${DEFAULT_ENABLE_GPU:-on}"
     export DEFAULT_MOUNT_WORKSPACE="${DEFAULT_MOUNT_WORKSPACE:-on}"
     export DEFAULT_USER_ROOT="${DEFAULT_USER_ROOT:-on}"
+    export LOCAL_DOCKER_IMAGES="${LOCAL_DOCKER_IMAGES:-}" # Ensure this is also handled
     # Add any other variables expected from .env here
 }
 
@@ -84,6 +100,6 @@ load_env_variables() {
 # │       └── env_helpers.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: .env file helpers for Jetson Container build system (update/load, safe parsing, backup). Improved load_env_variables robustness.
+# Description: .env file helpers. Reverted load_env_variables to safe line-by-line parsing.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-091500-BLDXLOGIC
+# COMMIT-TRACKING: UUID-20250424-110500-ENVPARSE
