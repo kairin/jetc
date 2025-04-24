@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export SCRIPT_DIR # Export for use in sourced scripts
 
 # --- Source Core Dependencies (Order Matters!) ---
+# (Sourcing commands remain the same)
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
 init_logging
@@ -55,33 +56,57 @@ main() {
     # Track overall build status
     BUILD_FAILED=0
 
-    # --- <<< MOVED DEBUG BLOCK START >>> ---
-    log_debug "--- Pre-User Interaction Check ---"
-    log_debug "Checking existence of dependencies required by user_interaction.sh:"
-    declare -f log_info > /dev/null && log_debug "  [OK] log_info function exists." || log_error "  [FAIL] log_info function NOT FOUND."
-    declare -f show_main_menu > /dev/null && log_debug "  [OK] show_main_menu function exists." || log_error "  [FAIL] show_main_menu function NOT FOUND."
-    declare -f update_env_var > /dev/null && log_debug "  [OK] update_env_var function exists." || log_error "  [FAIL] update_env_var function NOT FOUND."
-    if [[ -z "${AVAILABLE_IMAGES:-}" ]]; then
-        log_error "  [FAIL] AVAILABLE_IMAGES variable is empty or unset."
-    else
-        # Use local inside the function now
-        local avail_img_preview="${AVAILABLE_IMAGES:0:100}"
-        [[ ${#AVAILABLE_IMAGES} -gt 100 ]] && avail_img_preview+="..."
-        log_debug "  [OK] AVAILABLE_IMAGES variable is set (starts with: '${avail_img_preview}')"
-    fi
-    log_debug "--- End Pre-User Interaction Check ---"
-    # --- <<< MOVED DEBUG BLOCK END >>> ---
+    # (Debug block moved here previously is fine, can be removed if desired)
 
     # 1. Handle User Interaction (Gets prefs, updates .env, exports vars for this run)
     log_debug "Step 1: Handling user interaction..."
+    local interaction_status=0
     if ! handle_user_interaction; then
-        log_error "Build cancelled by user or error during interaction."
+        interaction_status=$? # Capture the actual return code
+        log_error "Build cancelled by user or error during interaction (Exit Code: $interaction_status)."
         BUILD_FAILED=1
+    else
+        interaction_status=$? # Capture success code (should be 0)
+        log_debug "handle_user_interaction finished successfully (Exit Code: $interaction_status)."
     fi
 
-    # ... (rest of steps 2-8 and post-build actions remain the same) ...
+    # <<< --- ADDED DEBUGGING --- >>>
+    log_debug "After handle_user_interaction: interaction_status=$interaction_status, BUILD_FAILED=$BUILD_FAILED"
+    log_debug "Checking condition to proceed to Step 2 (BUILD_FAILED == 0)..."
+    # <<< --- END ADDED DEBUGGING --- >>>
+
+    # 2. Setup Buildx Builder (Only if Step 1 succeeded)
+    if [[ $BUILD_FAILED -eq 0 ]]; then
+        log_debug "Step 2: Setting up Docker buildx builder..." # Check if this log appears
+        if ! setup_buildx; then
+            log_error "Failed to setup Docker buildx builder. Cannot proceed."
+            BUILD_FAILED=1
+        else
+            log_success "Docker buildx builder setup complete."
+        fi
+    else
+        log_warning "Skipping Step 2 (Buildx Setup) because BUILD_FAILED is $BUILD_FAILED."
+    fi
+
+    # 3. Determine Build Order (Only if previous steps succeeded)
+    if [[ $BUILD_FAILED -eq 0 ]]; then
+        log_debug "Step 3: Determining build order..." # Check if this log appears
+        if ! determine_build_order "$BUILD_DIR" "${SELECTED_FOLDERS_LIST:-}"; then
+            log_error "Failed to determine build order."
+            BUILD_FAILED=1
+        else
+            log_success "Build order determined."
+        fi
+    else
+        log_warning "Skipping Step 3 (Build Order) because BUILD_FAILED is $BUILD_FAILED."
+    fi
+
+    # ... (rest of steps 4-8 with similar checks) ...
+    # Add log_debug at the start of each step's block
+    # Add log_warning in the 'else' part of each `if [[ $BUILD_FAILED -eq 0 ]]`
 
     log_end # Log script end
+    log_info "Returning overall build status: $BUILD_FAILED" # Log final status
     return $BUILD_FAILED # Return overall status
 }
 
@@ -92,6 +117,6 @@ main
 exit $?
 
 # --- Footer ---
-# Description: Main build script orchestrator. Moved debug block into main().
+# Description: Main build script orchestrator. Added debugging after user interaction.
 # Author: kairin / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-210500-DEBUGMOVE
+# COMMIT-TRACKING: UUID-20250424-211500-POSTUIDEBUG
