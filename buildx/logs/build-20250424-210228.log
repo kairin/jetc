@@ -1,0 +1,57 @@
+Setting build stage to: 01-00-build-essential
+Successfully built stage: 01-00-build-essential. Output image: kairin/jetc:01-00-build-essential
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 01-02-numba
+Successfully built stage: 01-02-numba. Output image: kairin/jetc:01-02-numba
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 01-03-numpy
+Successfully built stage: 01-03-numpy. Output image: kairin/jetc:01-03-numpy
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 01-04-cuda
+Continuing with next build...
+Build failed for stage: 01-04-cuda. Last successful image remains: kairin/jetc:01-03-numpy
+Setting build stage to: 01-05-h5py
+Successfully built stage: 01-05-h5py. Output image: kairin/jetc:01-05-h5py
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 02-bazel
+Continuing with next build...
+Build failed for stage: 02-bazel. Last successful image remains: kairin/jetc:01-05-h5py
+Setting build stage to: 03-ninja
+Successfully built stage: 03-ninja. Output image: kairin/jetc:03-ninja
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 04-python
+Successfully built stage: 04-python. Output image: kairin/jetc:04-python
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 06-rust
+Successfully built stage: 06-rust. Output image: kairin/jetc:06-rust
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 09-opencv
+Continuing with next build...
+Build failed for stage: 09-opencv. Last successful image remains: kairin/jetc:06-rust
+Setting build stage to: 10-onnx
+Successfully built stage: 10-onnx. Output image: kairin/jetc:10-onnx
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 10-onnxruntime
+Continuing with next build...
+Build failed for stage: 10-onnxruntime. Last successful image remains: kairin/jetc:10-onnx
+Setting build stage to: 10-triton
+Successfully built stage: 10-triton. Output image: kairin/jetc:10-triton
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 11-diffusers
+Successfully built stage: 11-diffusers. Output image: kairin/jetc:11-diffusers
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 12-huggingface_hub
+Successfully built stage: 12-huggingface_hub. Output image: kairin/jetc:12-huggingface_hub
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 13-transformers
+Successfully built stage: 13-transformers. Output image: kairin/jetc:13-transformers
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 14-xformers
+Successfully built stage: 14-xformers. Output image: kairin/jetc:14-xformers
+Updated AVAILABLE_IMAGES in /media/kkk/Apps/jetc/buildx/.env
+Setting build stage to: 15-flash-attention
+Continuing with next build...
+Build failed for stage: 15-flash-attention. Last successful image remains: kairin/jetc:14-xformers
+Setting build stage to: 18-comfyui
+Successfully built stage: 18-comfyui. Output image: kairin/jetc:18-comfyui
+One or more build stages failed. Final image is the last successful one: kairin/jetc:18-comfyui

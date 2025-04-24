@@ -1,0 +1,26 @@
+Build process for /media/kkk/Apps/jetc/buildx/build/01-00-build-essential exited with code 1
+Build failed for stage: 01-00-build-essential. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/01-01-arrow exited with code 1
+Build failed for stage: 01-01-arrow. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/01-02-numba exited with code 1
+Build failed for stage: 01-02-numba. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/01-03-numpy exited with code 1
+Build failed for stage: 01-03-numpy. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/01-04-cuda exited with code 1
+Build failed for stage: 01-04-cuda. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/01-05-h5py exited with code 1
+Build failed for stage: 01-05-h5py. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/02-bazel exited with code 1
+Build failed for stage: 02-bazel. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/03-ninja exited with code 1
+Build failed for stage: 03-ninja. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/04-python exited with code 1
+Build failed for stage: 04-python. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/06-rust exited with code 1
+Build failed for stage: 06-rust. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/09-opencv exited with code 1
+Build failed for stage: 09-opencv. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/10-onnx exited with code 1
+Build failed for stage: 10-onnx. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Build process for /media/kkk/Apps/jetc/buildx/build/10-onnxruntime exited with code 1
+Build failed for stage: 10-onnxruntime. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3

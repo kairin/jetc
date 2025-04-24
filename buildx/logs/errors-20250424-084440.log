@@ -1,0 +1,2 @@
+Build process for /media/kkk/Apps/jetc/buildx/build/01-00-build-essential exited with code 1
+Build failed for stage: 01-00-build-essential. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3

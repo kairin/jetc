@@ -1,0 +1,11 @@
+Build process for /media/kkk/Apps/jetc/buildx/build/01-04-cuda exited with code 1
+Build failed for stage: 01-04-cuda. Last successful image remains: kairin/jetc:01-03-numpy
+Build process for /media/kkk/Apps/jetc/buildx/build/02-bazel exited with code 1
+Build failed for stage: 02-bazel. Last successful image remains: kairin/jetc:01-05-h5py
+Build process for /media/kkk/Apps/jetc/buildx/build/09-opencv exited with code 1
+Build failed for stage: 09-opencv. Last successful image remains: kairin/jetc:06-rust
+Build process for /media/kkk/Apps/jetc/buildx/build/10-onnxruntime exited with code 1
+Build failed for stage: 10-onnxruntime. Last successful image remains: kairin/jetc:10-onnx
+Build process for /media/kkk/Apps/jetc/buildx/build/15-flash-attention exited with code 1
+Build failed for stage: 15-flash-attention. Last successful image remains: kairin/jetc:14-xformers
+One or more build stages failed. Final image is the last successful one: kairin/jetc:18-comfyui

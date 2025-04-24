@@ -1,0 +1,10 @@
+Setting build stage to: 01-00-build-essential
+Continuing with next build...
+Build failed for stage: 01-00-build-essential. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Setting build stage to: 01-02-numba
+Continuing with next build...
+Build failed for stage: 01-02-numba. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Setting build stage to: 01-03-numpy
+Continuing with next build...
+Build failed for stage: 01-03-numpy. Last successful image remains: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+Setting build stage to: 01-04-cuda
