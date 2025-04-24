@@ -203,7 +203,7 @@ main() {
             # Allow post-build menu? Maybe not useful if nothing built. Exit early?
             # For now, continue to menu if requested, but return failure code later.
         fi
-    }
+
 
     # Run the post-build menu regardless of BUILD_FAILED status?
     # Only run if at least one image was successfully built.
