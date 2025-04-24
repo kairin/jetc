@@ -75,6 +75,7 @@ source_script() {
     "${log_func_prefix}log_debug" "Attempting to source $script_name: $script_path"
 
     if [[ -f "$script_path" ]]; then
+        "${log_func_prefix}log_debug" "File check PASSED for path: '$script_path'" # DEBUG ADD
         # shellcheck disable=SC1090
         source "$script_path"
         local source_status=$?
@@ -89,9 +90,10 @@ source_script() {
              return 0
         fi
     else
+        "${log_func_prefix}log_debug" "File check FAILED for path: '$script_path'" # DEBUG ADD
         # Ensure this line uses log_error, not log_log_error
-        "${log_func_prefix}log_error" "$script_name not found at: $script_path" # VERIFY THIS LINE
-        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_error" "$script_name not found at: $script_path"; fi
+        "${log_func_prefix}log_error" "$script_name not found at path: '$script_path'" # Added quotes for clarity
+        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_error" "$script_name not found at path: '$script_path'"; fi # Corrected typo here too
         return 1
     fi
 }
@@ -170,4 +172,4 @@ _utils_log_debug "utils.sh finished execution."
 #
 # Description: General utility functions for the build system. Added get_system_datetime.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-104500-TYPOFIX3 # New UUID for re-applying typo fix
+# COMMIT-TRACKING: UUID-20250425-105000-PATHDEBUG # New UUID for path debugging
