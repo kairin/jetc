@@ -16,22 +16,21 @@ ENV_FILE="$SCRIPT_DIR/../.env" # Path to the .env file relative to this script
 
 # --- Source Core Utilities FIRST ---
 # Source utils.sh for core functions like validate_variable and logging helpers
-if [ -f "$SCRIPT_DIR/utils.sh" ]; then
+UTILS_PATH="$SCRIPT_DIR/utils.sh"
+if [ -f "$UTILS_PATH" ]; then
     # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/utils.sh"
+    source "$UTILS_PATH"
+    # Explicitly check if the crucial function is now defined
+    if ! command -v validate_variable &> /dev/null; then
+        echo "CRITICAL ERROR: Sourced '$UTILS_PATH' but 'validate_variable' function is still not defined. Check '$UTILS_PATH' for errors." >&2
+        exit 1
+    fi
+    log_debug "'$UTILS_PATH' sourced successfully, 'validate_variable' is defined." # Use log_debug from utils.sh
 else
-    # Minimal fallbacks ONLY if utils.sh is missing
-    echo "CRITICAL ERROR: utils.sh not found. Essential functions missing." >&2
-    validate_variable() { echo "WARNING: validate_variable (fallback): Checking $1" >&2; [[ -n "$2" ]]; }
-    get_system_datetime() { date +"%Y%m%d-%H%M%S"; }
-    # Minimal logging fallbacks if utils.sh (and thus logging) is missing
-    log_info() { echo "INFO: $1"; }
-    log_warning() { echo "WARNING: $1" >&2; }
-    log_error() { echo "ERROR: $1" >&2; }
-    log_success() { echo "SUCCESS: $1"; }
-    log_debug() { if [[ "${JETC_DEBUG:-0}" == "1" ]]; then echo "[DEBUG] $1" >&2; fi; }
-    # Define capture_screenshot fallback if utils.sh is missing
-    capture_screenshot() { log_warning "capture_screenshot: utils.sh not loaded, cannot capture."; return 1; }
+    # If utils.sh is fundamentally missing, exit immediately. Fallbacks are unreliable.
+    echo "CRITICAL ERROR: '$UTILS_PATH' not found. Essential functions missing. Cannot continue." >&2
+    exit 1
+    # --- Fallback logic removed - exit immediately if utils.sh is missing ---
 fi
 
 # --- Logging Initialization ---
@@ -112,7 +111,7 @@ fi
 log_info "Detected platform: $PLATFORM"
 
 # --- Validate Essential Variables ---
-# Now call validate_variable AFTER utils.sh is sourced and .env is loaded
+# Now call validate_variable AFTER utils.sh is sourced and verified
 log_debug "Validating essential variables..."
 validate_variable "DOCKER_USERNAME" "$DOCKER_USERNAME" "Docker username is required." || exit 1
 validate_variable "DOCKER_REPO_PREFIX" "$DOCKER_REPO_PREFIX" "Docker repository prefix is required." || exit 1
@@ -122,8 +121,6 @@ validate_variable "PLATFORM" "$PLATFORM" "Target platform is required." || exit 
 # Ensure AVAILABLE_IMAGES is treated as a string, even if empty initially
 export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
 log_debug "Final AVAILABLE_IMAGES after load: '${AVAILABLE_IMAGES}'"
-
-# --- Source Core Utilities --- # REMOVED - Moved to top
 
 # --- Final Checks ---
 # Ensure log directory exists
@@ -145,4 +142,4 @@ log_info "--- Environment Setup Complete ---"
 #
 # Description: Loads .env, sets defaults, validates variables, initializes logging.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-083500-ENVFIX3 # Keeping previous fix UUID
+# COMMIT-TRACKING: UUID-20250425-093000-ENVFIX4 # New UUID for this more robust fix
