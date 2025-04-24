@@ -56,18 +56,18 @@ RUN cd ${BUILD_DIR}/arrow-src/cpp && \
       -DARROW_PYTHON=OFF \ # Assuming Python bindings handled later
       -DARROW_FLIGHT=OFF \
       -DARROW_ORC=OFF \ # Disabled ORC as per original comment
-      # --- Moved CMake flags inside cmake command ---
+      # --- Moved CMake flags outside RUN instruction (REVERTED) ---
+      ../ && \
+    make -j$(nproc) && \
+    make install && \
+    # Cleanup build directory
+    cd / && rm -rf ${BUILD_DIR}
       -DARROW_WITH_BZ2=ON \
       -DARROW_WITH_LZ4=ON \
       -DARROW_WITH_SNAPPY=ON \
       -DARROW_WITH_ZLIB=ON \
       -DARROW_WITH_ZSTD=ON \
       # --- End moved flags ---
-      ../ && \
-    make -j$(nproc) && \
-    make install && \
-    # Cleanup build directory
-    cd / && rm -rf ${BUILD_DIR}
 
 # Optional: Verify installation (e.g., check for a library file)
 RUN ldconfig && \

@@ -52,40 +52,26 @@ determine_build_order() {
         return 1
     fi
 
-    # Find all potential stage directories (numbered) up to depth 2
+    # REVERTED: Find only top-level numbered folders
     local potential_stage_dirs=()
-    mapfile -t potential_stage_dirs < <(find "$build_dir" -maxdepth 2 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
+    mapfile -t potential_stage_dirs < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
 
     if [ ${#potential_stage_dirs[@]} -eq 0 ]; then
-        log_warning "No numbered build stage folders found in $build_dir (checked depth 2)."
+        log_warning "No numbered build stage folders found in $build_dir (checked depth 1)."
         return 0
     fi
 
-    # Populate the global SELECTED_FOLDERS_MAP based on user input OR build all
+    # REVERTED: Populate map based only on selection list or all found folders (no Dockerfile check here)
     if [[ -z "$selected_folders_list" ]]; then
-        log_info "No specific stages selected by user. Preparing to build all found numbered stages/sub-stages with Dockerfiles."
-        # If building all, populate map with all found numbered folders *that contain a Dockerfile*
-        # OR parent folders containing numbered sub-stages with Dockerfiles
+        log_info "No specific stages selected by user. Preparing to build all found numbered stages."
         for folder_path in "${potential_stage_dirs[@]}"; do
-             local folder_name
-             folder_name=$(basename "$folder_path")
-             # Check if it's a direct stage or a parent of sub-stages
-             if [[ -f "$folder_path/Dockerfile" ]]; then
-                 SELECTED_FOLDERS_MAP["$folder_name"]=1
-                 log_debug "Adding direct stage '$folder_name' to selection map (building all)."
-             elif compgen -G "$folder_path/[0-9]*-*/Dockerfile" > /dev/null; then
-                 # It's a parent dir with numbered sub-stages having Dockerfiles
-                 SELECTED_FOLDERS_MAP["$folder_name"]=1 # Select the parent
-                 log_debug "Adding parent stage '$folder_name' to selection map (building all - has sub-stages)."
-                 # Also add sub-stages to map for consistency? Or handle during ORDERED_FOLDERS population.
-                 # Let's handle during ORDERED_FOLDERS population.
-             else
-                 log_debug "Skipping '$folder_path' (no Dockerfile or valid sub-stages) from 'build all' selection."
-             fi
+            local folder_name
+            folder_name=$(basename "$folder_path")
+            SELECTED_FOLDERS_MAP["$folder_name"]=1
+            log_debug "Adding '$folder_name' to selection map (building all)."
         done
     else
         log_info "User selected specific stages: $selected_folders_list"
-        # Populate the map only with selected folder names
         log_debug "Populating selection map..."
         for sel_folder in $selected_folders_list; do
             if [[ -n "$sel_folder" ]]; then
@@ -96,46 +82,15 @@ determine_build_order() {
         log_debug "Selection map populated."
     fi
 
-    # Now, iterate through the *sorted* list of all potential numbered folders
-    # and populate ORDERED_FOLDERS based on the map AND Dockerfile existence (direct or in sub-stages)
+    # REVERTED: Iterate through sorted potential folders and add to ORDERED_FOLDERS if selected (no Dockerfile check)
     for folder_path in "${potential_stage_dirs[@]}"; do
         local folder_name
         folder_name=$(basename "$folder_path")
-        local parent_folder_name=""
-        local parent_path=""
-
-        # Check if the direct parent is a numbered folder (i.e., this is a sub-stage)
-        parent_path=$(dirname "$folder_path")
-        if [[ "$parent_path" != "$build_dir" ]]; then
-             parent_folder_name=$(basename "$parent_path")
-             # If the parent is numbered AND selected, skip adding the sub-stage directly here
-             # It will be added when the parent is processed.
-             if [[ "$parent_folder_name" =~ ^[0-9]+-.* && ${SELECTED_FOLDERS_MAP[$parent_folder_name]+_} ]]; then
-                 log_debug "Skipping sub-stage '$folder_name' directly, will be handled by selected parent '$parent_folder_name'."
-                 continue
-             fi
-        fi
 
         # Check if this folder name exists in the global SELECTED_FOLDERS_MAP
         if [[ ${SELECTED_FOLDERS_MAP[$folder_name]+_} ]]; then
-            # Check if a Dockerfile exists directly within this folder
-            if [[ -f "$folder_path/Dockerfile" ]]; then
-                log_debug "Stage '$folder_name' ($folder_path) is selected and contains a Dockerfile. Adding to build order."
-                ORDERED_FOLDERS+=("$folder_path") # Add the path containing the Dockerfile
-            else
-                # Check if it contains numbered subdirectories with Dockerfiles
-                local sub_stages=()
-                mapfile -t sub_stages < <(find "$folder_path" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' -exec test -f '{}/Dockerfile' \; -print | sort -V)
-                if [[ ${#sub_stages[@]} -gt 0 ]]; then
-                    log_debug "Parent stage '$folder_name' ($folder_path) is selected and contains ${#sub_stages[@]} sub-stages with Dockerfiles. Adding sub-stages to build order."
-                    for sub_stage_path in "${sub_stages[@]}"; do
-                        ORDERED_FOLDERS+=("$sub_stage_path")
-                        log_debug "  - Added sub-stage: $(basename "$sub_stage_path")"
-                    done
-                else
-                    log_debug "Stage '$folder_name' ($folder_path) is selected BUT lacks a Dockerfile and valid sub-stages. Skipping."
-                fi
-            fi
+            log_debug "Stage '$folder_name' ($folder_path) is selected. Adding to build order."
+            ORDERED_FOLDERS+=("$folder_path") # Add the path
         else
             log_debug "Stage '$folder_name' ($folder_path) is NOT selected. Skipping."
         fi
@@ -143,7 +98,7 @@ determine_build_order() {
 
     # Final Check and Logging
     if [ ${#ORDERED_FOLDERS[@]} -eq 0 ]; then
-         log_warning "No build stages selected or matched that contain a Dockerfile (or valid sub-stages). Nothing to build."
+         log_warning "No build stages selected or matched. Nothing to build."
          return 0
     fi
 

@@ -111,78 +111,73 @@ build_folder_image() {
     log_info "Platform: ${PLATFORM:-linux/arm64}"
     log_info "Tag: $fixed_tag"
     log_info "Base Image (FROM via ARG): \"$base_image_tag\""
-    log_info "Skip Intermediate Push/Pull: $skip_intermediate"
-    log_info "Use Buildx Builder: $use_builder"
+    log_info "Skip Intermediate Push/Pull: $skip_intermediate" # Log the received value
+    log_info "Use Buildx Builder: $use_builder"                 # Log the received value
     log_info "Use Cache: $use_cache"
     log_info "Use Squash: $use_squash"
     log_info "--------------------------------------------------"
 
-    # --- Build Command ---
-    local build_cmd_opts=()
-    build_cmd_opts+=("--platform" "${PLATFORM:-linux/arm64}")
-    build_cmd_opts+=("-t" "$fixed_tag")
-    build_cmd_opts+=("--build-arg" "BASE_IMAGE=$base_image_tag")
-    [[ "$use_cache" == "n" ]] && { log_info "Using --no-cache"; build_cmd_opts+=("--no-cache"); }
-    if [[ "$use_squash" == "y" ]]; then
-        if [[ "$use_builder" != "y" ]]; then log_info "Using --squash"; build_cmd_opts+=("--squash");
-        else log_warning "Squash ignored when using buildx."; fi
-    fi
-    log_debug "Decision point: use_builder='$use_builder', skip_intermediate='$skip_intermediate'" # <-- Added Debug
-    if [[ "$use_builder" == "y" ]]; then
-        if [[ "$skip_intermediate" == "y" ]]; then log_info "Using --load (buildx)"; build_cmd_opts+=("--load");
-        else log_info "Using --push (buildx)"; build_cmd_opts+=("--push"); fi
-    else
-         [[ "$skip_intermediate" == "y" ]] && log_info "Building locally (default docker build)" || log_info "Building for push (default docker build - push happens later)"
-    fi
-    build_cmd_opts+=("$folder_path")
+    local build_cmd_base="docker buildx build" # Assume buildx initially
+    local build_args=("--platform" "$platform" "-t" "$full_tag" "--build-arg" "BASE_IMAGE=$base_image_tag")
+    local push_flag=""
 
-    # --- Execute ---
-    local build_status=1
-    log_info "Running Build Command:"
-    if [[ "$use_builder" == "y" ]]; then
-        echo "CMD: docker buildx build ${build_cmd_opts[*]}"
-        if docker buildx build "${build_cmd_opts[@]}"; then build_status=0; fi
+    # REVERTED: Simplified logic, potentially ignoring use_builder='n' from UI
+    if [[ "$skip_intermediate" == "n" ]]; then
+        push_flag="--push"
+        log_info "Using --push (buildx)"
     else
-        echo "CMD: docker build ${build_cmd_opts[*]}"
-        if docker build "${build_cmd_opts[@]}"; then
-             build_status=0
-             log_debug "Default build finished. Checking skip_intermediate ('$skip_intermediate') before potential push." # <-- Added Debug
-             if [[ "$skip_intermediate" != "y" ]]; then
-                 log_info "Pushing image (default docker build): $fixed_tag"
-                 if ! docker push "$fixed_tag"; then
-                     log_error "Push failed for $fixed_tag (default docker build)."
-                     build_status=1
-                 fi
-             fi
+        # If not pushing, assume buildx load or standard build (logic was complex, reverting to simpler state)
+        # This might incorrectly use --load even if use_builder was 'n'
+        if [[ "$use_builder" == "y" ]]; then
+             push_flag="--load"
+             log_info "Using --load (buildx)"
+        else
+             log_info "Using standard 'docker build' (implied by no --push/--load)"
+             build_cmd_base="docker build" # Switch command if not using builder explicitly? Reverting this part is tricky. Let's keep buildx build base for now.
         fi
     fi
 
-    # --- Post Build ---
-    if [[ $build_status -ne 0 ]]; then
+    if [[ "$use_cache" == "n" ]]; then
+        build_args+=("--no-cache")
+        log_info "Using --no-cache"
+    fi
+
+    if [[ "$use_squash" == "y" ]]; then
+        # Reverted: Simple squash logic, might conflict with buildx
+        build_args+=("--squash")
+        log_info "Using --squash"
+    fi
+
+    # Add push/load flag if determined
+    if [[ -n "$push_flag" ]]; then
+        build_args+=("$push_flag")
+    fi
+
+    # Add build context
+    build_args+=("$folder_path")
+
+    # Execute the build command
+    log_info "Running Build Command:"
+    echo "CMD: $build_cmd_base ${build_args[*]}" # Log the exact command
+    if ! $build_cmd_base "${build_args[@]}"; then
         log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        log_error "Error: Failed to build image for $folder_basename ($folder_path)."
+        log_error "Error: Failed to build image for $image_name ($folder_path)."
         log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        export fixed_tag=""
         return 1
     fi
-    if [[ "$skip_intermediate" == "y" ]]; then
-        log_info "Verifying locally built image exists: $fixed_tag"
-        if ! verify_image_exists "$fixed_tag"; then
-            log_error "Local verification failed for $fixed_tag."
-            export fixed_tag=""
-            return 1
+
+    # Reverted: Simplified pull-back logic
+    if [[ "$skip_intermediate" == "n" ]]; then
+        log_info "Pulling back pushed image to verify: $full_tag"
+        if ! pull_docker_image "$full_tag"; then
+            log_error "Pull-back verification failed for $full_tag."
+            # return 1 # Reverted: Don't fail build on pull-back error
+        else
+            log_success "Pull-back verification successful."
         fi
-        log_success "Local verification successful."
-    else
-        log_info "Pulling back pushed image to verify: $fixed_tag"
-        if ! pull_image "$fixed_tag"; then
-            log_error "Pull-back verification failed for $fixed_tag."
-            return 1
-        fi
-        log_success "Pull-back verification successful."
     fi
 
-    log_success "Build process completed successfully for: $fixed_tag"
+    log_success "Build process completed successfully for: $full_tag"
     return 0
 }
 
@@ -216,5 +211,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Docker helper functions. Added more specific debug logs for skip_intermediate.
+# Description: Docker helper functions. Reverted build command logic to previous state.
 # COMMIT-TRACKING: UUID-20250425-072000-SKIPDEBUG

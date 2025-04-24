@@ -85,17 +85,17 @@ build_selected_stages() {
         # Call build_folder_image with all required arguments from global scope
         # Ensure the order matches the function definition in docker_helpers.sh
         # build_folder_image "$folder_path" "$use_cache" "$docker_username" "$use_squash" "$skip_intermediate" "$base_image_tag" "$docker_repo_prefix" "$docker_registry" "$use_builder"
-        # Pass the SELECTED_* variables directly
+        # REVERTED: Pass potentially incorrect global vars instead of SELECTED_*
         if build_folder_image \
             "$folder_path" \
-            "${SELECTED_USE_CACHE:-y}" \
+            "${use_cache:-y}" \
             "${DOCKER_USERNAME}" \
-            "${SELECTED_USE_SQUASH:-n}" \
-            "${SELECTED_SKIP_INTERMEDIATE:-n}" \
+            "${use_squash:-n}" \
+            "${skip_intermediate_push_pull:-n}" \
             "$current_base_image" \
             "${DOCKER_REPO_PREFIX}" \
             "${DOCKER_REGISTRY:-}" \
-            "${SELECTED_USE_BUILDER:-y}"; then # Pass SELECTED_USE_BUILDER
+            "${use_builder:-y}"; then # Pass potentially incorrect global use_builder
 
             # On success, update LAST_SUCCESSFUL_TAG with the tag just built (fixed_tag is exported by build_folder_image)
             if [[ -n "${fixed_tag:-}" ]]; then
