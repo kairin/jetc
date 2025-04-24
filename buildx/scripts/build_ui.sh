@@ -33,6 +33,9 @@ ENV_CANONICAL="$(cd "$SCRIPT_DIR_BUI/.." && pwd)/.env"
 # Description: UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
 # Author: Mr K / GitHub Copilot
 
+# Set PREFS_FILE before calling get_user_preferences
+PREFS_FILE="/tmp/build_prefs.sh"
+
 # Always load .env before calling get_user_preferences
 load_env_variables
 
