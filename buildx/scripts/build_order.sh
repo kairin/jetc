@@ -52,26 +52,30 @@ determine_build_order() {
         return 1
     fi
 
-    # Find all numbered directories (e.g., 01-*, 10-*)
-    # Use mapfile for safer handling of paths with spaces/special chars
-    local all_numbered_folders=() # Local array to hold all found folders initially
-    mapfile -t all_numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
+    # Find all potential stage directories (numbered) up to depth 2
+    # This finds both build/01-stage and build/01-group/001-substage
+    local potential_stage_dirs=()
+    mapfile -t potential_stage_dirs < <(find "$build_dir" -maxdepth 2 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
 
-    if [ ${#all_numbered_folders[@]} -eq 0 ]; then
-        log_warning "No numbered build stage folders found in $build_dir."
+    if [ ${#potential_stage_dirs[@]} -eq 0 ]; then
+        log_warning "No numbered build stage folders found in $build_dir (checked depth 2)."
         # ORDERED_FOLDERS and SELECTED_FOLDERS_MAP remain empty, return success
         return 0
     fi
 
     # Populate the global SELECTED_FOLDERS_MAP based on user input OR build all
     if [[ -z "$selected_folders_list" ]]; then
-        log_info "No specific stages selected by user. Preparing to build all found numbered stages."
-        # If building all, populate map with all found numbered folders
-        for folder_path in "${all_numbered_folders[@]}"; do
-            local folder_name
-            folder_name=$(basename "$folder_path")
-            SELECTED_FOLDERS_MAP["$folder_name"]=1
-            log_debug "Adding '$folder_name' to selection map (building all)."
+        log_info "No specific stages selected by user. Preparing to build all found numbered stages with Dockerfiles."
+        # If building all, populate map with all found numbered folders *that contain a Dockerfile*
+        for folder_path in "${potential_stage_dirs[@]}"; do
+            if [[ -f "$folder_path/Dockerfile" ]]; then
+                local folder_name
+                folder_name=$(basename "$folder_path")
+                SELECTED_FOLDERS_MAP["$folder_name"]=1
+                log_debug "Adding '$folder_name' to selection map (building all)."
+            else
+                log_debug "Skipping '$folder_path' (no Dockerfile) from 'build all' selection."
+            fi
         done
     else
         log_info "User selected specific stages: $selected_folders_list"
@@ -86,25 +90,29 @@ determine_build_order() {
         log_debug "Selection map populated."
     fi
 
-    # Now, iterate through the *sorted* list of all found numbered folders
-    # and populate ORDERED_FOLDERS based on the map
-    for folder_path in "${all_numbered_folders[@]}"; do
+    # Now, iterate through the *sorted* list of all potential numbered folders
+    # and populate ORDERED_FOLDERS based on the map AND Dockerfile existence
+    for folder_path in "${potential_stage_dirs[@]}"; do
         local folder_name
         folder_name=$(basename "$folder_path")
 
         # Check if this folder name exists in the global SELECTED_FOLDERS_MAP
-        # Use [[ ${SELECTED_FOLDERS_MAP[$folder_name]+_} ]] for compatibility
         if [[ ${SELECTED_FOLDERS_MAP[$folder_name]+_} ]]; then
-            log_debug "Stage '$folder_name' is selected. Adding to build order."
-            ORDERED_FOLDERS+=("$folder_path") # Add to global array
+            # Check if a Dockerfile exists directly within this folder
+            if [[ -f "$folder_path/Dockerfile" ]]; then
+                log_debug "Stage '$folder_name' ($folder_path) is selected and contains a Dockerfile. Adding to build order."
+                ORDERED_FOLDERS+=("$folder_path") # Add the path containing the Dockerfile
+            else
+                log_debug "Stage '$folder_name' ($folder_path) is selected BUT lacks a Dockerfile. Skipping."
+            fi
         else
-            log_debug "Stage '$folder_name' is NOT selected. Skipping."
+            log_debug "Stage '$folder_name' ($folder_path) is NOT selected. Skipping."
         fi
     done
 
     # Final Check and Logging
     if [ ${#ORDERED_FOLDERS[@]} -eq 0 ]; then
-         log_warning "No build stages selected or matched. Nothing to build."
+         log_warning "No build stages selected or matched that contain a Dockerfile. Nothing to build."
          # ORDERED_FOLDERS remains empty, return success
          return 0
     fi
@@ -192,7 +200,6 @@ fi
 # │       └── build_order.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Determines build order. Accepts build_dir ($1), selection_list ($2).
-#              Exports global ORDERED_FOLDERS array and SELECTED_FOLDERS_MAP assoc. array.
+# Description: Determines build order. Modified to check for Dockerfile existence before adding to ORDERED_FOLDERS. Searches depth 2.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-195959-ORDERFIX3
+# COMMIT-TRACKING: UUID-20250425-065844-ORDERFIX4
