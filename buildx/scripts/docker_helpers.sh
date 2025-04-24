@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set strict mode for this critical script
+set -euo pipefail
+
 # Source utilities (needed for logging)
 SCRIPT_DIR_DOCKER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
@@ -382,12 +385,19 @@ build_folder_image() {
     local docker_username=$7
     local repo_prefix=$8
     local registry=${9:-}
+    
+    # Unset the exported variable to ensure we detect failures
+    unset fixed_tag 2>/dev/null || true
 
     local image_name
     image_name=$(basename "$folder_path")
 
     # --- Construct the tag dynamically ---
-    generate_image_tag "$folder_path" "$docker_username" "$repo_prefix" "$registry"
+    if ! generate_image_tag "$folder_path" "$docker_username" "$repo_prefix" "$registry"; then
+        _log_debug "Error: Failed to generate image tag"
+        return 1
+    fi
+    
     # 'tag' variable is now exported by generate_image_tag
     export fixed_tag="$tag" # Keep fixed_tag export for compatibility if needed elsewhere
 
@@ -450,34 +460,34 @@ build_folder_image() {
         # If push was performed, pull it back to ensure local availability and consistency
         if [[ "$push_load_arg" == "--push" ]]; then
             echo "Pulling image $fixed_tag to ensure it's available locally..." >&2
-            if pull_image "$fixed_tag"; then
-                echo "Successfully pulled image $fixed_tag." >&2
-                # Verify image exists locally after pull
-                if verify_image_exists "$fixed_tag"; then
-                    echo "Image $fixed_tag verified locally after pull." >&2
-                    return 0 # Success
-                else
-                    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
-                    echo "Error: Image $fixed_tag NOT found locally after 'docker pull' succeeded." >&2
-                    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
-                    return 1 # Failure
-                fi
-            else
-                # pull_image already prints error
+            if ! pull_image "$fixed_tag"; then
+                echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+                echo "Error: Failed to pull image $fixed_tag after build." >&2
+                echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
                 return 1 # Failure
             fi
+            
+            # Verify image exists locally after pull
+            if ! verify_image_exists "$fixed_tag"; then
+                echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+                echo "Error: Image $fixed_tag NOT found locally after 'docker pull' succeeded." >&2
+                echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+                return 1 # Failure
+            fi
+            
+            echo "Image $fixed_tag verified locally after pull." >&2
+            return 0 # Success
         else # --load was used
             # Verify the image exists locally (due to --load)
             echo "Verifying image $fixed_tag exists locally (--load used)..." >&2
-             if verify_image_exists "$fixed_tag"; then
-                 echo "Image $fixed_tag verified locally." >&2
-                 return 0 # Success
-             else
+             if ! verify_image_exists "$fixed_tag"; then
                  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
                  echo "Error: Image $fixed_tag NOT found locally after build with --load." >&2
                  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
                  return 1 # Failure
              fi
+             echo "Image $fixed_tag verified locally." >&2
+             return 0 # Success
         fi
     else
         echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2

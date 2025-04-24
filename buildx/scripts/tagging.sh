@@ -6,6 +6,9 @@
 # Responsibility: Create, push, and verify the final timestamped tag.
 # =========================================================================
 
+# Set strict mode for this critical script
+set -euo pipefail
+
 # --- Dependencies ---
 SCRIPT_DIR_TAGGING="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -32,103 +35,129 @@ else
     pull_image() { log_warning "pull_image: verification.sh not loaded"; return 1; }
 fi
 
-# --- Main Function --- #
+# Docker image tagging functions for Jetson Container build system
 
-# Create the final timestamped tag based on the last successful build stage
-# Input: $1 = last_successful_fixed_tag (The tag of the final image built in the loop)
-# Input: $2 = build_target ("push" or "load")
-# Input: $3 = docker_username
-# Input: $4 = docker_repo_prefix
-# Input: $5 = docker_registry (optional)
-# Output: Echoes the final timestamped tag on success.
-# Return: 0 on success, non-zero on failure.
+SCRIPT_DIR_TAG="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_TAG/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_TAG/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_TAG/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
+
+# =========================================================================
+# Function: Perform pre-tagging verification to ensure the image can be pulled
+# Arguments: $1 = image tag to verify
+# Returns: 0 if successful, 1 if failed
+# =========================================================================
+perform_pre_tagging_pull() {
+    local image_tag="$1"
+    
+    if [[ -z "$image_tag" ]]; then
+        _log_debug "Error: perform_pre_tagging_pull called with empty tag"
+        return 1
+    }
+    
+    _log_debug "Performing pre-tagging verification for $image_tag"
+    
+    # First verify the image exists locally
+    if ! verify_image_exists "$image_tag"; then
+        _log_debug "Error: Image $image_tag not found locally"
+        return 1
+    }
+    
+    # Images built with --load are only available locally
+    # No need to try pulling in this case
+    if [[ "${skip_intermediate_push_pull:-y}" == "y" ]]; then
+        _log_debug "Image built with --load, skipping pull verification"
+        return 0
+    }
+    
+    # Try pulling the image as verification
+    if ! pull_image "$image_tag"; then
+        _log_debug "Warning: Failed to pull $image_tag during pre-tagging verification"
+        return 1
+    }
+    
+    _log_debug "Pre-tagging verification successful for $image_tag"
+    return 0
+}
+
+# =========================================================================
+# Function: Create a final timestamp tag for the image
+# Arguments: $1 = source image tag, $2 = username, $3 = repo_prefix, $4 = registry (optional)
+# Returns: Echo timestamp tag on success, empty on failure. Exit code 0 on success, 1 on failure
+# =========================================================================
 create_final_timestamp_tag() {
-    local last_successful_fixed_tag="$1"
-    local build_target="$2"
-    local docker_username="$3"
-    local docker_repo_prefix="$4"
-    local docker_registry="$5"
-
-    log_info "--- Starting Final Tagging Process ---"
-
-    # --- Input Validation ---
-    if [ -z "$last_successful_fixed_tag" ]; then
-        log_error "Final tagging requires the last successful fixed tag."
+    local source_tag="$1"
+    local username="$2"
+    local repo_prefix="$3"
+    local registry="${4:-}"
+    
+    if [[ -z "$source_tag" || -z "$username" || -z "$repo_prefix" ]]; then
+        _log_debug "Error: create_final_timestamp_tag missing required arguments"
         return 1
-    fi
-    if [[ "$build_target" != "push" && "$build_target" != "load" ]]; then
-        log_error "Invalid build target specified for tagging: '$build_target'. Must be 'push' or 'load'."
+    }
+    
+    # Generate a timestamp tag
+    local timestamp_tag
+    timestamp_tag=$(generate_timestamped_tag "$username" "$repo_prefix" "$registry")
+    if [[ -z "$timestamp_tag" ]]; then
+        _log_debug "Error: Failed to generate timestamp tag"
         return 1
-    fi
-    if [ -z "$docker_username" ]; then
-        log_error "Docker username not specified for tagging."
+    }
+    
+    _log_debug "Tagging $source_tag as $timestamp_tag"
+    
+    # Tag the image
+    if ! docker tag "$source_tag" "$timestamp_tag"; then
+        _log_debug "Error: Failed to tag $source_tag as $timestamp_tag"
         return 1
-    fi
-    if [ -z "$docker_repo_prefix" ]; then
-        log_error "Docker repository prefix not specified for tagging."
-        return 1
-    fi
-
-    # --- Verify Source Image --- #
-    log_info "Verifying source image exists locally: $last_successful_fixed_tag"
-    if ! verify_image_locally "$last_successful_fixed_tag"; then
-        log_error "Source image '$last_successful_fixed_tag' for final tagging not found locally. Cannot proceed."
-        return 1
-    fi
-    log_success "Source image verified."
-
-    # --- Generate Timestamped Tag --- #
-    local current_date_time
-    current_date_time=$(get_system_datetime)
-    local timestamped_latest_tag_base
-    if [ -n "$docker_registry" ]; then
-        timestamped_latest_tag_base="${docker_registry}/${docker_username}/${docker_repo_prefix}"
-    else
-        timestamped_latest_tag_base="${docker_username}/${docker_repo_prefix}"
-    fi
-    local timestamped_latest_tag="${timestamped_latest_tag_base}:latest-${current_date_time}-1"
-
-    log_info "Generated final timestamped tag: $timestamped_latest_tag"
-
-    # --- Tag Image --- #
-    log_info "Tagging $last_successful_fixed_tag -> $timestamped_latest_tag"
-    if ! docker tag "$last_successful_fixed_tag" "$timestamped_latest_tag"; then
-        log_error "Failed to tag image '$last_successful_fixed_tag' as '$timestamped_latest_tag'."
-        return 1
-    fi
-    log_success "Image tagged successfully."
-
-    # --- Push and Verify (if build target was push) --- #
-    if [[ "$build_target" == "push" ]]; then
-        log_info "Pushing final timestamped tag: $timestamped_latest_tag"
-        if ! docker push "$timestamped_latest_tag"; then
-            log_error "Failed to push final tag '$timestamped_latest_tag'."
-            # Consider attempting to remove the local tag if push fails?
-            # docker rmi "$timestamped_latest_tag" || log_warning "Failed to remove local tag $timestamped_latest_tag after push failure."
+    }
+    
+    # If using push mode, push the new tag to registry
+    if [[ "${skip_intermediate_push_pull:-y}" != "y" ]]; then
+        _log_debug "Pushing timestamp tag $timestamp_tag to registry"
+        if ! docker push "$timestamp_tag"; then
+            _log_debug "Error: Failed to push $timestamp_tag to registry"
             return 1
-        fi
-        log_success "Final tag pushed successfully."
+        }
+    }
+    
+    # Echo the tag name for capture by the caller
+    echo "$timestamp_tag"
+    return 0
+}
 
-        # Pull back to verify registry consistency
-        log_info "Pulling final tag for verification: $timestamped_latest_tag"
-        if ! pull_image "$timestamped_latest_tag"; then
-            log_error "Failed to pull back final tag '$timestamped_latest_tag' after push. Registry might be inconsistent."
-            return 1
+# =========================================================================
+# Function: Verify all images in a list exist locally
+# Arguments: $@ = List of image tags to verify
+# Returns: 0 if all exist, 1 if any missing
+# =========================================================================
+verify_all_images_exist_locally() {
+    local missing=0
+    
+    if [[ $# -eq 0 ]]; then
+        _log_debug "No images provided to verify_all_images_exist_locally"
+        return 0
+    }
+    
+    _log_debug "Verifying local existence of $# images"
+    
+    for img in "$@"; do
+        _log_debug "Checking if $img exists locally"
+        if ! verify_image_exists "$img"; then
+            _log_debug "Image $img not found locally"
+            missing=1
         fi
-        log_success "Final tag pulled successfully."
-    fi
-
-    # --- Final Local Verification --- #
-    log_info "Verifying final tag exists locally: $timestamped_latest_tag"
-    if ! verify_image_locally "$timestamped_latest_tag"; then
-        log_error "Final tag '$timestamped_latest_tag' not found locally after tagging/pulling."
+    done
+    
+    if [[ $missing -eq 1 ]]; then
+        _log_debug "Some images are missing locally"
         return 1
     fi
-    log_success "Final tag '$timestamped_latest_tag' verified locally."
-
-    # --- Success --- #
-    log_success "--- Final Tagging Process Completed Successfully ---"
-    echo "$timestamped_latest_tag" # Output the tag for the caller
+    
+    _log_debug "All images verified locally"
     return 0
 }
 
@@ -192,6 +221,6 @@ fi
 # │       └── tagging.sh         <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Handles the creation, pushing, and verification of the final timestamped image tag.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-092500-TAGGING
+# Description: Docker image tagging and verification functions.
+# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR

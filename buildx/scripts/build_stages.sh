@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set strict mode for this critical script
+set -euo pipefail
+
 # Source necessary utilities and helpers
 SCRIPT_DIR_BSTAGES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
@@ -73,7 +76,7 @@ build_selected_stages() {
 
         # Check if this folder was selected for building using the map from build_order.sh
         if [[ -z "${SELECTED_FOLDERS_MAP[$folder_name]}" ]]; then
-            echo "Skipping folder (not selected): $folder_name"
+            _log_debug "Skipping folder (not selected): $folder_name"
             continue
         fi
 
@@ -110,6 +113,12 @@ build_selected_stages() {
         if [ $build_status -eq 0 ]; then
             # Build succeeded, update the base image for the next stage
             # 'fixed_tag' is exported by build_folder_image
+            if [[ -z "${fixed_tag:-}" ]]; then
+                echo "Error: fixed_tag not set after successful build of folder $folder_name" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+                build_failed=1
+                continue
+            fi
+            
             current_base_image="$fixed_tag"
             export LAST_SUCCESSFUL_TAG="$fixed_tag" # Update the last known good tag
             echo "Successfully built stage: $folder_name. Output image: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}"
@@ -118,7 +127,9 @@ build_selected_stages() {
             # Use the dedicated function from env_update.sh
             if [[ -n "$build_dir_path" ]]; then # Ensure path is valid
                  local env_file_path="$(dirname "$build_dir_path")/.env" # Assumes .env is one level above build/
-                 update_available_images_in_env "$env_file_path" "$LAST_SUCCESSFUL_TAG"
+                 if ! update_available_images_in_env "$env_file_path" "$LAST_SUCCESSFUL_TAG"; then
+                     echo "Warning: Failed to update AVAILABLE_IMAGES in .env with new tag." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+                 fi
             else
                  echo "Warning: Could not determine .env file path to update AVAILABLE_IMAGES." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
             fi
@@ -129,13 +140,12 @@ build_selected_stages() {
             build_failed=1
             # Do NOT update LAST_SUCCESSFUL_TAG or current_base_image
             echo "Build failed for stage: $folder_name. Last successful image remains: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
-            # Optionally, ask user if they want to continue? For now, continue automatically.
-            # Consider adding a prompt here or an overall build strategy flag (fail fast vs continue)
-            # read -p "Stage $folder_name failed. Continue with next stage? (y/n) [y]: " continue_on_fail
-            # if [[ "${continue_on_fail:-y}" != "y" ]]; then
-            #     echo "Exiting build due to stage failure." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
-            #     return 1 # Exit immediately
-            # fi
+        fi
+        
+        # Check if we should stop the build after a failure
+        if [[ $build_failed -eq 1 && "${FAIL_FAST:-false}" == "true" ]]; then
+            echo "Exiting build early due to failure (FAIL_FAST=true)" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+            break
         fi
     done
 

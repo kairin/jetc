@@ -1,5 +1,17 @@
 #!/bin/bash
-# filepath: /workspaces/jetc/buildx/scripts/build_stage.sh
+
+# Set strict mode for this critical script
+set -euo pipefail
+
+# Build stage functions for Jetson Container build system
+
+SCRIPT_DIR_BSTAGE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_BSTAGE/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_BSTAGE/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_BSTAGE/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
 
 # =========================================================================
 # Build Single Stage Script

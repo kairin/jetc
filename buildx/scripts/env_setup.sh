@@ -1,102 +1,194 @@
-# filepath: /workspaces/jetc/buildx/scripts/env_setup.sh
 #!/bin/bash
 
+# Environment setup functions for Jetson Container build system
+
+SCRIPT_DIR_ENVSETUP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_ENVSETUP/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_ENVSETUP/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
+
 # =========================================================================
-# Environment Setup Script
-# Responsibility: Load .env, set initial script variables, define logging.
+# Function: Setup .env file with defaults if missing
+# Arguments: None
+# Returns: 0 on success, 1 on failure
 # =========================================================================
+setup_env_file() {
+    local env_file="$ENV_CANONICAL"
+    
+    _log_debug "Setting up .env file at $env_file"
+    
+    # If .env file doesn't exist, create it with defaults
+    if [[ ! -f "$env_file" ]]; then
+        _log_debug ".env file not found, creating with defaults"
+        
+        # Create directory if it doesn't exist
+        mkdir -p "$(dirname "$env_file")"
+        
+        # Create the file with default content
+        cat > "$env_file" << EOF
+# Docker registry URL (optional, leave empty for Docker Hub)
+DOCKER_REGISTRY=
 
-# --- Strict Mode & Globals ---
-# set -eo pipefail # Consider enabling this in the main build.sh
-SCRIPT_DIR_ENV_SETUP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR_ENV_SETUP/../.." && pwd)" # Assumes scripts/ is under buildx/
-ENV_FILE="$PROJECT_ROOT/buildx/.env"
+# Docker registry username (required)
+DOCKER_USERNAME=jetc
 
-# --- Logging Setup ---
-# Define colors (or check for tput)
-if command -v tput >/dev/null && tput setaf 1 >/dev/null 2>&1; then
-    COLOR_RESET=$(tput sgr0)
-    COLOR_RED=$(tput setaf 1)
-    COLOR_GREEN=$(tput setaf 2)
-    COLOR_YELLOW=$(tput setaf 3)
-    COLOR_BLUE=$(tput setaf 4)
-    COLOR_MAGENTA=$(tput setaf 5)
-    COLOR_CYAN=$(tput setaf 6)
-    COLOR_WHITE=$(tput setaf 7)
-    COLOR_BOLD=$(tput bold)
-else
-    COLOR_RESET="\033[0m"
-    COLOR_RED="\033[0;31m"
-    COLOR_GREEN="\033[0;32m"
-    COLOR_YELLOW="\033[0;33m"
-    COLOR_BLUE="\033[0;34m"
-    COLOR_MAGENTA="\033[0;35m"
-    COLOR_CYAN="\033[0;36m"
-    COLOR_WHITE="\033[0;37m"
-    COLOR_BOLD="\033[1m"
-fi
+# Docker repository prefix (required)
+DOCKER_REPO_PREFIX=jetc
 
-# Logging functions
-_log() {
-    local color="$1"
-    local level="$2"
-    local message="$3"
-    echo -e "${color}${level}:${COLOR_RESET} ${message}" >&2
-}
+# Default base image for builds (last selected)
+DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3
 
-log_info() { _log "$COLOR_BLUE" "INFO" "$1"; }
-log_success() { _log "$COLOR_GREEN" "SUCCESS" "$1"; }
-log_warning() { _log "$COLOR_YELLOW" "WARNING" "$1"; }
-log_error() { _log "$COLOR_RED" "ERROR" "$1"; }
-log_debug() {
-    if [[ "${JETC_DEBUG:-0}" == "1" || "${JETC_DEBUG:-false}" == "true" ]]; then
-        _log "$COLOR_CYAN" "DEBUG" "$1"
-    fi
-}
+# Available container images (semicolon-separated, managed by build/run scripts)
+AVAILABLE_IMAGES=nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3
 
-# --- Load .env File ---
-# Loads variables from .env file in the buildx directory.
-# Exports loaded variables.
-load_env_variables() {
-    log_debug "Looking for .env file at: $ENV_FILE"
-    if [ -f "$ENV_FILE" ]; then
-        log_debug "Sourcing environment variables from $ENV_FILE"
-        # Read line by line to handle potential issues with `set -a`
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            # Skip comments and empty lines
-            if [[ "$line" =~ ^\s*# ]] || [[ -z "$line" ]]; then
-                continue
-            fi
-            # Export the variable
-            export "$line"
-            log_debug " -> Exported: $line"
-        done < "$ENV_FILE"
-        log_info "Loaded environment variables from $ENV_FILE"
-        return 0
+# Last used container settings for jetcrun.sh
+DEFAULT_IMAGE_NAME=nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3
+DEFAULT_ENABLE_X11=on
+DEFAULT_ENABLE_GPU=on
+DEFAULT_MOUNT_WORKSPACE=on
+DEFAULT_USER_ROOT=on
+EOF
+    
+        if [[ $? -ne 0 ]]; then
+            _log_debug "Error: Failed to create default .env file"
+            return 1
+        fi
+        
+        _log_debug "Created default .env file at $env_file"
     else
-        log_warning ".env file not found at $ENV_FILE. Using default values or environment variables."
+        _log_debug ".env file already exists at $env_file"
+    }
+    
+    # Validate the .env file has required variables
+    load_env_variables
+    
+    if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" ]]; then
+        _log_debug "Error: .env file missing required variables"
         return 1
-    fi
+    }
+    
+    return 0
 }
 
-# --- Initial Script Variables ---
-# Set default values if not loaded from .env or environment
-export PLATFORM="${PLATFORM:-linux/arm64}"
-export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}"
-export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3}" # Example default
-export JETC_DEBUG="${JETC_DEBUG:-0}" # Default debug to off
+# =========================================================================
+# Function: Initialize logging system
+# Arguments: $1 = log directory, $2 = main log file, $3 = error log file
+# Returns: 0 on success, 1 on failure
+# =========================================================================
+init_logging() {
+    local log_dir="${1:-logs}"
+    local main_log="${2:-build.log}"
+    local error_log="${3:-errors.log}"
+    
+    # Create log directory if it doesn't exist
+    if [[ ! -d "$log_dir" ]]; then
+        _log_debug "Creating log directory: $log_dir"
+        mkdir -p "$log_dir" || {
+            echo "Error: Failed to create log directory: $log_dir" >&2
+            return 1
+        }
+    }
+    
+    # Initialize log files
+    > "$main_log" || {
+        echo "Error: Failed to create/clear main log file: $main_log" >&2
+        return 1
+    }
+    
+    > "$error_log" || {
+        echo "Error: Failed to create/clear error log file: $error_log" >&2
+        return 1
+    }
+    
+    # Export log file paths for use in other scripts
+    export MAIN_LOG="$main_log"
+    export ERROR_LOG="$error_log"
+    
+    _log_debug "Logging initialized: MAIN_LOG=$main_log, ERROR_LOG=$error_log"
+    return 0
+}
 
-# Log initial important variables
-log_debug "Initial PLATFORM: $PLATFORM"
-log_debug "Initial BUILDER_NAME: $BUILDER_NAME"
-log_debug "Initial DEFAULT_BASE_IMAGE: $DEFAULT_BASE_IMAGE"
-log_debug "Initial JETC_DEBUG: $JETC_DEBUG"
+# =========================================================================
+# Function: Log message
+# Arguments: $1 = message, $2 = log file (optional, defaults to MAIN_LOG)
+# Returns: 0 (always successful)
+# =========================================================================
+log_message() {
+    local message="$1"
+    local log_file="${2:-$MAIN_LOG}"
+    
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - INFO: $message" | tee -a "$log_file"
+    return 0
+}
 
-# --- Main Execution (Load .env) ---
-# Always attempt to load .env when this script is sourced
-load_env_variables
+# =========================================================================
+# Function: Log error message
+# Arguments: $1 = message, $2 = log file (optional, defaults to ERROR_LOG)
+# Returns: 0 (always successful)
+# =========================================================================
+log_error() {
+    local message="$1"
+    local log_file="${2:-$ERROR_LOG}"
+    
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: $message" | tee -a "$log_file" >&2
+    return 0
+}
 
-# --- Footer --- (Add standard footer manually or via hook)
+# =========================================================================
+# Function: Log warning message
+# Arguments: $1 = message, $2 = log file (optional, defaults to both logs)
+# Returns: 0 (always successful)
+# =========================================================================
+log_warning() {
+    local message="$1"
+    local log_file="${2:-}"
+    
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - WARNING: $message" | tee -a "$MAIN_LOG" >&2
+    [[ -n "$log_file" ]] && echo "$(date '+%Y-%m-%d %H:%M:%S') - WARNING: $message" >> "$log_file"
+    return 0
+}
+
+# =========================================================================
+# Function: Log success message
+# Arguments: $1 = message, $2 = log file (optional, defaults to MAIN_LOG)
+# Returns: 0 (always successful)
+# =========================================================================
+log_success() {
+    local message="$1"
+    local log_file="${2:-$MAIN_LOG}"
+    
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - SUCCESS: $message" | tee -a "$log_file"
+    return 0
+}
+
+# =========================================================================
+# Function: Log start of script
+# Arguments: $1 = log file (optional, defaults to MAIN_LOG)
+# Returns: 0 (always successful)
+# =========================================================================
+log_start() {
+    local log_file="${1:-$MAIN_LOG}"
+    
+    echo "====================================================" | tee -a "$log_file"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Script started" | tee -a "$log_file"
+    echo "====================================================" | tee -a "$log_file"
+    return 0
+}
+
+# =========================================================================
+# Function: Log end of script
+# Arguments: $1 = log file (optional, defaults to MAIN_LOG)
+# Returns: 0 (always successful)
+# =========================================================================
+log_end() {
+    local log_file="${1:-$MAIN_LOG}"
+    
+    echo "====================================================" | tee -a "$log_file"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Script completed" | tee -a "$log_file"
+    echo "====================================================" | tee -a "$log_file"
+    return 0
+}
 
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -105,6 +197,6 @@ load_env_variables
 # │       └── env_setup.sh       <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Loads .env, sets initial script variables (PLATFORM, BUILDER_NAME, etc.), defines logging functions and colors.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-100500-ENVSETUP
+# Description: Environment setup and logging functions.
+# Author: GitHub Copilot
+# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
