@@ -11,11 +11,9 @@ export SCRIPT_DIR # Export for use in sourced scripts
 # Source utility scripts
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
-# Source logging functions FIRST
+# Source logging functions FIRST - This also initializes logging
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/env_setup.sh" || { echo "Error: env_setup.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-# source "$SCRIPT_DIR/scripts/logging.sh" || { echo "Error: logging.sh not found."; exit 1; } # DEPRECATED
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
 # shellcheck disable=SC1091
@@ -38,6 +36,7 @@ source "$SCRIPT_DIR/scripts/tagging.sh" || { echo "Error: tagging.sh not found."
 # Source the post-build menu
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/post_build_menu.sh" || { echo "Error: post_build_menu.sh not found."; exit 1; }
+# Source system checks (NOW SOURCES env_setup.sh itself)
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/system_checks.sh" || { echo "Error: system_checks.sh not found."; exit 1; }
 # Source env update helpers (needed for update_env_var)
@@ -45,31 +44,27 @@ source "$SCRIPT_DIR/scripts/system_checks.sh" || { echo "Error: system_checks.sh
 source "$SCRIPT_DIR/scripts/env_update.sh" || { echo "Error: env_update.sh not found."; exit 1; }
 
 
-# --- Configuration ---
+# --- Configuration ---\
 export BUILD_DIR="$SCRIPT_DIR/build"
-export LOG_DIR="$SCRIPT_DIR/logs"
-# Generate log filenames using the function
-log_timestamp=$(get_system_datetime)
-export MAIN_LOG="$LOG_DIR/build-${log_timestamp}.log"
-export ERROR_LOG="$LOG_DIR/errors-${log_timestamp}.log"
+# LOG_DIR, MAIN_LOG, ERROR_LOG are now set by env_setup.sh/init_logging
 export JETC_DEBUG="${JETC_DEBUG:-false}" # Enable debug logging if JETC_DEBUG=true
 
-# --- Initialization ---
-# Initialize logging using defined variables
-init_logging "$LOG_DIR" "$MAIN_LOG" "$ERROR_LOG"
+# --- Initialization ---\
+# Logging is already initialized by sourcing env_setup.sh
+# REMOVED: init_logging "$LOG_DIR" "$MAIN_LOG" "$ERROR_LOG"
 log_start # Log script start
 
-# Check essential dependencies
+# Check essential dependencies (uses function from system_checks.sh)
 check_dependencies "docker" "dialog"
 
-# --- Main Build Process ---
+# --- Main Build Process ---\
 main() {
-    log_message "Starting Jetson Container Build Process..."
+    log_message "INFO" "Starting Jetson Container Build Process..." # Use log_message directly or log_info
     log_debug "JETC_DEBUG is set to: ${JETC_DEBUG}"
-    
+
     # Track overall build status
     BUILD_FAILED=0
-    
+
     # 1. Handle User Interaction (Gets prefs, updates .env, exports vars for this run)
     log_debug "Step 1: Handling user interaction..."
     if ! handle_user_interaction; then
@@ -77,7 +72,7 @@ main() {
         BUILD_FAILED=1
         # No return here, allow cleanup and exit at the end
     fi
-    
+
     # Proceed only if user interaction succeeded
     if [[ $BUILD_FAILED -eq 0 ]]; then
         log_debug "User interaction successful. Exported variables:"
@@ -90,12 +85,13 @@ main() {
         log_debug "  use_squash=${use_squash:-<unset>}"
         log_debug "  skip_intermediate_push_pull=${skip_intermediate_push_pull:-<unset>}"
         log_debug "  use_builder=${use_builder:-<unset>}"
-        log_debug "  platform=${platform:-<unset>}"
+        log_debug "  platform=${PLATFORM:-<unset>}" # Use uppercase PLATFORM from env
 
         # 2. Setup Buildx Builder
         log_debug "Step 2: Setting up Docker buildx builder..."
+        # Use the corrected function name from buildx_setup.sh
         if ! setup_buildx; then
-        log_error "Failed to setup Docker buildx builder. Cannot proceed."
+            log_error "Failed to setup Docker buildx builder. Cannot proceed."
             BUILD_FAILED=1
         else
             log_success "Docker buildx builder setup complete."
@@ -161,7 +157,7 @@ main() {
         else
             log_success "Created timestamp tag: $timestamp_tag"
             export FINAL_TIMESTAMP_TAG="$timestamp_tag"
-            
+
             # Update environment variables with the new tag
             log_debug "Updating DEFAULT_IMAGE_NAME in .env to $timestamp_tag"
             if ! update_env_var "DEFAULT_IMAGE_NAME" "$timestamp_tag"; then
@@ -177,7 +173,7 @@ main() {
         local all_tags=()
         [[ -n "${LAST_SUCCESSFUL_TAG:-}" ]] && all_tags+=("$LAST_SUCCESSFUL_TAG")
         [[ -n "${FINAL_TIMESTAMP_TAG:-}" ]] && all_tags+=("$FINAL_TIMESTAMP_TAG")
-        
+
         if [[ ${#all_tags[@]} -eq 0 ]]; then
              log_warning "No tags found to verify locally."
         elif ! verify_all_images_exist_locally "${all_tags[@]}"; then
@@ -190,7 +186,7 @@ main() {
 
     # 8. Post-Build Actions (Menu)
     log_debug "Step 8: Post-Build Actions..."
-    log_message "Build process completed."
+    log_message "INFO" "Build process completed." # Use log_message directly or log_info
     if [[ $BUILD_FAILED -eq 0 ]]; then
         log_success "Final Image Tag: ${LAST_SUCCESSFUL_TAG}"
         [[ -n "${FINAL_TIMESTAMP_TAG:-}" ]] && log_success "Timestamp Tag: ${FINAL_TIMESTAMP_TAG}"
@@ -202,8 +198,8 @@ main() {
             log_error "No successful image was built."
             # Allow post-build menu? Maybe not useful if nothing built. Exit early?
             # For now, continue to menu if requested, but return failure code later.
-        fi # <--- This closes the inner if [[ -n "${LAST_SUCCESSFUL_TAG:-}" ]] in the else block
-    fi # <--- ADD THIS MISSING 'fi' HERE
+        fi
+    fi
 
     # Run the post-build menu regardless of BUILD_FAILED status?
     # Only run if at least one image was successfully built.
@@ -212,7 +208,7 @@ main() {
         run_post_build_menu "${LAST_SUCCESSFUL_TAG}" "${FINAL_TIMESTAMP_TAG:-}"
     else
         log_warning "Skipping post-build menu as no image was successfully built."
-    fi # <--- This closes the post-build menu if
+    fi
 
     log_end # Log script end
     # Return the overall build status
@@ -221,10 +217,16 @@ main() {
 }
 
 
-# --- Script Execution ---
-# Ensure cleanup runs on exit
+# --- Script Execution ---\
+# Ensure cleanup runs on exit (cleanup function is in system_checks.sh)
 trap cleanup EXIT INT TERM
 
 # Run the main function and exit with its status code
 main
 exit $?
+
+# --- Footer ---
+# File location diagram: ... (omitted for brevity)
+# Description: Main build script orchestrator. Fixed logging initialization and calls.
+# Author: Mr K / GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250424-202828-MAINFIX
