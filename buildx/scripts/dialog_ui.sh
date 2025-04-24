@@ -52,6 +52,10 @@ get_user_preferences() {
 
       local form_exit_status=$?
       if [ $form_exit_status -ne 0 ]; then
+        # Only exit if user pressed Cancel or Esc, not if defaults are present
+        if [[ -n "$temp_username" && -n "$temp_prefix" ]]; then
+          break
+        fi
         echo "Docker information entry canceled (exit code: $form_exit_status). Exiting." >&2
         exit 1
       fi
