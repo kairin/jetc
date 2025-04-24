@@ -1,256 +1,290 @@
 #!/bin/bash
-
-# Environment setup functions for Jetson Container build system
-
-SCRIPT_DIR_ENVSETUP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_ENVSETUP/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_ENVSETUP/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
-
-# Define color codes (optional, for terminal output)
-C_RESET='\033[0m'
-C_INFO='\033[0;32m'    # Green
-C_WARN='\033[0;33m'    # Yellow
-C_ERROR='\033[0;31m'   # Red
-C_DEBUG='\033[0;36m'   # Cyan
+# filepath: /workspaces/jetc/buildx/scripts/env_setup.sh
 
 # =========================================================================
-# Function: Log debug message (only if JETC_DEBUG=true or 1)
-# Arguments: $1 = message
-# Returns: 0
+# Environment Setup and Logging Initialization
+# Responsibility: Load .env variables, set up global environment vars,
+#                 initialize logging.
 # =========================================================================
-log_debug() {
-    if [[ "${JETC_DEBUG}" == "true" || "${JETC_DEBUG}" == "1" ]]; then
-        # Log to stderr, include caller function name if available
-        echo -e "${C_DEBUG}[DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $1${C_RESET}" >&2
-        # Optionally log to main log file as well, without color codes
-        [[ -n "${MAIN_LOG:-}" ]] && echo "[DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $1" >> "$MAIN_LOG"
-    fi
-    return 0
+
+# --- Basic Setup ---
+SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR_ENV/.." && pwd)" # Assumes scripts is one level down
+ENV_FILE="$PROJECT_ROOT/.env"
+
+# --- Global Variables (Defaults) ---
+export ARCH="${ARCH:-linux/arm64}"
+export PLATFORM="${PLATFORM:-$ARCH}" # Default PLATFORM to ARCH if not set
+export CURRENT_DATE_TIME="" # Will be set by get_system_datetime
+export BUILDER_NAME="jetson-builder" # Default builder name
+export DEFAULT_BASE_IMAGE="" # Will be loaded from .env
+export AVAILABLE_IMAGES="" # Will be loaded from .env
+export DOCKER_USERNAME="" # Will be loaded from .env
+export DOCKER_REPO_PREFIX="" # Will be loaded from .env
+export DOCKER_REGISTRY="" # Will be loaded from .env
+
+# Logging related (Defaults, might be overridden by load_env_variables if present in .env)
+export LOG_DIR="$PROJECT_ROOT/logs"
+export MAIN_LOG="" # Will be set by init_logging
+export ERROR_LOG="" # Will be set by init_logging
+export LOG_LEVEL="${LOG_LEVEL:-INFO}" # Default log level (INFO, DEBUG, WARN, ERROR, SUCCESS)
+export JETC_DEBUG="${JETC_DEBUG:-false}" # Explicit debug flag
+
+# --- Logging Functions ---
+# Define colors (use defaults if utils.sh wasn't sourced/available)
+RED="${RED:-\\033[0;31m}"
+GREEN="${GREEN:-\\033[0;32m}"
+YELLOW="${YELLOW:-\\033[1;33m}"
+BLUE="${BLUE:-\\033[0;34m}"
+NC="${NC:-\\033[0m}" # No Color
+
+# Function to get current timestamp
+get_system_datetime() {
+    date -u +'%Y-%m-%d_%H-%M-%S_UTC' # Consistent UTC timestamp
 }
 
-# =========================================================================
-# Function: Setup .env file with defaults if missing
-# Arguments: None
-# Returns: 0 on success, 1 on failure
-# =========================================================================
-setup_env_file() {
-    local env_file="$ENV_CANONICAL"
-
-    log_debug "Setting up .env file at $env_file"
-
-    # If .env file doesn't exist, create it with defaults
-    if [[ ! -f "$env_file" ]]; then
-        log_debug ".env file not found, creating with defaults"
-
-        # Create directory if it doesn't exist
-        mkdir -p "$(dirname "$env_file")" || {
-            log_error "Failed to create directory for .env file: $(dirname "$env_file")"
-            return 1
-        }
-
-        # Create the file with default content
-        cat > "$env_file" << EOF || { log_error "Failed to create default .env file at $env_file"; return 1; }
-# Docker registry URL (optional, leave empty for Docker Hub)
-DOCKER_REGISTRY=
-
-# Docker registry username (required)
-DOCKER_USERNAME=jetc
-
-# Docker repository prefix (required)
-DOCKER_REPO_PREFIX=jetc
-
-# Default base image for builds (last selected)
-DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3
-
-# Available container images (semicolon-separated, managed by build/run scripts)
-AVAILABLE_IMAGES=nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3
-
-# Last used container settings for jetcrun.sh
-DEFAULT_IMAGE_NAME=nvcr.io/nvidia/l4t-pytorch:r35.4.1-py3
-DEFAULT_ENABLE_X11=on
-DEFAULT_ENABLE_GPU=on
-DEFAULT_MOUNT_WORKSPACE=on
-DEFAULT_USER_ROOT=on
-EOF
-        # Note: Error handling for 'cat' moved inline above using || { ... }
-
-        log_debug "Created default .env file at $env_file"
-    else
-        log_debug ".env file already exists at $env_file"
-    fi
-
-    # Check/install screenshot tool early
-    check_install_screenshot_tool # <-- ADDED CALL HERE
-
-    # Validate the .env file has required variables
-    load_env_variables # Assumes this function is defined in env_helpers.sh
-
-    if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" ]]; then
-        log_error ".env file missing required variables (DOCKER_USERNAME, DOCKER_REPO_PREFIX)"
-        return 1
-    fi
-
-    log_debug "Finished setting up environment file."
-    return 0
-}
-
-# =========================================================================
-# Function: Initialize logging system
-# Arguments: $1 = log directory, $2 = main log file, $3 = error log file
-# Returns: 0 on success, 1 on failure
-# =========================================================================
+# Initialize Logging (creates directory and sets log file paths)
 init_logging() {
-    local log_dir="${1:-logs}"
-    local main_log="${2:-build.log}"
-    local error_log="${3:-errors.log}"
+    local log_dir="$1"
+    local main_log_path="$2"
+    local error_log_path="$3"
 
-    # In init_logging function...
-        # Create log directory if it doesn't exist
-        if [[ ! -d "$log_dir" ]]; then
-            log_debug "Creating log directory: $log_dir"
-            mkdir -p "$log_dir" || {
-                echo -e "${C_ERROR}Error: Failed to create log directory: $log_dir${C_RESET}" >&2 # Direct echo before logging is fully setup
-                return 1
-            }
-        fi # <--- ADDED MISSING fi HERE
+    # Use defaults if arguments are empty
+    if [[ -z "$log_dir" ]]; then
+        log_dir="$LOG_DIR" # Use global default/loaded value
+    fi
+     if [[ -z "$main_log_path" || -z "$error_log_path" ]]; then
+         local log_timestamp
+         log_timestamp=$(get_system_datetime)
+         main_log_path="${log_dir}/build-${log_timestamp}.log"
+         error_log_path="${log_dir}/errors-${log_timestamp}.log"
+     fi
 
-    # Initialize log files
-    > "$main_log" || {
-        echo -e "${C_ERROR}Error: Failed to create/clear main log file: $main_log${C_RESET}" >&2
-        return 1
-    }
 
-    > "$error_log" || {
-        echo -e "${C_ERROR}Error: Failed to create/clear error log file: $error_log${C_RESET}" >&2
-        return 1
-    }
+    export LOG_DIR="$log_dir"
+    export MAIN_LOG="$main_log_path"
+    export ERROR_LOG="$error_log_path"
 
-    # Export log file paths for use in other scripts
-    export MAIN_LOG="$main_log"
-    export ERROR_LOG="$error_log"
+    mkdir -p "$LOG_DIR" || { echo "Error: Failed to create log directory $LOG_DIR"; exit 1; }
+    # Touch files to ensure they exist
+    touch "$MAIN_LOG" "$ERROR_LOG" || { echo "Error: Failed to create log files in $LOG_DIR"; exit 1; }
+    # Set permissions? Maybe 644?
+    chmod 644 "$MAIN_LOG" "$ERROR_LOG"
 
-    log_debug "Logging initialized: MAIN_LOG=$main_log, ERROR_LOG=$error_log"
-    return 0
+    # Use log_message to log initialization (avoids duplicate logging function definition issues)
+    log_message "INFO" "Logging initialized. Main log: $MAIN_LOG, Error log: $ERROR_LOG"
 }
 
-# =========================================================================
-# Function: Log informational message
-# Arguments: $1 = message
-# Returns: 0 (always successful)
-# =========================================================================
+# Core logging function
 log_message() {
-    local message="$1"
-    # Log to stderr with color, include caller function name
-    echo -e "${C_INFO}[INFO] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message${C_RESET}" >&2
-    # Log to main log file without color
-    [[ -n "${MAIN_LOG:-}" ]] && echo "[INFO] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message" >> "$MAIN_LOG"
-    return 0
+    local type="$1"
+    local message="$2"
+    local timestamp
+    timestamp=$(date -u +'%Y-%m-%d %H:%M:%S') # Shorter timestamp for logs
+
+    local color=$NC
+    local log_prefix="[${type}]"
+    local log_to_error_log=false
+
+    case "$type" in
+        ERROR) color=$RED; log_to_error_log=true ;;
+        WARN) color=$YELLOW; log_to_error_log=true ;; # Also log warnings to error log
+        SUCCESS) color=$GREEN ;;
+        INFO) color=$BLUE ;;
+        DEBUG) color=$YELLOW ;; # Use yellow for debug to stand out
+        START) color=$GREEN; log_prefix="[START]" ;;
+        END) color=$GREEN; log_prefix="[END]" ;;
+        *) log_prefix="[${type}]" ;; # Handle custom types if needed
+    esac
+
+    # Determine if message should be logged based on LOG_LEVEL or JETC_DEBUG
+    local should_log=false
+    if [[ "$JETC_DEBUG" == "true" ]]; then
+         should_log=true # Log everything if debug is true
+    else
+        case "$LOG_LEVEL" in
+            DEBUG) should_log=true ;; # Log everything if level is DEBUG
+            INFO) [[ "$type" == "INFO" || "$type" == "SUCCESS" || "$type" == "WARN" || "$type" == "ERROR" || "$type" == "START" || "$type" == "END" ]] && should_log=true ;;
+            WARN) [[ "$type" == "WARN" || "$type" == "ERROR" || "$type" == "START" || "$type" == "END" ]] && should_log=true ;;
+            ERROR) [[ "$type" == "ERROR" || "$type" == "START" || "$type" == "END" ]] && should_log=true ;;
+            SUCCESS) [[ "$type" == "SUCCESS" || "$type" == "START" || "$type" == "END" ]] && should_log=true ;;
+            *) should_log=true ;; # Default to log if level is unrecognized
+        esac
+        # Always log START and END regardless of level (except maybe ERROR level?)
+         # Let's keep START/END logged unless level is strictly ERROR
+         if [[ "$LOG_LEVEL" == "ERROR" && "$type" != "ERROR" && "$type" != "START" && "$type" != "END" ]]; then
+             should_log=false
+         fi
+
+    fi
+
+
+    if [[ "$should_log" == "true" ]]; then
+         local caller_info=""
+         # Get caller info (optional, can be resource intensive)
+         # caller_info=" ($(basename "${BASH_SOURCE[1]}"):${BASH_LINENO[0]})" # Basic caller info
+
+         # Log to main log file
+         echo "${timestamp} - ${log_prefix}:${caller_info} ${message}" >> "$MAIN_LOG"
+
+         # Log to error log file if applicable
+         if [[ "$log_to_error_log" == "true" ]]; then
+             echo "${timestamp} - ${log_prefix}:${caller_info} ${message}" >> "$ERROR_LOG"
+         fi
+
+         # Log to stdout/stderr
+         # Send DEBUG, INFO, SUCCESS, START, END to stdout
+         # Send WARN, ERROR to stderr
+        local output_stream=1 # stdout
+        if [[ "$type" == "WARN" || "$type" == "ERROR" ]]; then
+            output_stream=2 # stderr
+        fi
+         echo -e "${color}${log_prefix}${NC} ${timestamp} - ${caller_info} ${message}" >&$output_stream
+    fi
 }
-# Alias for backward compatibility / preference
-log_info() { log_message "$@"; }
+
+# Convenience logging functions
+log_start() { log_message "START" "Script started"; }
+log_end() { log_message "END" "Script finished"; }
+log_info() { log_message "INFO" "$1"; }
+log_success() { log_message "SUCCESS" "$1"; }
+log_warning() { log_message "WARN" "$1"; }
+log_error() { log_message "ERROR" "$1"; }
+log_debug() { log_message "DEBUG" "$1"; } # Only logs if LOG_LEVEL=DEBUG or JETC_DEBUG=true
+
 
 # =========================================================================
-# Function: Log error message
-# Arguments: $1 = message
-# Returns: 0 (always successful)
-# =========================================================================
-log_error() {
-    local message="$1"
-    # Log to stderr with color, include caller function name
-    echo -e "${C_ERROR}[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message${C_RESET}" >&2
-    # Log to error log file without color
-    [[ -n "${ERROR_LOG:-}" ]] && echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message" >> "$ERROR_LOG"
-    # Also log to main log file
-    [[ -n "${MAIN_LOG:-}" ]] && echo "[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message" >> "$MAIN_LOG"
-    return 0
-}
-
-# =========================================================================
-# Function: Log warning message
-# Arguments: $1 = message
-# Returns: 0 (always successful)
-# =========================================================================
-log_warning() {
-    local message="$1"
-    # Log to stderr with color, include caller function name
-    echo -e "${C_WARN}[WARN] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message${C_RESET}" >&2
-    # Log to error log file without color
-    [[ -n "${ERROR_LOG:-}" ]] && echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message" >> "$ERROR_LOG"
-    # Also log to main log file
-    [[ -n "${MAIN_LOG:-}" ]] && echo "[WARN] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message" >> "$MAIN_LOG"
-    return 0
-}
-
-# =========================================================================
-# Function: Log success message
-# Arguments: $1 = message
-# Returns: 0 (always successful)
-# =========================================================================
-log_success() {
-    local message="$1"
-    # Log to stderr with color, include caller function name
-    echo -e "${C_INFO}[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message${C_RESET}" >&2
-    # Log to main log file without color
-    [[ -n "${MAIN_LOG:-}" ]] && echo "[SUCCESS] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $message" >> "$MAIN_LOG"
-    return 0
-}
-
-# =========================================================================
-# Function: Log start of script
+# Function: Load variables from .env file
 # Arguments: None
-# Returns: 0 (always successful)
+# Returns: 0 on success, 1 if file not found
+# Exports: Variables found in the .env file
 # =========================================================================
-log_start() {
-    local msg="Script started"
-    echo -e "${C_INFO}====================================================${C_RESET}" >&2
-    echo -e "${C_INFO}[START] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $msg${C_RESET}" >&2
-    echo -e "${C_INFO}====================================================${C_RESET}" >&2
-    [[ -n "${MAIN_LOG:-}" ]] && {
-        echo "====================================================" >> "$MAIN_LOG"
-        echo "[START] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $msg" >> "$MAIN_LOG"
-        echo "====================================================" >> "$MAIN_LOG"
-    }
+load_env_variables() {
+    log_debug "Attempting to load environment variables from: $ENV_FILE"
+    if [ ! -f "$ENV_FILE" ]; then
+        log_warning ".env file not found at $ENV_FILE. Using default values."
+        # Ensure required defaults are explicitly set and exported if file missing
+        export ARCH="${ARCH:-linux/arm64}"
+        export PLATFORM="${PLATFORM:-$ARCH}"
+        export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}" # Ensure default is exported
+        return 1 # Indicate file not found, but don't exit
+    fi
+
+    log_debug "Reading variables from $ENV_FILE"
+    # Use set -a to automatically export variables read from the file
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+
+    # Explicitly export potentially loaded variables with defaults if they are still empty
+    export ARCH="${ARCH:-linux/arm64}"
+    export PLATFORM="${PLATFORM:-$ARCH}"
+    export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}" # <-- FIX: Ensure export and default
+    export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-}"
+    export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
+    export DOCKER_USERNAME="${DOCKER_USERNAME:-}"
+    export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-}"
+    export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}"
+    export LOG_LEVEL="${LOG_LEVEL:-INFO}"
+    export JETC_DEBUG="${JETC_DEBUG:-false}"
+
+    log_debug "Finished loading variables from $ENV_FILE"
+    log_debug "  -> ARCH=$ARCH"
+    log_debug "  -> PLATFORM=$PLATFORM"
+    log_debug "  -> BUILDER_NAME=$BUILDER_NAME"
+    log_debug "  -> DOCKER_USERNAME=$DOCKER_USERNAME"
+    log_debug "  -> LOG_LEVEL=$LOG_LEVEL"
+    log_debug "  -> JETC_DEBUG=$JETC_DEBUG"
+    # Add more debug logs as needed
+
     return 0
 }
 
 # =========================================================================
-# Function: Log end of script
+# Function: Setup basic build environment variables
 # Arguments: None
-# Returns: 0 (always successful)
+# Returns: 0 (always succeeds for now)
+# Exports: ARCH, PLATFORM, CURRENT_DATE_TIME
 # =========================================================================
-log_end() {
-    local msg="Script finished"
-    echo -e "${C_INFO}====================================================${C_RESET}" >&2
-    echo -e "${C_INFO}[END] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $msg${C_RESET}" >&2
-    echo -e "${C_INFO}====================================================${C_RESET}" >&2
-     [[ -n "${MAIN_LOG:-}" ]] && {
-        echo "====================================================" >> "$MAIN_LOG"
-        echo "[END] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-<script>}: $msg" >> "$MAIN_LOG"
-        echo "====================================================" >> "$MAIN_LOG"
-    }
+setup_build_environment() {
+    log_info "Setting up build environment..."
+    # ARCH and PLATFORM are now handled/defaulted during load_env_variables
+    # Just ensure they are logged if needed
+    log_debug "Using ARCH: ${ARCH}"
+    log_debug "Using PLATFORM: ${PLATFORM}"
+
+    # Set current timestamp
+    export CURRENT_DATE_TIME
+    CURRENT_DATE_TIME=$(get_system_datetime)
+    log_debug "Set CURRENT_DATE_TIME: $CURRENT_DATE_TIME"
+
+    log_success "Build environment setup complete."
     return 0
 }
 
-# =========================================================================
-# Function: Set current build stage for logging context
-# Arguments: $1 = stage name
-# Returns: 0
-# =========================================================================
-set_stage() {
-    export CURRENT_STAGE="$1"
-    log_debug "Entering stage: $CURRENT_STAGE"
-    return 0 # Added explicit return 0 for consistency
-}
+
+# --- Initialization Call ---
+# Automatically initialize logging when this script is sourced
+# Use default log dir/names initially; they might be updated by load_env_variables
+init_logging "$LOG_DIR" "$MAIN_LOG" "$ERROR_LOG"
+
+
+# --- Main Execution (for testing) ---
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    log_info "Running env_setup.sh directly for testing..."
+
+    # --- Test Setup --- #
+    # Create a dummy .env file
+    echo "Creating dummy .env file: $ENV_FILE"
+    cat << EOF > "$ENV_FILE"
+# Dummy .env for testing
+export DOCKER_USERNAME="testuser"
+DOCKER_REPO_PREFIX="testprefix"
+# BUILDER_NAME is missing to test default
+LOG_LEVEL=DEBUG
+# ARCH=linux/amd64 # Test overriding default ARCH
+EOF
+
+    # --- Test Functions --- #
+    log_info "*** Testing load_env_variables ***"
+    load_env_variables
+    log_info "Resulting Variables:"
+    echo "  ARCH=$ARCH"
+    echo "  PLATFORM=$PLATFORM"
+    echo "  BUILDER_NAME=$BUILDER_NAME"
+    echo "  DOCKER_USERNAME=$DOCKER_USERNAME"
+    echo "  DOCKER_REPO_PREFIX=$DOCKER_REPO_PREFIX"
+    echo "  LOG_LEVEL=$LOG_LEVEL"
+
+    log_info "*** Testing setup_build_environment ***"
+    setup_build_environment
+    echo "  CURRENT_DATE_TIME=$CURRENT_DATE_TIME"
+
+    log_info "*** Testing Logging Functions ***"
+    log_debug "This is a debug message."
+    log_info "This is an info message."
+    log_success "This is a success message."
+    log_warning "This is a warning message."
+    log_error "This is an error message."
+
+    # --- Cleanup --- #
+    log_info "Cleaning up dummy .env file..."
+    rm "$ENV_FILE"
+    log_info "env_setup.sh test finished."
+    exit 0
+fi
+
 
 # File location diagram:
 # jetc/                          <- Main project folder
+# ├── .env                       <- Optional environment variables file
 # ├── buildx/                    <- Parent directory
 # │   └── scripts/               <- Current directory
 # │       └── env_setup.sh       <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Environment setup and logging functions. Updated logging for consistency, debug, and origin. Added early screenshot tool check.
-# Author: GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-193806-SCREENSHT1
+# Description: Sets up environment variables (ARCH, PLATFORM, etc.), loads .env,
+#              and initializes logging functions. Ensures BUILDER_NAME is exported with a default.
+# Author: Mr K / GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250424-202222-ENVSETUPFIX
