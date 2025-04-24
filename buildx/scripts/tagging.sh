@@ -159,7 +159,7 @@ verify_all_images_exist_locally() {
     if [[ $# -eq 0 ]]; then
         log_debug "No images provided to verify_all_images_exist_locally"
         return 0
-    }
+    fi # <--- CORRECTED LINE
 
     log_info "Verifying local existence of $# images: $*" # Use log_info
 
@@ -168,7 +168,7 @@ verify_all_images_exist_locally() {
         if ! verify_image_exists "$img"; then # Use function from docker_helpers.sh
             log_error "Image $img not found locally" # Use log_error
             missing=1
-        fi
+        fi # Correct fi for inner if
     done
 
     if [[ $missing -eq 1 ]]; then
@@ -179,6 +179,8 @@ verify_all_images_exist_locally() {
     log_success "All expected images verified locally." # Use log_success
     return 0
 }
+
+
 
 # --- Main Execution (for testing) ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
