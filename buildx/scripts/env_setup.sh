@@ -103,7 +103,13 @@ fi
 log_debug "Environment setup script completed."
 
 # --- Footer ---
-# File location diagram: ... (omitted for brevity)
-# Description: Initializes environment, loads .env safely, sets globals. Sourced utils.sh earlier.
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── env_setup.sh       <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Initializes environment variables and loads .env file.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-073000-ENVFIX2 # Keeping previous UUID for now
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

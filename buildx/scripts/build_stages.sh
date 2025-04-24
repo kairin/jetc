@@ -199,6 +199,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -206,6 +207,6 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Manages the execution of build stages. Fixed typo in update_available_images_in_env call.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250425-071326-ENVUPDFIX
+# Description: Manages the execution of build stages in the correct order.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

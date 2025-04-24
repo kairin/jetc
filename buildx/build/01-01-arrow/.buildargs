@@ -1,4 +1,12 @@
-# Define build arguments specific to the 01-01-arrow Dockerfile
-
-# Specify the Apache Arrow branch to clone
-ARROW_BRANCH=apache-arrow-16.1.0
+# --- Footer ---
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                 <- Build stages directory
+# │   │   └── 01-01-arrow/       <- Current directory
+# │   │       └── .buildargs     <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Build arguments specific to the Apache Arrow stage.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

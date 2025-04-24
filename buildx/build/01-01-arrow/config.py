@@ -1,15 +1,6 @@
 # COMMIT-TRACKING: UUID-20240731-100000-PROTOFIX
 # Description: Remove redundant apt install/remove of protobuf-dev packages. Rely on BUNDLED source.
 # Author: GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-01-arrow/         <- Current directory
-# │   │       └── config.py        <- THIS FILE
-# └── ...                        <- Other project files
 from jetson_containers import L4T_VERSION, CUDA_ARCHITECTURES
 
 def build_arrow(version, branch, default=False):
@@ -33,11 +24,20 @@ package = [
 # COMMIT-TRACKING: UUID-20240731-110000-NOORC
 # Description: Disable ARROW_ORC build option due to configuration errors.
 # Author: GitHub Copilot
-#
-# ...existing code...
 
 # COMMIT-TRACKING: UUID-20240731-103000-MAKEJ4
 # Description: Reduce make parallelism to -j4 to mitigate potential resource exhaustion.
 # Author: GitHub Copilot
+
+# --- Footer ---
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                 <- Build stages directory
+# │   │   └── 01-01-arrow/       <- Current directory
+# │   │       └── config.py      <- THIS FILE
+# └── ...                        <- Other project files
 #
-# ...existing code...
+# Description: Configuration script for the Apache Arrow build stage.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

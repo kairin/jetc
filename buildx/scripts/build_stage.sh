@@ -60,13 +60,6 @@ build_single_stage() {
     if [[ ! -d "$folder_path" ]]; then
         log_error "Build folder does not exist: $folder_path" # Use log_error
         return 1
-    }
-    
-# In build_single_stage function...
-    # Check folder exists
-    if [[ ! -d "$folder_path" ]]; then
-        log_error "Build folder does not exist: $folder_path" # Use log_error
-        return 1
     fi # <--- CORRECTED LINE (was })
 
     
@@ -84,13 +77,13 @@ build_single_stage() {
     if [[ $build_status -ne 0 ]]; then
         log_error "Build failed for stage $folder_name" # Use log_error
         return 1
-    }
+    fi
     
     # fixed_tag is exported by build_folder_image
     if [[ -z "${fixed_tag:-}" ]]; then
         log_error "No output tag (fixed_tag) exported from build_folder_image for stage $folder_name" # Use log_error
         return 1
-    }
+    fi
     
     # Export the stage output tag (DEPRECATED - caller should use fixed_tag directly)
     # export STAGE_OUTPUT_TAG="$fixed_tag"
@@ -99,6 +92,7 @@ build_single_stage() {
     return 0
 }
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -106,6 +100,6 @@ build_single_stage() {
 # │       └── build_stage.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Functions for building individual Docker stages. Added logging. Relies on docker_helpers for buildx command.
-# Author: GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+# Description: Functions for building a single Docker stage.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

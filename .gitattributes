@@ -4,3 +4,13 @@ archive/** filter=git-crypt diff=git-crypt
 
 # _old_forAI_training folder: tracked in git but not included in git archives or when someone clones
 _old_forAI_training/** export-ignore
+
+# --- Footer ---
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── .gitattributes             <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Defines attributes per path for Git. Ensures consistent line endings.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

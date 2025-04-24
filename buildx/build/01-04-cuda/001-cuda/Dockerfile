@@ -6,19 +6,19 @@
 # depends: [build-essential] (implicitly handled by build system based on config)
 # test: (embedded in Dockerfile)
 #---
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
-#
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-cuda/             <- CUDA directory
-# │   │       └── 001-cuda/        <- Current directory
-# │   │           └── Dockerfile   <- THIS FILE
+# │   ├── build/                 <- Build stages directory
+# │   │   └── 01-04-cuda/        <- Parent directory
+# │   │       └── 001-cuda/      <- Current directory
+# │   │           └── Dockerfile <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Unified Dockerfile for CUDA installation, samples, and environment setup.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D
 
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64

@@ -196,6 +196,12 @@ main
 exit $?
 
 # --- Footer ---
-# Description: Main build script orchestrator. Removed sourcing and call for deprecated post_build_menu.sh. Added final verification step.
-# Author: kairin / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-223000-SKIPPOSTBUILD
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Current directory
+# │   └── build.sh               <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Main build orchestrator script for the Jetson Container project.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

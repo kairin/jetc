@@ -1,16 +1,17 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
-#
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-cuda/             <- CUDA directory
-# │   │       └── cupy/            <- Current directory
-# │   │           └── config.py    <- THIS FILE
+# │   ├── build/                 <- Build stages directory
+# │   │   └── 01-04-cuda/        <- Parent directory
+# │   │       └── 004-cupy/      <- Current directory
+# │   │           └── config.py  <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Configuration script for the CuPy build stage.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D
+
 from jetson_containers import L4T_VERSION, CUDA_ARCHITECTURES, package
 
 # latest cupy versions to support Python 3.8 (for JetPack 5)

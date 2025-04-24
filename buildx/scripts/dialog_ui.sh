@@ -504,7 +504,14 @@ show_main_menu() {
 }
 
 
-# File location diagram: ... (omitted)
-# Description: Dialog UI logic. Renamed get_user_preferences to show_main_menu. Exports prefs to /tmp/build_prefs.sh.
-# Author: kairin / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-211000-RENAMEUIFUNC
+# --- Footer ---
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── dialog_ui.sh       <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Provides UI elements using the 'dialog' command.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

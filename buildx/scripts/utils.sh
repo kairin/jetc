@@ -54,26 +54,12 @@ check_install_dialog() {
 }
 
 # =========================================================================
-# Function: Get system datetime from Ubuntu 22.04+ or WSL
-# Returns: Formatted datetime string as YYYYMMDD-HHMMSS
+# Function: Get current system date and time in YYYYMMDD-HHMMSS format
+# Arguments: None
+# Returns: Formatted date-time string to stdout
 # =========================================================================
 get_system_datetime() {
-  # Check if timedatectl is available (systemd-based systems like Ubuntu 22.04+)
-  if command -v timedatectl &> /dev/null; then
-    # Use timedatectl in a simpler, more reliable way
-    local datetime=$(timedatectl | grep "Local time" | awk '{print $3" "$4}' 2>/dev/null)
-    if [ -n "$datetime" ]; then
-      # Convert to desired format using date command with input date string
-      echo $(date -d "$datetime" +"%Y%m%d-%H%M%S" 2>/dev/null)
-      if [ $? -eq 0 ]; then
-        return 0
-      fi
-    fi
-  fi
-
-  # Fallback to standard date command (works on both WSL and native Ubuntu)
-  echo $(date +"%Y%m%d-%H%M%S")
-  return 0
+    date +"%Y%m%d-%H%M%S"
 }
 
 # In /workspaces/jetc/buildx/scripts/utils.sh
@@ -188,8 +174,7 @@ store_current_datetime() {
   echo "$JETC_RUN_DATETIME"
 }
 
-
-
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -197,6 +182,6 @@ store_current_datetime() {
 # │       └── utils.sh           <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: General utility functions. Centralized ENV_CANONICAL definition. Added _log_debug. Initialized SCREENSHOT_TOOL_MISSING.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-194340-UNBOUNDFIX
+# Description: General utility functions for the build system. Added get_system_datetime.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

@@ -146,5 +146,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Docker image tagging and verification functions. Relies on logging.sh, env_setup.sh, docker_helpers.sh sourced by caller.
-# COMMIT-TRACKING: UUID-20250424-205555-LOGGINGREFACTOR
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── tagging.sh         <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Functions related to Docker image tagging.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

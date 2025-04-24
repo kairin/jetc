@@ -246,6 +246,7 @@ update_default_run_options() {
     fi
 }
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -253,6 +254,6 @@ update_default_run_options() {
 # │       └── env_helpers.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: .env file helpers. Added functions for getting/setting specific vars, handling AVAILABLE_IMAGES array, and run options. Added debug logging.
+# Description: Helper functions related to environment variable management.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

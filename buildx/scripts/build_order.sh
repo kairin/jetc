@@ -173,6 +173,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -180,6 +181,6 @@ fi
 # │       └── build_order.sh     <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Determines build order. Modified to check for Dockerfile existence before adding to ORDERED_FOLDERS. Searches depth 2.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250425-065844-ORDERFIX4
+# Description: Determines the correct build order for Docker stages.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

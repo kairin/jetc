@@ -106,20 +106,14 @@ The modifications and build system architecture introduced by the JETC project a
 
 Please note that the underlying container contents, Dockerfiles, and application setups sourced from `dusty-nv/jetson-containers` retain their original licenses. Consult the `dusty-nv/jetson-containers` repository for details on the licenses applicable to those components.
 
+<!-- --- Footer --- -->
 <!--
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- THIS FILE
-# ├── .github/                   <- GitHub integration and standards
-# ├── buildx/                    <- Core build system
-# │   ├── build/                 <- Modular build stages
-# │   ├── scripts/               <- Helper scripts
-# │   ├── build.sh               <- Main build script
-# │   ├── jetcrun.sh             <- Container run utility
-# │   └── .env                   <- User configuration
-# └── ...                        <- Other project files
-#
-# Description: Main README for the JETC project, focusing on the modular build system. Updated license to CC BY-NC-SA 4.0.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-111500-README
+ File location diagram:
+ jetc/                          <- Main project folder
+ ├── README.md                  <- THIS FILE
+ └── ...                        <- Other project files
+
+ Description: Main project README file.
+ Author: Mr K / GitHub Copilot
+ COMMIT-TRACKING: UUID-20250425-080000-42595D
 -->

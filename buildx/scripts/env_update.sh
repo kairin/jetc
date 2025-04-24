@@ -166,5 +166,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Functions to update .env file. Ensures update_available_images_in_env is defined. Exports updated list vars.
-# COMMIT-TRACKING: UUID-20250424-231500-ENVUPDATEFIX2
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── env_update.sh      <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Functions for updating the .env file.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

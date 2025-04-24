@@ -51,6 +51,7 @@ run_post_build_menu() {
     return $menu_exit_status
 }
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -58,6 +59,6 @@ run_post_build_menu() {
 # │       └── post_build_menu.sh <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Runs the post-build menu using interactive_ui.sh. Added logging.
-# Author: GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+# Description: Displays a menu after the build process completes.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

@@ -27,11 +27,12 @@ qt-online-installer-linux-arm64-4.9.0.run
 buildx/.env
 /tmp/build_prefs.sh # Temporary file for build preferences
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── .gitignore                 <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Git ignore rules. Added temporary build preferences file.
+# Description: Specifies intentionally untracked files that Git should ignore.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-223000-GITIGNORE
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

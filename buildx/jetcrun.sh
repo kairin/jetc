@@ -123,14 +123,13 @@ fi
 _log_debug "jetcrun.sh finished."
 exit 0
 
-
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Current directory
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers using standard 'docker run'. Refactored for modularity.
+# Description: Utility script to run Jetson containers with appropriate Docker arguments.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

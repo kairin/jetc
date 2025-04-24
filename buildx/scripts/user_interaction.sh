@@ -131,5 +131,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Handles user interaction for build configuration. Relies on dependencies sourced by caller.
-# COMMIT-TRACKING: UUID-20250424-205555-LOGGINGREFACTOR
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── user_interaction.sh <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Handles user interaction logic, sourcing UI implementations.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

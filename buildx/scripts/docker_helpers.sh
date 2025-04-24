@@ -211,5 +211,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Docker helper functions. Reverted build command logic to previous state.
-# COMMIT-TRACKING: UUID-20250425-072000-SKIPDEBUG
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── docker_helpers.sh  <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Helper functions for Docker operations (build, pull, etc.).
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

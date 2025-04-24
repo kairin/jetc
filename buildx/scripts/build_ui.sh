@@ -37,6 +37,7 @@ _log_debug() {
 
 _log_debug "build_ui.sh sourced (DEPRECATED)."
 
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -44,6 +45,6 @@ _log_debug "build_ui.sh sourced (DEPRECATED)."
 # │       └── build_ui.sh        <- THIS FILE (DEPRECATED)
 # └── ...                        <- Other project files
 #
-# Description: UI functions bridge. DEPRECATED - Functionality moved to user_interaction.sh.
+# Description: UI functions bridge (DEPRECATED).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-095000-DEPRECATE
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

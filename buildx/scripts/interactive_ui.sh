@@ -1099,14 +1099,14 @@ show_post_build_menu() {
   fi
 }
 
-
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
 # │   └── scripts/               <- Current directory
-# │       └── interactive_ui.sh  <- THIS FILE (Renamed from dialog_ui.sh)
+# │       └── interactive_ui.sh  <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive UI functions (Dialog/Text) for build/run preferences and post-build actions. Added logging.
+# Description: Provides interactive command-line UI elements.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

@@ -158,7 +158,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# File location diagram: ... (omitted)
-# Description: Centralized logging functions and initialization.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-204545-LOGGINGSCRIPT
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── logging.sh         <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Logging functions for the build system.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

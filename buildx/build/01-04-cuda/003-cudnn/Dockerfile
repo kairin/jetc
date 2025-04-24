@@ -1,16 +1,16 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
-#
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-cuda/             <- CUDA directory
-# │   │       └── 003-cudnn/       <- Current directory
-# │   │           └── Dockerfile   <- THIS FILE
+# │   ├── build/                 <- Build stages directory
+# │   │   └── 01-04-cuda/        <- Parent directory
+# │   │       └── 003-cudnn/     <- Current directory
+# │   │           └── Dockerfile <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Dockerfile for installing cuDNN.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D
 
 # Use ARG for dynamic base image injection, with a default value
 ARG TARGETPLATFORM=linux/arm64

@@ -161,7 +161,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit $?
 fi
 
-# --- Footer ---\
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
@@ -169,6 +169,6 @@ fi
 # │       └── system_checks.sh   <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Checks for essential system tools (docker, buildx, git) and optional tools (dialog). Verifies Docker daemon status. Now sources env_setup.sh for logging.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-202626-SYSLOGFIX
+# Description: Performs system checks required for the build process.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

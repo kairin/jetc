@@ -1,16 +1,16 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate cuda-python files into a single Dockerfile
-# Author: Mr K / GitHub Copilot
-#
+# --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-cuda/             <- CUDA directory
+# │   ├── build/                 <- Build stages directory
+# │   │   └── 01-04-cuda/        <- Parent directory
 # │   │       └── 002-cuda-python/ <- Current directory
-# │   │           └── Dockerfile   <- THIS FILE
+# │   │           └── Dockerfile <- THIS FILE
 # └── ...                        <- Other project files
+#
+# Description: Dockerfile for building cuda-python (unified install/build modes).
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D
 
 #---
 # name: cuda-python (unified)

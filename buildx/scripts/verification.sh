@@ -251,6 +251,13 @@ _run_verification_in_container() {
 
 
 # --- Footer ---
-# Description: Runs verification checks inside a container. Fixed docker run command.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250425-070000-VERIFIX2
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── verification.sh    <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Functions for verifying system state and Docker image properties.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-080000-42595D

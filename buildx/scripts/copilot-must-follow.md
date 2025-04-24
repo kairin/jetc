@@ -133,16 +133,16 @@ FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 # COMMIT-TRACKING: UUID-20250421-022100-XXXX
 ```
 
+<!-- --- Footer --- -->
 <!--
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── copilot-must-follow.md <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Coding standards and commit tracking/footer rules for Jetson container project.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-CFMT
+ File location diagram:
+ jetc/                          <- Main project folder
+ ├── buildx/                    <- Parent directory
+ │   └── scripts/               <- Current directory
+ │       └── copilot-must-follow.md <- THIS FILE
+ └── ...                        <- Other project files
+
+ Description: Specific instructions for GitHub Copilot regarding coding standards and footers.
+ Author: Mr K / GitHub Copilot
+ COMMIT-TRACKING: UUID-20250425-080000-42595D
 -->
