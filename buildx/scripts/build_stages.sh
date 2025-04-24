@@ -7,21 +7,20 @@
 #                 the build for each stage using docker_helpers.
 # =========================================================================
 
+# Set strict mode
+set -euo pipefail
+
 # --- Dependencies ---
-SCRIPT_DIR_STAGES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR_STAGES="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 # Source required scripts (use fallbacks if sourcing fails)
-# env_setup provides logging
+# env_setup provides logging and global vars like PLATFORM
 if [ -f "$SCRIPT_DIR_STAGES/env_setup.sh" ]; then
     # shellcheck disable=SC1091
     source "$SCRIPT_DIR_STAGES/env_setup.sh"
 else
-    echo "Warning: env_setup.sh not found. Logging/colors may be basic." >&2
-    log_info() { echo "INFO: $1"; }
-    log_warning() { echo "WARNING: $1" >&2; }
-    log_error() { echo "ERROR: $1" >&2; }
-    log_success() { echo "SUCCESS: $1"; }
-    log_debug() { :; }
+    echo "CRITICAL ERROR: env_setup.sh not found. Cannot proceed." >&2
+    exit 1
 fi
 # docker_helpers provides build_folder_image
 if [ -f "$SCRIPT_DIR_STAGES/docker_helpers.sh" ]; then
@@ -29,7 +28,7 @@ if [ -f "$SCRIPT_DIR_STAGES/docker_helpers.sh" ]; then
     source "$SCRIPT_DIR_STAGES/docker_helpers.sh"
 else
     log_error "docker_helpers.sh not found. Build stage execution will fail."
-    build_folder_image() { log_error "build_folder_image: docker_helpers.sh not loaded"; return 1; }
+    exit 1
 fi
 # env_update provides update_available_images_in_env
 if [ -f "$SCRIPT_DIR_STAGES/env_update.sh" ]; then
@@ -37,7 +36,8 @@ if [ -f "$SCRIPT_DIR_STAGES/env_update.sh" ]; then
     source "$SCRIPT_DIR_STAGES/env_update.sh"
 else
     log_error "env_update.sh not found. .env updates will fail."
-    update_available_images_in_env() { log_error "update_available_images_in_env: env_update.sh not loaded"; return 1; }
+    # Allow to continue but warn, maybe updates aren't critical
+    update_available_images_in_env() { log_warning "update_available_images_in_env: env_update.sh not loaded"; return 0; }
 fi
 
 
@@ -48,7 +48,7 @@ fi
 # (These should be set by the calling script after sourcing user_interaction results)
 # DOCKER_USERNAME, DOCKER_REPO_PREFIX, DOCKER_REGISTRY
 # SELECTED_BASE_IMAGE
-# use_cache, use_squash, skip_intermediate_push_pull, use_builder, platform
+# use_cache, use_squash, skip_intermediate_push_pull, use_builder, PLATFORM
 
 # Declare global map for skipping specific apps within stages (initialize as empty)
 declare -gA skip_apps_map=()
@@ -67,29 +67,24 @@ build_selected_stages() {
     log_info "=================================================="
 
     # Ensure required global variables are available
-    # Check if ORDERED_FOLDERS is declared and has elements
     if ! declare -p ORDERED_FOLDERS &>/dev/null || [[ ${#ORDERED_FOLDERS[@]} -eq 0 ]]; then
-        # Allow proceeding if empty (build_order.sh logs warning), but log here too.
         log_warning "ORDERED_FOLDERS array is empty or not set. No stages to build."
-        # Set LAST_SUCCESSFUL_TAG to the initial base image if nothing is built
         export LAST_SUCCESSFUL_TAG="${SELECTED_BASE_IMAGE}"
-        return 0 # Return success as there's nothing to fail on
+        return 0
     fi
-     # Check if SELECTED_FOLDERS_MAP is truly available (paranoid check)
      if [[ ! $(declare -p SELECTED_FOLDERS_MAP 2>/dev/null) =~ "declare -A" ]]; then
         log_error "SELECTED_FOLDERS_MAP associative array is not declared globally. Check build_order.sh."
         return 1
      fi
-     # Add warning if map is empty but list wasn't (indicates potential issue)
      if [[ ${#SELECTED_FOLDERS_MAP[@]} -eq 0 && -n "${SELECTED_FOLDERS_LIST:-}" ]]; then
          log_warning "SELECTED_FOLDERS_MAP is empty, but SELECTED_FOLDERS_LIST was not. Check build_order.sh."
-         # Proceeding anyway based on ORDERED_FOLDERS, but this might indicate a logic error upstream.
      fi
 
 
     local current_base_image="${SELECTED_BASE_IMAGE}" # Start with the user-selected base image
     local stage_build_failed=0
-    unset LAST_SUCCESSFUL_TAG # Ensure it's clear at the start
+    # Clear or initialize LAST_SUCCESSFUL_TAG
+    export LAST_SUCCESSFUL_TAG=""
 
     log_info "Initial base image for build stages: $current_base_image"
 
@@ -101,26 +96,25 @@ build_selected_stages() {
         local build_folder_basename
         build_folder_basename=$(basename "$build_folder_path")
 
-        # Double-check if this folder should be built using the map
+        # Check if this folder should be built using the map
         if [[ ${SELECTED_FOLDERS_MAP[$build_folder_basename]+_} ]]; then
              log_info "--- Processing Stage: $build_folder_basename ---"
              log_debug "  Folder Path: $build_folder_path"
              log_debug "  Using Base Image: $current_base_image"
 
              # Call the build function from docker_helpers.sh
-             # Pass all necessary parameters sourced from user interaction / env
-             # *** CORRECTED ARGUMENT ORDER ***
+             # CORRECTED ARGUMENT ORDER to match build_folder_image definition
              build_folder_image \
                 "$build_folder_path"                    # $1: folder_path
                 "${use_cache:-n}"                       # $2: use_cache
-                "${platform:-linux/arm64}"              # $3: platform_arg (ignored by latest func, uses global $PLATFORM)
+                "${DOCKER_USERNAME}"                    # $3: docker_username
                 "${use_squash:-n}"                      # $4: use_squash
-                "${skip_intermediate_push_pull:-y}"     # $5: skip_intermediate_push_pull
+                "${skip_intermediate_push_pull:-y}"     # $5: skip_intermediate
                 "$current_base_image"                   # $6: base_image_tag
-                "${DOCKER_USERNAME}"                    # $7: docker_username
-                "${DOCKER_REPO_PREFIX}"                 # $8: repo_prefix
-                "${DOCKER_REGISTRY:-}"                  # $9: registry
-             # Removed extra $10: "${use_builder:-y}"
+                "${DOCKER_REPO_PREFIX}"                 # $7: repo_prefix
+                "${DOCKER_REGISTRY:-}"                  # $8: registry
+                "${use_builder:-y}"                     # $9: use_builder
+                # PLATFORM is handled globally within build_folder_image
 
             local build_status=$?
             # build_folder_image should export 'fixed_tag' on success
@@ -140,8 +134,7 @@ build_selected_stages() {
                 log_error "Stage '$build_folder_basename' failed with exit code $build_status."
                 log_debug "  Failed Tag (if generated): ${current_fixed_tag:-<none>}"
                 stage_build_failed=1
-                # Decide whether to continue or break on failure
-                # For now, let's break to prevent building dependent stages on a failed base
+                # Break on failure to prevent building dependent stages on a failed base
                 log_error "Aborting remaining build stages due to failure in '$build_folder_basename'."
                 break
             fi
@@ -176,37 +169,45 @@ build_selected_stages() {
 
 # --- Main Execution (for testing) ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    log_info "Running build_stages.sh directly for testing..."
-
-    # --- Test Setup --- #
-    # Mock necessary functions and variables if not sourced
+    # Minimal setup for testing if run directly
+    export SCRIPT_DIR_STAGES # Ensure it's exported if needed by sourced scripts in test mode
+    # Mock necessary functions and variables if not fully sourced
      if ! command -v build_folder_image &> /dev/null; then
-        log_warning "Mocking build_folder_image for testing."
+        echo "Warning: Mocking build_folder_image for testing." >&2
         build_folder_image() {
-            local folder="$1" base_name repo_prefix="$8" username="$7" # Get correct args
+            local folder="$1" username="$3" repo_prefix="$7" # Get relevant args for tag
+            local base_name
             base_name=$(basename "$folder")
-            log_info "Mock build_folder_image called for: $base_name"
-            log_debug "Mock Args: $@" # Log all args passed
+            echo "INFO: Mock build_folder_image called for: $base_name"
+            echo "DEBUG: Mock Args: $@" # Log all args passed
             # Simulate success for '01-*', failure for '02-*'
             if [[ "$base_name" == 01-* ]]; then
-                export fixed_tag="${username}/${repo_prefix}:${base_name}-success" # Use correct args
-                log_success " -> Mock Success: $fixed_tag"
+                export fixed_tag="${username}/${repo_prefix}:${base_name}-success"
+                echo "SUCCESS: -> Mock Success: $fixed_tag"
                 return 0
             elif [[ "$base_name" == 02-* ]]; then
-                 export fixed_tag="${username}/${repo_prefix}:${base_name}-fail" # Use correct args
-                 log_error " -> Mock Failure"
+                 export fixed_tag="${username}/${repo_prefix}:${base_name}-fail"
+                 echo "ERROR: -> Mock Failure" >&2
                  return 1
             else
-                 export fixed_tag="${username}/${repo_prefix}:${base_name}-success" # Use correct args
-                 log_success " -> Mock Success (default): $fixed_tag"
+                 export fixed_tag="${username}/${repo_prefix}:${base_name}-success"
+                 echo "SUCCESS: -> Mock Success (default): $fixed_tag"
                  return 0
             fi
         }
     fi
      if ! command -v update_available_images_in_env &> /dev/null; then
-        log_warning "Mocking update_available_images_in_env for testing."
-        update_available_images_in_env() { log_info "Mock update_available_images_in_env called with: $1"; return 0; }
+        echo "Warning: Mocking update_available_images_in_env for testing." >&2
+        update_available_images_in_env() { echo "INFO: Mock update_available_images_in_env called with: $1"; return 0; }
     fi
+     # Define basic logging if env_setup wasn't fully loaded
+     if ! command -v log_info &> /dev/null; then
+        log_info() { echo "INFO: $1"; }
+        log_warning() { echo "WARNING: $1" >&2; }
+        log_error() { echo "ERROR: $1" >&2; }
+        log_success() { echo "SUCCESS: $1"; }
+        log_debug() { :; }
+     fi
 
     # Set mock global variables
     ORDERED_FOLDERS=( "/tmp/build/01-first" "/tmp/build/02-second-fails" "/tmp/build/03-third" )
@@ -218,9 +219,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     use_cache="n"
     use_squash="n"
     skip_intermediate_push_pull="y"
-    use_builder="y" # This is unused by the corrected call
-    platform="linux/arm64"
-    SELECTED_FOLDERS_LIST="01-first 02-second-fails 03-third" # For warning check
+    use_builder="y"
+    PLATFORM="linux/arm64" # Needs to be set for testing if env_setup didn't run
+    SELECTED_FOLDERS_LIST="01-first 02-second-fails 03-third"
 
     # --- Test Cases --- #
     log_info ""
@@ -254,7 +255,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     SELECTED_FOLDERS_LIST=""
     unset LAST_SUCCESSFUL_TAG
      if build_selected_stages; then
-         log_success "Test 3 Result: build_selected_stages reported SUCCESS (expected)." # Now expects success
+         log_success "Test 3 Result: build_selected_stages reported SUCCESS (expected)."
     else
          log_error "Test 3 Result: build_selected_stages reported FAILURE (unexpected)."
     fi
@@ -269,15 +270,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── build_stages.sh    <- THIS FILE
-# └── ...                        <- Other project files
-#
+# File location diagram: ... (omitted)
 # Description: Iterates through build stages determined by build_order.sh
 #              and executes the build using docker_helpers.sh functions.
 #              Corrected argument order for build_folder_image call.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-201515-STAGESFIX2
+# COMMIT-TRACKING: UUID-20250424-215000-STAGESFIX3
