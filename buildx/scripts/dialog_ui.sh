@@ -225,45 +225,43 @@ show_main_menu() {
 
     # --- Step 0: Docker Information ---
     while true; do
+      # Use --form for Docker info
       dialog --backtitle "Docker Build Configuration" \
              --title "Step 0: Docker Information" \
-             --ok-label "Next: Select Stages" \
-             --cancel-label "Exit Build" \
-             --form "Confirm or edit Docker details (loaded from .env):" $DIALOG_HEIGHT $DIALOG_WIDTH $FORM_HEIGHT \
-             "Registry (optional, empty=Docker Hub):" 1 1 "$temp_registry"     1 40 70 0 \
-             "Username (required):"                   2 1 "$temp_username"    2 40 70 0 \
-             "Repository Prefix (required):"          3 1 "$temp_prefix" 3 40 70 0 \
-             2>"$temp_docker_info"
+             --form "Enter your Docker repository details:" \
+             $DIALOG_HEIGHT $DIALOG_WIDTH $FORM_HEIGHT \
+             "Registry (optional):" 1 1 "$temp_registry" 1 25 50 0 \
+             "Username (required):" 2 1 "$temp_username" 2 25 50 0 \
+             "Repo Prefix (required):" 3 1 "$temp_prefix" 3 25 50 0 \
+             2> "$temp_docker_info"
 
-      capture_screenshot "step0_docker_info" # Assumes capture_screenshot is in utils.sh
       local form_exit_status=$?
       if [ $form_exit_status -ne 0 ]; then
-        echo "Docker information entry canceled (exit code: $form_exit_status). Exiting." >&2
         exit 1 # Exit subshell on cancel
       fi
 
-      # Read values back from temp file
-      mapfile -t lines < "$temp_docker_info"
-      # Ensure array has enough elements to avoid unbound errors
-      while [ "${#lines[@]}" -lt 3 ]; do lines+=(""); done
-      temp_registry="$(echo -n "${lines[0]}" | tr -d '\r\n')"
-      temp_username="$(echo -n "${lines[1]}" | tr -d '\r\n')"
-      temp_prefix="$(echo -n "${lines[2]}" | tr -d '\r\n')"
+      # Read values back from temp file (newline separated)
+      local input_registry input_username input_prefix
+      read -r input_registry < <(sed -n '1p' "$temp_docker_info")
+      read -r input_username < <(sed -n '2p' "$temp_docker_info")
+      read -r input_prefix < <(sed -n '3p' "$temp_docker_info")
 
       # Validate required fields
-      if [[ -z "$temp_username" || -z "$temp_prefix" ]]; then
-        dialog --msgbox "Validation Error:\\n\\nUsername and Repository Prefix are required.\\nPlease correct the entries." 10 $DIALOG_WIDTH
-        capture_screenshot "step0_docker_info_validation_error"
-        continue # Loop back to the form
+      if [[ -z "$input_username" || -z "$input_prefix" ]]; then
+        dialog --msgbox "Username and Repo Prefix are required. Please fill them in." 6 50
+        # Re-populate for next loop iteration
+        temp_registry="$input_registry"
+        temp_username="$input_username"
+        temp_prefix="$input_prefix"
+      else
+        # Update variables and break loop
+        DOCKER_REGISTRY="$input_registry"
+        DOCKER_USERNAME="$input_username"
+        DOCKER_REPO_PREFIX="$input_prefix"
+        break
       fi
-
-      # Valid, assign to exported vars and break loop
-      DOCKER_REGISTRY="$temp_registry"
-      DOCKER_USERNAME="$temp_username"
-      DOCKER_REPO_PREFIX="$temp_prefix"
-      export DOCKER_REGISTRY DOCKER_USERNAME DOCKER_REPO_PREFIX # Make available outside subshell if needed? No, write to PREFS_FILE later.
-      break
     done
+    capture_screenshot "step0_docker_info"
 
     # --- Step 0.5: Select Build Stages ---
     local build_dir="$SCRIPT_DIR_DLG/../build"
@@ -271,42 +269,60 @@ show_main_menu() {
     local numbered_folders=()
     local folder_count=0
     if [ -d "$build_dir" ]; then
-        mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V) # Use -V for natural sort
-        for folder_path in "${numbered_folders[@]}"; do
-            folder_name=$(basename "$folder_path")
-            folder_checklist_items+=("$folder_name" "" "on") # Default ON
-            ((folder_count++))
-        done
+        # Find numbered folders up to depth 2 (handles 01-04-cuda/001-cuda structure)
+        mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 2 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
+        if [[ ${#numbered_folders[@]} -gt 0 ]]; then
+            folder_count=${#numbered_folders[@]}
+            local i=1
+            for folder_path in "${numbered_folders[@]}"; do
+                local folder_name=$(basename "$folder_path")
+                # Check if it's a sub-stage for display purposes
+                local display_name="$folder_name"
+                local parent_dir=$(dirname "$folder_path")
+                if [[ "$parent_dir" != "$build_dir" ]]; then
+                    display_name="  -> $(basename "$parent_dir")/$folder_name"
+                fi
+                # Add path as tag, name as item, default OFF
+                folder_checklist_items+=("$folder_path" "$display_name" "off")
+                i=$((i+1))
+            done
+
+            # Use --checklist for stages
+            dialog --backtitle "Docker Build Configuration" \
+                   --title "Step 0.5: Select Build Stages ($folder_count found)" \
+                   --separate-output \
+                   --checklist "Use SPACE to select stages to build:" \
+                   $((DIALOG_HEIGHT + FOLDER_LIST_HEIGHT)) $DIALOG_WIDTH $FOLDER_LIST_HEIGHT \
+                   "${folder_checklist_items[@]}" \
+                   2> "$temp_folders"
+
+            local checklist_exit_status=$?
+            if [ $checklist_exit_status -ne 0 ]; then
+              exit 1 # Exit subshell on cancel
+            fi
+            capture_screenshot "step0.5_select_stages"
+        else
+            dialog --msgbox "No numbered build stage folders found in '$build_dir' (checked depth 2)." 6 60
+        fi
+    else
+        dialog --msgbox "Build directory '$build_dir' not found. Cannot select stages." 6 60
     fi
 
     local selected_folders_list=""
-    if [[ $folder_count -gt 0 ]]; then
-        local list_height=$(( FOLDER_LIST_HEIGHT < folder_count ? FOLDER_LIST_HEIGHT : folder_count + 2 )) # Add margin
-        list_height=$(( list_height > DIALOG_HEIGHT - 4 ? DIALOG_HEIGHT - 4 : list_height )) # Ensure fits dialog
-        dialog --backtitle "Docker Build Configuration" \
-               --title "Step 0.5: Select Build Stages" \
-               --ok-label "Next: Build Options" \
-               --cancel-label "Exit Build" \
-               --checklist "Select the build stages (folders) to include (Spacebar to toggle):" $DIALOG_HEIGHT $DIALOG_WIDTH $list_height \
-               "${folder_checklist_items[@]}" \
-               2>"$temp_folders"
-        local folders_exit_status=$?
-        capture_screenshot "step0.5_select_stages"
-        if [ $folders_exit_status -ne 0 ]; then
-            echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
-            exit 1 # Exit subshell on cancel
-        fi
-        # Read selection - dialog returns quoted strings, remove them
-        # Use mapfile and join with space for safety
+    if [[ -s "$temp_folders" ]]; then # Check if temp file is not empty
+        # Read selected paths (tags) into an array
         local temp_sel_array=()
-        mapfile -t temp_sel_array < <(sed 's/"//g' "$temp_folders")
-        selected_folders_list="${temp_sel_array[*]}"
+        mapfile -t temp_sel_array < "$temp_folders"
+        # Convert paths back to basenames for SELECTED_FOLDERS_LIST
+        local selected_basenames=()
+        for sel_path in "${temp_sel_array[@]}"; do
+            selected_basenames+=("$(basename "$sel_path")")
+        done
+        selected_folders_list="${selected_basenames[*]}" # Space separated list of basenames
     else
-        # Optionally show a message if no folders found
-        dialog --msgbox "No numbered build stage folders found in '$build_dir'.\nProceeding without stage selection." 8 $DIALOG_WIDTH
-        capture_screenshot "step0.5_no_stages_found"
-        selected_folders_list="" # Explicitly empty
+        selected_folders_list="" # Explicitly empty if nothing selected or no stages found
     fi
+    local stage_count=${#temp_sel_array[@]} # Count selected stages
 
     # --- Step 1: Build Options ---
     # Defaults (can be pre-set based on .env if desired)
@@ -317,19 +333,17 @@ show_main_menu() {
 
     dialog --backtitle "Docker Build Configuration" \
            --title "Step 1: Build Options" \
-           --ok-label "Next: Base Image" \
-           --cancel-label "Exit Build" \
-           --checklist "Use Spacebar to toggle options, Enter to confirm:" $DIALOG_HEIGHT $DIALOG_WIDTH $CHECKLIST_HEIGHT \
-           "cache"         "Use Build Cache (Faster, uses previous layers)"        "$([ "$use_cache" == "y" ] && echo "on" || echo "off")" \
-           "squash"        "Squash Layers (Smaller final image, experimental)"     "$([ "$use_squash" == "y" ] && echo "on" || echo "off")" \
-           "local_build"   "Build Locally Only (Faster, no registry push/pull)"    "$([ "$skip_intermediate_push_pull" == "y" ] && echo "on" || echo "off")" \
-           "use_builder"   "Use Optimized Jetson Builder (Recommended)"            "$([ "$use_builder" == "y" ] && echo "on" || echo "off")" \
-            2>"$temp_options"
+           --checklist "Select build options (SPACE to toggle):" \
+           $DIALOG_HEIGHT $DIALOG_WIDTH $CHECKLIST_HEIGHT \
+           "cache"       "Use build cache (--no-cache if off)"             "${use_cache}" \
+           "squash"      "Squash layers (--squash, experimental)"          "${use_squash}" \
+           "local_build" "Build locally only (--load if on, --push if off)" "${skip_intermediate_push_pull}" \
+           "use_builder" "Use Buildx builder (jetson-builder)"             "${use_builder}" \
+           2> "$temp_options"
 
     capture_screenshot "step1_build_options"
     local checklist_exit_status=$?
     if [ $checklist_exit_status -ne 0 ]; then
-      echo "Build options selection canceled (exit code: $checklist_exit_status). Exiting." >&2
       exit 1 # Exit subshell on cancel
     fi
     local selected_options
@@ -348,97 +362,84 @@ show_main_menu() {
     local MENU_HEIGHT=4 # Number of radio list items
     dialog --backtitle "Docker Build Configuration" \
            --title "Step 2: Base Image Selection" \
-           --ok-label "Confirm Choice" \
-           --cancel-label "Exit Build" \
-           --radiolist "Choose the base image for the *first* build stage:" $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
-           "use_default"    "Use Default (if locally available): $current_default_base_image_display"  "on" \
-           "pull_default"   "Pull Default Image Now: $current_default_base_image_display"             "off" \
-           "specify_custom" "Specify Custom Image (will attempt pull)"                "off" \
-           2>"$temp_base_choice"
+           --radiolist "Select the base image for the *first* build stage:" \
+           $DIALOG_HEIGHT $DIALOG_WIDTH $MENU_HEIGHT \
+           "use_default"  "Use default: $current_default_base_image_display" "on" \
+           "pull_default" "Pull default: $current_default_base_image_display" "off" \
+           "specify_custom" "Specify a custom image tag" "off" \
+           "list_available" "Choose from previously built images" "off" \
+           2> "$temp_base_choice"
 
     capture_screenshot "step2_base_image_selection"
     local menu_exit_status=$?
     if [ $menu_exit_status -ne 0 ]; then
-      echo "Base image selection canceled (exit code: $menu_exit_status). Exiting." >&2
       exit 1 # Exit subshell on cancel
     fi
     BASE_IMAGE_ACTION=$(cat "$temp_base_choice")
 
     # Handle chosen action
     case "$BASE_IMAGE_ACTION" in
-      "specify_custom")
-        dialog --backtitle "Docker Build Configuration" \
-               --title "Step 2a: Custom Base Image" \
-               --ok-label "Confirm Image" \
-               --cancel-label "Exit Build" \
-               --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$current_default_base_image_display" \
-               2>"$temp_custom_image"
-        local input_exit_status=$?
-        capture_screenshot "step2a_custom_base_image_input"
-        if [ $input_exit_status -ne 0 ]; then
-          echo "Custom base image input canceled (exit code: $input_exit_status). Exiting." >&2
-          exit 1 # Exit subshell on cancel
-        fi
-        local entered_image
-        entered_image=$(cat "$temp_custom_image")
-        if [ -z "$entered_image" ]; then
-          dialog --msgbox "No custom image entered. Reverting to default:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
-          capture_screenshot "step2a_custom_base_image_revert"
-          # Check msgbox exit status? Usually not necessary.
-          SELECTED_IMAGE_TAG="$current_default_base_image_display"
-          BASE_IMAGE_ACTION="use_default" # Update action for summary
-        else
-          SELECTED_IMAGE_TAG="$entered_image"
-          dialog --infobox "Attempting to pull custom base image:\\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH
-          capture_screenshot "step2a_custom_base_image_pull_attempt"
-          sleep 1 # Give user time to see infobox
-          # Use pull_image from docker_helpers.sh
-          if ! pull_image "$SELECTED_IMAGE_TAG"; then
-            if dialog --yesno "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nCheck tag/URL.\\n\\nContinue build using default ($current_default_base_image_display)? Warning: Build might fail." 14 $DIALOG_WIDTH; then
-               capture_screenshot "step2a_custom_base_image_pull_fail_continue"
-               SELECTED_IMAGE_TAG="$current_default_base_image_display"
-               BASE_IMAGE_ACTION="use_default" # Update action for summary
-               dialog --msgbox "Proceeding with default base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-               capture_screenshot "step2a_custom_base_image_pull_fail_revert_msg"
-            else
-               capture_screenshot "step2a_custom_base_image_pull_fail_exit"
-               echo "User chose to exit after failed custom image pull." >&2
-               exit 1 # Exit subshell
-            fi
-          else
-            dialog --msgbox "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-            capture_screenshot "step2a_custom_base_image_pull_success"
-          fi
-        fi
-        ;;
       "pull_default")
-        dialog --infobox "Attempting to pull default base image:\\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
-        capture_screenshot "step2_pull_default_attempt"
-        sleep 1
-        if ! pull_image "$current_default_base_image_display"; then
-           if dialog --yesno "Failed to pull default base image:\\n$current_default_base_image_display.\\nBuild might fail if not local.\\n\\nContinue anyway?" 12 $DIALOG_WIDTH; then
-              capture_screenshot "step2_pull_default_fail_continue"
-              dialog --msgbox "Warning: Default image not pulled. Using local if available." 8 $DIALOG_WIDTH
-              capture_screenshot "step2_pull_default_fail_continue_msg"
-           else
-              capture_screenshot "step2_pull_default_fail_exit"
-              echo "User chose to exit after failed default image pull." >&2
-              exit 1 # Exit subshell
-           fi
+        # Attempt to pull the default image
+        dialog --infobox "Pulling default base image: $DEFAULT_BASE_IMAGE..." 5 60
+        if pull_docker_image "$DEFAULT_BASE_IMAGE"; then
+            SELECTED_IMAGE_TAG="$DEFAULT_BASE_IMAGE"
+            dialog --msgbox "Successfully pulled $DEFAULT_BASE_IMAGE." 6 60
         else
-          dialog --msgbox "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
-          capture_screenshot "step2_pull_default_success"
+            dialog --msgbox "Failed to pull $DEFAULT_BASE_IMAGE. Check Docker connection and image name. Reverting to default tag without pulling." 8 70
+            SELECTED_IMAGE_TAG="$DEFAULT_BASE_IMAGE" # Revert to default tag name
         fi
-        SELECTED_IMAGE_TAG="$current_default_base_image_display"
         ;;
-      "use_default")
-        SELECTED_IMAGE_TAG="$current_default_base_image_display"
-        dialog --msgbox "Using default base image (local version if available):\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-        capture_screenshot "step2_use_default_msg"
+      "specify_custom")
+        # Ask for custom image tag
+        dialog --inputbox "Enter custom base image tag (e.g., user/repo:tag):" $DIALOG_HEIGHT $DIALOG_WIDTH "$DEFAULT_BASE_IMAGE" 2> "$temp_custom_image"
+        local input_exit_status=$?
+        if [ $input_exit_status -ne 0 ]; then exit 1; fi # Exit on cancel
+        local custom_tag
+        custom_tag=$(cat "$temp_custom_image")
+        if [[ -n "$custom_tag" ]]; then
+            SELECTED_IMAGE_TAG="$custom_tag"
+        else
+            dialog --msgbox "No custom tag entered. Using default: $DEFAULT_BASE_IMAGE" 6 60
+            SELECTED_IMAGE_TAG="$DEFAULT_BASE_IMAGE"
+        fi
         ;;
-      *)
-        echo "Invalid base image action selected: '$BASE_IMAGE_ACTION'. Exiting." >&2
-        exit 1 # Exit subshell
+      "list_available")
+        # Fetch available images from .env
+        local available_images_str="$AVAILABLE_IMAGES" # From env_setup.sh
+        local image_options=()
+        local image_count=0
+        if [[ -n "$available_images_str" ]]; then
+            local IFS=$'\n' # Split by newline
+            local images_array=($available_images_str)
+            local i=1
+            for img in "${images_array[@]}"; do
+                image_options+=("$i" "$img")
+                i=$((i+1))
+            done
+            image_count=${#images_array[@]}
+
+            dialog --title "Available Images" --menu "Select a previously built image:" $((DIALOG_HEIGHT + image_count)) $DIALOG_WIDTH $((image_count + 2)) "${image_options[@]}" 2> "$temp_custom_image"
+            local menu_exit_status=$?
+            if [ $menu_exit_status -eq 0 ]; then
+                local selected_index
+                selected_index=$(cat "$temp_custom_image")
+                # Array index is selected_index - 1
+                SELECTED_IMAGE_TAG="${images_array[$((selected_index - 1))]}"
+            else
+                # Cancelled or no selection, revert to default
+                dialog --msgbox "No image selected or cancelled. Using default: $DEFAULT_BASE_IMAGE" 6 60
+                SELECTED_IMAGE_TAG="$DEFAULT_BASE_IMAGE"
+                BASE_IMAGE_ACTION="use_default" # Update action display
+            fi
+        else
+            dialog --msgbox "No previously built images found in .env (AVAILABLE_IMAGES). Using default: $DEFAULT_BASE_IMAGE" 7 70
+            SELECTED_IMAGE_TAG="$DEFAULT_BASE_IMAGE"
+            BASE_IMAGE_ACTION="use_default" # Update action display
+        fi
+        ;;
+      "use_default"|*) # Default case
+        SELECTED_IMAGE_TAG="$DEFAULT_BASE_IMAGE"
         ;;
     esac
 
@@ -481,15 +482,15 @@ show_main_menu() {
       echo "export DOCKER_USERNAME=\"${DOCKER_USERNAME:-}\""
       echo "export DOCKER_REPO_PREFIX=\"${DOCKER_REPO_PREFIX:-}\""
       echo "export DOCKER_REGISTRY=\"${DOCKER_REGISTRY:-}\""
-      echo "export use_cache=\"${use_cache:-n}\""
-      echo "export use_squash=\"${use_squash:-n}\""
-      echo "export skip_intermediate_push_pull=\"${skip_intermediate_push_pull:-y}\""
-      echo "export use_builder=\"${use_builder:-y}\""
+      # Export SELECTED_* variables for build_stages.sh
+      echo "export SELECTED_USE_CACHE=\"${use_cache:-n}\""
+      echo "export SELECTED_USE_SQUASH=\"${use_squash:-n}\""
+      echo "export SELECTED_SKIP_INTERMEDIATE=\"${skip_intermediate_push_pull:-y}\""
+      echo "export SELECTED_USE_BUILDER=\"${use_builder:-y}\""
       echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\""
-      echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\"" # Use global PLATFORM
+      echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\""
       echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Quote list
     } > "$PREFS_FILE"
-    echo "DEBUG: Dialog subshell finished internal commands." >&2
     exit 0 # Successful exit from subshell
   ) # End subshell
   local subshell_exit_code=$?

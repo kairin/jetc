@@ -1,3 +1,5 @@
+> Documentation for all CUDA subcomponents is now consolidated in [../README.md](../README.md).
+
 <!-- --- Footer --- -->
 <!--
  File location diagram:
