@@ -1,77 +1,135 @@
 #!/bin/bash
 # filepath: /workspaces/jetc/buildx/scripts/user_interaction.sh
 
-# Source necessary utilities and UI functions
+# =========================================================================
+# User Interaction Script
+# Responsibility: Handle user choices for build configuration via dialog/prompts.
+#                 Update .env file and export choices for the current build run.
+# Relies on logging functions sourced by the main script.
+# Relies on utils.sh, dialog_ui.sh, env_setup.sh, env_update.sh sourced by main script or caller.
+# =========================================================================
+
+# --- Dependencies ---\
 SCRIPT_DIR_UI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_UI/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_UI/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_UI/interactive_ui.sh" || { echo "Error: interactive_ui.sh not found."; exit 1; }
 
-# =========================================================================
-# Function: Handle user interaction for build preferences
-# Exports: Variables defined in get_build_preferences via prefs file
-# Returns: 0 on success, 1 on failure or user cancellation
-# =========================================================================
+# DO NOT source logging.sh, env_setup.sh, utils.sh, dialog_ui.sh, env_update.sh here.
+# Assume they are sourced by the main build.sh script.
+# Check if required functions/variables exist as a safety measure.
+if ! declare -f log_info > /dev/null || ! declare -f show_main_menu > /dev/null || ! declare -f update_env_var > /dev/null || [[ -z "${AVAILABLE_IMAGES:-}" ]]; then
+     echo "CRITICAL ERROR: Required functions/variables (log_info, show_main_menu, update_env_var, AVAILABLE_IMAGES) not found in user_interaction.sh. Ensure main script sources dependencies." >&2
+     exit 1
+fi
+
+# --- Main Function ---
+
+# Handle user interaction to get build preferences
+# Exports:
+#   SELECTED_BASE_IMAGE, SELECTED_FOLDERS_LIST, use_cache, use_squash,
+#   skip_intermediate_push_pull, use_builder
+# Returns: 0 on success, 1 on cancellation or error
 handle_user_interaction() {
-    local PREFS_FILE="/tmp/build_prefs.sh"
-    
-    log_debug "Starting user interaction to gather build preferences..."
-    
-    # Call get_build_preferences from interactive_ui.sh
-    if (! get_build_preferences); then
-        log_error "User cancelled or error during preference selection"
-        return 1
-    fi
-    
-    # Check if the prefs file was created successfully
-    if [[ ! -f "$PREFS_FILE" ]]; then
-        log_error "Preferences file not created at $PREFS_FILE"
-        return 1
-    fi
-    
-    # Source the prefs file to export variables back to the caller's environment
-    log_debug "Sourcing preferences from $PREFS_FILE"
-    # shellcheck disable=SC1090
-    source "$PREFS_FILE" || {
-        log_error "Failed to source preferences file $PREFS_FILE"
-        return 1
-    }
-    
-    # Verify key variables were set
-    log_debug "Verifying sourced preferences..."
-    log_debug "DOCKER_USERNAME=${DOCKER_USERNAME:-<unset>}"
-    log_debug "DOCKER_REPO_PREFIX=${DOCKER_REPO_PREFIX:-<unset>}"
-    log_debug "SELECTED_BASE_IMAGE=${SELECTED_BASE_IMAGE:-<unset>}"
-    log_debug "SELECTED_FOLDERS_LIST=${SELECTED_FOLDERS_LIST:-<unset>}"
-    log_debug "use_cache=${use_cache:-<unset>}"
-    log_debug "skip_intermediate_push_pull=${skip_intermediate_push_pull:-<unset>}"
+    log_info "--- Starting User Interaction ---"
 
-    if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" || -z "${SELECTED_BASE_IMAGE:-}" ]]; then
-        log_error "Required variables not set after sourcing preferences"
+    # Use show_main_menu from dialog_ui.sh
+    # It should populate /tmp/build_prefs.sh
+    if ! show_main_menu; then
+        log_error "User cancelled or error in main menu."
         return 1
     fi
-    
+
+    # Source the temporary file to get user selections
+    local prefs_file="/tmp/build_prefs.sh"
+    if [[ -f "$prefs_file" ]]; then
+        log_debug "Sourcing user preferences from $prefs_file"
+        # shellcheck disable=SC1090
+        source "$prefs_file"
+        # Optionally remove the temp file now
+        # rm "$prefs_file"
+    else
+        log_error "Build preferences file ($prefs_file) not found after menu."
+        return 1
+    fi
+
+    # --- Export selections for the current build run ---
+    # These variables were set by sourcing $prefs_file
+    export SELECTED_BASE_IMAGE="${SELECTED_BASE_IMAGE:-}"
+    export SELECTED_FOLDERS_LIST="${SELECTED_FOLDERS_LIST:-}"
+    export use_cache="${use_cache:-y}" # Default to use cache
+    export use_squash="${use_squash:-n}" # Default to no squash
+    export skip_intermediate_push_pull="${skip_intermediate_push_pull:-y}" # Default to local build (load)
+    export use_builder="${use_builder:-y}" # Default to use buildx builder
+    # DOCKER_USERNAME, DOCKER_REPO_PREFIX, DOCKER_REGISTRY are also set from prefs_file
+
+    # Validate essential selections
+    if [[ -z "$SELECTED_BASE_IMAGE" ]]; then
+        log_error "No base image selected."
+        return 1
+    fi
+     if [[ -z "$SELECTED_FOLDERS_LIST" ]]; then
+        log_warning "No build stages selected by the user."
+        # Allow proceeding with no stages? Or return 1? For now, allow.
+    fi
+     if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" ]]; then
+         log_error "Docker username or repository prefix not set."
+         # These should have been prompted by the dialog UI if empty in .env
+         return 1
+     fi
+
+
     log_success "User interaction completed successfully"
+    log_info "Selections:"
+    log_info "  Base Image: $SELECTED_BASE_IMAGE"
+    log_info "  Selected Stages: $SELECTED_FOLDERS_LIST"
+    log_info "  Docker User: ${DOCKER_USERNAME}"
+    log_info "  Docker Repo Prefix: ${DOCKER_REPO_PREFIX}"
+    [[ -n "${DOCKER_REGISTRY:-}" ]] && log_info "  Docker Registry: ${DOCKER_REGISTRY}"
+    log_info "  Use Cache: $use_cache"
+    log_info "  Use Squash: $use_squash"
+    log_info "  Skip Push/Pull (Build Locally): $skip_intermediate_push_pull"
+    log_info "  Use Buildx Builder: $use_builder"
+
+    # --- Update .env file with persistent settings (optional) ---
+    # Example: Update the default base image if the user chose a different one
+    # log_debug "Updating DEFAULT_BASE_IMAGE in .env to $SELECTED_BASE_IMAGE"
+    # update_env_var "DEFAULT_BASE_IMAGE" "$SELECTED_BASE_IMAGE" # Uses function from env_update.sh
+
+    # Update Docker credentials if they were entered/confirmed
+    log_debug "Updating Docker credentials in .env"
+    update_env_var "DOCKER_USERNAME" "${DOCKER_USERNAME}"
+    update_env_var "DOCKER_REPO_PREFIX" "${DOCKER_REPO_PREFIX}"
+    update_env_var "DOCKER_REGISTRY" "${DOCKER_REGISTRY:-}" # Save registry even if empty
+
     return 0
 }
 
-# Execute the function if the script is run directly (for testing)
+
+# --- Main Execution (for testing) ---\
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Running user_interaction.sh directly for testing..."
+    # If testing directly, source dependencies first
+    if [ -f "$SCRIPT_DIR_UI/logging.sh" ]; then source "$SCRIPT_DIR_UI/logging.sh"; init_logging; else echo "ERROR: Cannot find logging.sh for test."; exit 1; fi
+    if [ -f "$SCRIPT_DIR_UI/env_setup.sh" ]; then source "$SCRIPT_DIR_UI/env_setup.sh"; else echo "ERROR: Cannot find env_setup.sh for test."; exit 1; fi
+    if [ -f "$SCRIPT_DIR_UI/utils.sh" ]; then source "$SCRIPT_DIR_UI/utils.sh"; else echo "ERROR: Cannot find utils.sh for test."; exit 1; fi
+    # Need stubs or the real dialog_ui.sh and env_update.sh for testing
+    if [ -f "$SCRIPT_DIR_UI/dialog_ui.sh" ]; then source "$SCRIPT_DIR_UI/dialog_ui.sh"; else echo "ERROR: Cannot find dialog_ui.sh for test."; exit 1; fi
+    if [ -f "$SCRIPT_DIR_UI/env_update.sh" ]; then source "$SCRIPT_DIR_UI/env_update.sh"; else echo "ERROR: Cannot find env_update.sh for test."; exit 1; fi
+
+    log_info "Running user_interaction.sh directly for testing..."
+    # Mock AVAILABLE_IMAGES if needed for testing dialog_ui.sh
+    export AVAILABLE_IMAGES="image1:tag1;image2:tag2"
+    # Mock .env file path for env_update.sh tests
+    export ENV_FILE="/tmp/test_ui_env_$$.env"; touch "$ENV_FILE"
+
     handle_user_interaction
-    exit $?
+    result=$?
+    log_info "handle_user_interaction finished with status: $result"
+    # Inspect exported variables if needed
+    echo "SELECTED_BASE_IMAGE=${SELECTED_BASE_IMAGE:-<unset>}"
+    # Clean up mock .env
+    rm "$ENV_FILE"
+    log_info "User interaction test finished."
+    exit $result
 fi
 
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── user_interaction.sh <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Handles user interaction for gathering build preferences. Added logging.
-# Author: GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+# --- Footer ---
+# Description: Handles user interaction for build configuration. Relies on dependencies sourced by caller.
+# COMMIT-TRACKING: UUID-20250424-205555-LOGGINGREFACTOR
