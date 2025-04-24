@@ -80,7 +80,7 @@ build_selected_stages() {
 
         # Determine the base image for the current stage
         # Default to the last successful tag, or the initial base if it's the first stage
-        local current_base_image="${LAST_SUCCESSFUL_TAG:-$INITIAL_BASE_IMAGE}"
+        local current_base_image="${LAST_SUCCESSFUL_TAG:-$SELECTED_BASE_IMAGE}"
         log_debug "Using base image for '$folder_name': $current_base_image"
 
         # Call build_folder_image with all required arguments from global scope
@@ -206,6 +206,6 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Manages the execution of build stages. Fixed passing of SELECTED_USE_CACHE to build_folder_image.
+# Description: Manages the execution of build stages. Fixed unbound variable error by using SELECTED_BASE_IMAGE.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250425-071500-CACHEFIX
+# COMMIT-TRACKING: UUID-20250425-071127-BASEIMGFIX
