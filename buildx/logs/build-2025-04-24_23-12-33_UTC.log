@@ -1,0 +1,83 @@
+2025-04-24 23:12:33 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-24_23-12-33_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-24_23-12-33_UTC.log
+2025-04-24 23:12:33 - [START]: Script started
+2025-04-24 23:12:33 - [INFO]: Checking dependencies: docker dialog
+2025-04-24 23:12:33 - [SUCCESS]: All dependencies verified.
+2025-04-24 23:12:33 - [INFO]: Starting Jetson Container Build Process...
+2025-04-24 23:12:33 - [INFO]: --- Starting User Interaction ---
+2025-04-24 23:12:53 - [INFO]: Attempting to pull image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 23:12:55 - [SUCCESS]:  -> Successfully pulled image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 23:12:56 - [SUCCESS]: User interaction completed successfully
+2025-04-24 23:12:56 - [INFO]: Selections:
+2025-04-24 23:12:56 - [INFO]:   Base Image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 23:12:56 - [INFO]:   Selected Stages: 01-00-build-essential 01-01-arrow 01-02-numba 01-03-numpy 01-04-cuda 01-05-h5py
+2025-04-24 23:12:56 - [INFO]:   Docker User: kairin
+2025-04-24 23:12:56 - [INFO]:   Docker Repo Prefix: jetc
+2025-04-24 23:12:56 - [INFO]:   Use Cache: n
+2025-04-24 23:12:56 - [INFO]:   Use Squash: n
+2025-04-24 23:12:56 - [INFO]:   Skip Push/Pull (Build Locally): n
+2025-04-24 23:12:56 - [INFO]:   Use Buildx Builder: n
+2025-04-24 23:12:56 - [INFO]: --- Setting up Docker Buildx ---
+2025-04-24 23:12:56 - [INFO]: Target builder instance: 'jetson-builder'
+2025-04-24 23:12:57 - [INFO]: Buildx builder 'jetson-builder' already exists.
+2025-04-24 23:12:57 - [SUCCESS]: --- Docker Buildx setup complete. Using builder: 'jetson-builder' ---
+2025-04-24 23:12:57 - [SUCCESS]: Docker buildx builder setup complete.
+2025-04-24 23:12:57 - [INFO]: --- Determining Build Order ---
+2025-04-24 23:12:57 - [INFO]: User selected specific stages: 01-00-build-essential 01-01-arrow 01-02-numba 01-03-numpy 01-04-cuda 01-05-h5py
+2025-04-24 23:12:57 - [INFO]: Final determined build order (5 stages):
+2025-04-24 23:12:57 - [INFO]:   - 01-00-build-essential
+2025-04-24 23:12:57 - [INFO]:   - 01-01-arrow
+2025-04-24 23:12:57 - [INFO]:   - 01-02-numba
+2025-04-24 23:12:57 - [INFO]:   - 01-03-numpy
+2025-04-24 23:12:57 - [INFO]:   - 01-05-h5py
+2025-04-24 23:12:57 - [INFO]: --- Build Order Determined ---
+2025-04-24 23:12:57 - [SUCCESS]: Build order determined.
+2025-04-24 23:12:57 - [INFO]: --- Starting Build Stages ---
+2025-04-24 23:12:57 - [INFO]: Found 5 stages to process.
+2025-04-24 23:12:57 - [INFO]: --- Processing Stage: 01-00-build-essential ---
+2025-04-24 23:12:57 - [INFO]: --------------------------------------------------
+2025-04-24 23:12:57 - [INFO]: Building image from folder: /media/kkk/Apps/jetc/buildx/build/01-00-build-essential
+2025-04-24 23:12:57 - [INFO]: Image Name: 01-00-build-essential
+2025-04-24 23:12:57 - [INFO]: Platform: linux/arm64
+2025-04-24 23:12:57 - [INFO]: Tag: kairin/jetc:01-00-build-essential
+2025-04-24 23:12:57 - [INFO]: Base Image (FROM via ARG): "kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3"
+2025-04-24 23:12:57 - [INFO]: Skip Intermediate Push/Pull: n
+2025-04-24 23:12:57 - [INFO]: Use Buildx Builder: y
+2025-04-24 23:12:57 - [INFO]: Use Cache: y
+2025-04-24 23:12:57 - [INFO]: Use Squash: n
+2025-04-24 23:12:57 - [INFO]: --------------------------------------------------
+2025-04-24 23:12:57 - [INFO]: Using --push (buildx)
+2025-04-24 23:12:57 - [INFO]: Running Build Command:
+2025-04-24 23:13:10 - [INFO]: Pulling back pushed image to verify: kairin/jetc:01-00-build-essential
+2025-04-24 23:13:10 - [INFO]: Attempting to pull image: kairin/jetc:01-00-build-essential
+2025-04-24 23:13:25 - [SUCCESS]:  -> Successfully pulled image: kairin/jetc:01-00-build-essential
+2025-04-24 23:13:25 - [SUCCESS]: Pull-back verification successful.
+2025-04-24 23:13:25 - [SUCCESS]: Build process completed successfully for: kairin/jetc:01-00-build-essential
+2025-04-24 23:13:25 - [SUCCESS]: Stage '01-00-build-essential' completed successfully.
+2025-04-24 23:13:25 - [INFO]:   Output Image: kairin/jetc:01-00-build-essential
+2025-04-24 23:13:25 - [INFO]: --- Stage Complete: 01-00-build-essential ---
+2025-04-24 23:13:25 - [INFO]: --- Processing Stage: 01-01-arrow ---
+2025-04-24 23:13:25 - [INFO]: --------------------------------------------------
+2025-04-24 23:13:25 - [INFO]: Building image from folder: /media/kkk/Apps/jetc/buildx/build/01-01-arrow
+2025-04-24 23:13:25 - [INFO]: Image Name: 01-01-arrow
+2025-04-24 23:13:25 - [INFO]: Platform: linux/arm64
+2025-04-24 23:13:25 - [INFO]: Tag: kairin/jetc:01-01-arrow
+2025-04-24 23:13:25 - [INFO]: Base Image (FROM via ARG): "kairin/jetc:01-00-build-essential"
+2025-04-24 23:13:25 - [INFO]: Skip Intermediate Push/Pull: n
+2025-04-24 23:13:25 - [INFO]: Use Buildx Builder: y
+2025-04-24 23:13:25 - [INFO]: Use Cache: y
+2025-04-24 23:13:25 - [INFO]: Use Squash: n
+2025-04-24 23:13:25 - [INFO]: --------------------------------------------------
+2025-04-24 23:13:26 - [INFO]: Using --push (buildx)
+2025-04-24 23:13:26 - [INFO]: Running Build Command:
+2025-04-24 23:13:26 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 23:13:26 - [ERROR]: Error: Failed to build image for 01-01-arrow (/media/kkk/Apps/jetc/buildx/build/01-01-arrow).
+2025-04-24 23:13:26 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 23:13:26 - [ERROR]: Stage '01-01-arrow' failed with exit code 1.
+2025-04-24 23:13:26 - [ERROR]: --- Build Process Aborted Due to Failure in Stage '01-01-arrow' ---
+2025-04-24 23:13:26 - [ERROR]: Build process completed with errors during stages.
+2025-04-24 23:13:26 - [INFO]: Build process completed.
+2025-04-24 23:13:26 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 23:13:26 - [WARN]: Last Successful Image Tag: kairin/jetc:01-00-build-essential
+2025-04-24 23:13:26 - [INFO]: Skipping deprecated post-build menu.
+2025-04-24 23:13:26 - [END]: Script finished
+2025-04-24 23:13:26 - [INFO]: Returning overall build status: 1

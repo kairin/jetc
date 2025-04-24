@@ -103,7 +103,7 @@ build_selected_stages() {
                  log_success "Stage '$folder_name' completed successfully."
                  log_info "  Output Image: $LAST_SUCCESSFUL_TAG"
                  # Update AVAILABLE_IMAGES in .env
-                 update_available_images_env "$LAST_SUCCESSFUL_TAG"
+                 update_available_images_in_env "$LAST_SUCCESSFUL_TAG"
                  log_info "--- Stage Complete: $folder_name ---"
             else
                  log_error "Build succeeded for '$folder_name' but fixed_tag was not exported correctly."
@@ -206,6 +206,6 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Manages the execution of build stages. Fixed unbound variable error by using SELECTED_BASE_IMAGE.
+# Description: Manages the execution of build stages. Fixed typo in update_available_images_in_env call.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250425-071127-BASEIMGFIX
+# COMMIT-TRACKING: UUID-20250425-071326-ENVUPDFIX
