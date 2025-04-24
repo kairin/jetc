@@ -24,7 +24,7 @@ run_container_verification() {
     # --- Host-Side Checks ---
     # Ensure required host functions exist
     if ! declare -f log_info > /dev/null || ! declare -f verify_image_exists > /dev/null; then
-         echo "CRITICAL HOST ERROR: Required functions (log_info, verify_image_exists) not found. Ensure build.sh sources dependencies." >&2
+        echo "ERROR (verification.sh): Required host functions (log_info, verify_image_exists) not found." >&2
          return 1
     fi
 
@@ -51,18 +51,17 @@ run_container_verification() {
 
     # Run the container, mounting the temp script and executing the internal function
     # Use --rm for automatic cleanup, run non-interactively (-t can cause issues)
+    # Mount the script to /tmp/verify.sh inside the container
+    # Execute bash /tmp/verify.sh with the internal function name and mode as arguments
     if docker run --rm \
-           -v "$temp_script:/tmp/verification_entrypoint.sh" \
-           --entrypoint /bin/bash \
-           "$image_tag" \
-           /tmp/verification_entrypoint.sh "_run_verification_in_container" "$mode"; then
-        log_success "--- Verification (Mode: $mode) completed successfully in container: $image_tag ---"
-        rm -f "$temp_script" # Explicit cleanup on success
-        trap - RETURN
+        --gpus all \
+        -v "$temp_script:/tmp/verify.sh" \
+        "$image_tag" \
+        bash /tmp/verify.sh _run_verification_in_container "$mode"; then
+        log_success "Container verification completed successfully for $image_tag (Mode: $mode)."
         return 0
     else
-        log_error "--- Verification (Mode: $mode) FAILED in container: $image_tag ---"
-        # temp_script is cleaned by trap
+        log_error "Container verification failed for $image_tag (Mode: $mode)."
         return 1
     fi
 }
@@ -237,43 +236,21 @@ _run_verification_in_container() {
 # Script Entry Point Logic (Handles being called by host or directly)
 # =========================================================================
 # Check if the first argument is the internal function name
-if [[ "${1:-}" == "_run_verification_in_container" ]]; then
-    # Shift arguments and call the internal function
-    shift
-    _run_verification_in_container "$@"
-    exit $? # Exit with the status of the internal function
-fi
+ if [[ "${1:-}" == "_run_verification_in_container" ]]; then
+    # Call the internal function with the mode argument ($2)
+    _run_verification_in_container "${2:-all}"
+     exit $? # Exit with the status of the internal function
+ fi
 
-# --- Host-Side Main Execution (for testing run_container_verification) ---
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # If testing host-side directly, source dependencies first
-    # Need to mock logging and docker_helpers if run standalone
-    echo "Running verification.sh host-side directly for testing..."
-    if ! declare -f log_info > /dev/null; then
-        echo "Mocking logging functions for host test..."
-        log_info() { echo "INFO: $1"; }
-        log_warning() { echo "WARNING: $1" >&2; }
-        log_error() { echo "ERROR: $1" >&2; }
-        log_success() { echo "SUCCESS: $1"; }
-        log_debug() { :; }
-    fi
-     if ! declare -f verify_image_exists > /dev/null; then
-         echo "Mocking docker_helpers functions for host test..."
-         verify_image_exists() { log_info "Mock verify_image_exists for $1: Assuming TRUE"; return 0; }
-     fi
-
-    # Test the host-side function (requires docker running and a test image)
-    TEST_IMAGE="hello-world" # Use a simple image for basic test
-    log_info "*** Testing run_container_verification with image: $TEST_IMAGE ***"
-    if run_container_verification "$TEST_IMAGE" "basic"; then
-        log_success "Host-side test completed successfully."
-    else
-        log_error "Host-side test failed."
-    fi
-    exit 0
-fi
+ # --- Host-Side Main Execution (for testing run_container_verification) ---
+ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "This script is intended to be sourced or called by other scripts."
+    echo "To test verification, use the main build script or call run_container_verification <image_tag> [mode]."
+     exit 0
+ fi
 
 
 # --- Footer ---
-# Description: Runs verification checks inside a container. Made container part self-contained.
-# COMMIT-TRACKING: UUID-20250424-230000-VERIFIX
+# Description: Runs verification checks inside a container. Fixed docker run command.
+# Author: Mr K / GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250425-070000-VERIFIX2

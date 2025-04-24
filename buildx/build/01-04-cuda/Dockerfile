@@ -1,13 +1,13 @@
-# COMMIT-TRACKING: UUID-20240730-220000-PLATALL
-# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
-# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-063724-CUDABUILD
+# Description: Fixed COPY instruction to use subdirectories (001-cuda, etc.) instead of non-existent install.sh. Added verification checks.
+# Author: Mr K / GitHub Copilot / kairin
 #
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- Project documentation
 # ├── buildx/                    <- Buildx directory
 # │   ├── build/                   <- Build stages directory
-# │   │   └── 01-cuda/             <- Current directory
+# │   │   └── 01-04-cuda/          <- Current directory
 # │   │       └── Dockerfile       <- THIS FILE
 # └── ...                        <- Other project files
 #---
@@ -27,10 +27,29 @@ ARG CUDA_URL \
     CUDA_ARCH_LIST \
     DISTRO
 
-# Copy the install script into the container
-# Assuming install.sh is directly in the build/01-cuda directory
-COPY install.sh /tmp/cuda/install.sh
-RUN /tmp/cuda/install.sh
+# Change to a working directory for the build process
+WORKDIR /tmp/cuda-build
+
+# Copy each installation step directory and run its install script
+# Ensure these directories and install.sh scripts exist in your build context
+COPY 001-cuda/ /tmp/cuda-build/001-cuda/
+RUN cd 001-cuda && chmod +x install.sh && ./install.sh
+
+COPY 002-cuda-python/ /tmp/cuda-build/002-cuda-python/
+RUN cd 002-cuda-python && chmod +x install.sh && ./install.sh
+
+COPY 003-cudnn/ /tmp/cuda-build/003-cudnn/
+RUN cd 003-cudnn && chmod +x install.sh && ./install.sh
+
+COPY 004-cupy/ /tmp/cuda-build/004-cupy/
+RUN cd 004-cupy && chmod +x install.sh && ./install.sh
+
+COPY 005-pycuda/ /tmp/cuda-build/005-pycuda/
+RUN cd 005-pycuda && chmod +x install.sh && ./install.sh
+
+# Cleanup build directory
+RUN rm -rf /tmp/cuda-build
+WORKDIR /
 
 ENV CUDA_HOME="/usr/local/cuda"
 ENV NVCC_PATH="$CUDA_HOME/bin/nvcc"
@@ -64,6 +83,9 @@ ENV LD_LIBRARY_PATH="${CUDA_HOME}/compat:${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}"
 # Add verification checks for CUDA
 RUN echo "# Check for CUDA" >> /tmp/cuda_checks.sh \
     && echo "check_cmd nvcc 'NVIDIA CUDA Compiler'" >> /tmp/cuda_checks.sh \
+    && echo "check_cmd python3 'Python 3 Interpreter'" >> /tmp/cuda_checks.sh \
+    && echo "check_python_pkg cupy 'CuPy'" >> /tmp/cuda_checks.sh \
+    && echo "check_python_pkg pycuda 'PyCUDA'" >> /tmp/cuda_checks.sh \
     && echo "check_cmd nvidia-smi 'NVIDIA System Management Interface'" >> /tmp/cuda_checks.sh \
     && cat /tmp/cuda_checks.sh >> /opt/list_app_checks.sh
 
