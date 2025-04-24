@@ -46,17 +46,25 @@ if ! command -v source_script &> /dev/null; then
     exit 1
 fi
 
+# Add debugging before sourcing buildx_setup.sh
+log_debug "Current SCRIPT_DIR before sourcing buildx_setup: $SCRIPT_DIR"
+log_debug "Path to be sourced for Buildx Setup: $SCRIPT_DIR/scripts/buildx_setup.sh"
 # Source buildx setup script
 source_script "$SCRIPT_DIR/scripts/buildx_setup.sh" "Buildx Setup"
 # Source docker helpers script
+log_debug "Path to be sourced for Docker Helpers: $SCRIPT_DIR/scripts/docker_helpers.sh"
 source_script "$SCRIPT_DIR/scripts/docker_helpers.sh" "Docker Helpers"
 # Source user interaction script (handles dialog or basic prompts)
+log_debug "Path to be sourced for User Interaction: $SCRIPT_DIR/scripts/user_interaction.sh"
 source_script "$SCRIPT_DIR/scripts/user_interaction.sh" "User Interaction"
 # Source build order determination script
+log_debug "Path to be sourced for Build Order: $SCRIPT_DIR/scripts/build_order.sh"
 source_script "$SCRIPT_DIR/scripts/build_order.sh" "Build Order"
 # Source build stages execution script
+log_debug "Path to be sourced for Build Stages: $SCRIPT_DIR/scripts/build_stages.sh"
 source_script "$SCRIPT_DIR/scripts/build_stages.sh" "Build Stages"
 # Source post-build menu script
+log_debug "Path to be sourced for Post-Build Menu: $SCRIPT_DIR/scripts/post_build_menu.sh"
 source_script "$SCRIPT_DIR/scripts/post_build_menu.sh" "Post-Build Menu"
 
 # --- Main Build Logic ---
@@ -144,4 +152,4 @@ exit 0
 #
 # Description: Main build orchestrator script for the Jetson Container project.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-101500-SOURCINGFIX # New UUID for sourcing fix
+# COMMIT-TRACKING: UUID-20250425-104500-TYPOFIX3 # Use same UUID

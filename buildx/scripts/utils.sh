@@ -89,7 +89,8 @@ source_script() {
              return 0
         fi
     else
-        "${log_func_prefix}log_error" "$script_name not found at: $script_path" # Corrected typo here
+        # Ensure this line uses log_error, not log_log_error
+        "${log_func_prefix}log_error" "$script_name not found at: $script_path" # VERIFY THIS LINE
         if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_error" "$script_name not found at: $script_path"; fi
         return 1
     fi
@@ -169,4 +170,4 @@ _utils_log_debug "utils.sh finished execution."
 #
 # Description: General utility functions for the build system. Added get_system_datetime.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-103000-TYPOFIX2 # New UUID for second typo fix
+# COMMIT-TRACKING: UUID-20250425-104500-TYPOFIX3 # New UUID for re-applying typo fix
