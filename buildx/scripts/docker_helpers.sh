@@ -353,14 +353,16 @@ generate_base_image_args() {
 generate_cache_args() {
   local use_cache=$1
   log_debug "Generating cache args for use_cache=$use_cache"
+# In generate_cache_args function...
   if [[ "$use_cache" == "n" ]]; then
     log_debug "Generated args: --no-cache"
     echo "--no-cache" # Output to stdout
   else
     log_debug "Generated args: (empty)"
     echo "" # Output empty string to stdout
-  fi # Removed extra '}' here
+  fi # <--- CORRECTED LINE (was })
 }
+
 
 # =========================================================================
 # Function: Generate Docker build push/load arguments string

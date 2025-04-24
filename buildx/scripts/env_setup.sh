@@ -103,15 +103,16 @@ init_logging() {
     local main_log="${2:-build.log}"
     local error_log="${3:-errors.log}"
 
-    # Create log directory if it doesn't exist
-    if [[ ! -d "$log_dir" ]]; then
-        log_debug "Creating log directory: $log_dir"
-        mkdir -p "$log_dir" || {
-            echo -e "${C_ERROR}Error: Failed to create log directory: $log_dir${C_RESET}" >&2 # Direct echo before logging is fully setup
-            return 1
-        }
-    fi # Added missing 'fi' here based on standard if block structure
-
+    # In init_logging function...
+        # Create log directory if it doesn't exist
+        if [[ ! -d "$log_dir" ]]; then
+            log_debug "Creating log directory: $log_dir"
+            mkdir -p "$log_dir" || {
+                echo -e "${C_ERROR}Error: Failed to create log directory: $log_dir${C_RESET}" >&2 # Direct echo before logging is fully setup
+                return 1
+            }
+        fi # <--- ADDED MISSING fi HERE
+    
     # Initialize log files
     > "$main_log" || {
         echo -e "${C_ERROR}Error: Failed to create/clear main log file: $main_log${C_RESET}" >&2

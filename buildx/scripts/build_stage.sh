@@ -62,11 +62,13 @@ build_single_stage() {
         return 1
     }
     
-    # Check Dockerfile exists
-    if [[ ! -f "$folder_path/Dockerfile" ]]; then
-        log_error "Dockerfile not found in $folder_path" # Use log_error
+# In build_single_stage function...
+    # Check folder exists
+    if [[ ! -d "$folder_path" ]]; then
+        log_error "Build folder does not exist: $folder_path" # Use log_error
         return 1
-    }
+    fi # <--- CORRECTED LINE (was })
+
     
     # Call build_folder_image from docker_helpers.sh
     # Disable error propagation for build_folder_image to check status manually
