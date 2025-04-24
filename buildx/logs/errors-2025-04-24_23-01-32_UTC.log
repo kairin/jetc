@@ -1,0 +1,9 @@
+2025-04-24 23:05:04 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 23:05:04 - [ERROR]: Error: Failed to build image for 01-01-arrow (/media/kkk/Apps/jetc/buildx/build/01-01-arrow).
+2025-04-24 23:05:04 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 23:05:04 - [ERROR]: Stage '01-01-arrow' failed with exit code 1.
+2025-04-24 23:05:04 - [ERROR]: Aborting remaining build stages due to failure in '01-01-arrow'.
+2025-04-24 23:05:04 - [ERROR]: One or more build stages failed.
+2025-04-24 23:05:04 - [ERROR]: Build process completed with errors during stages.
+2025-04-24 23:05:04 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 23:05:04 - [WARN]: Last Successful Image Tag: kairin/jetc:01-00-build-essential
