@@ -39,11 +39,13 @@ PREFS_FILE="/tmp/build_prefs.sh"
 # Always load .env before calling get_user_preferences
 load_env_variables
 
-# Always call get_user_preferences (do not skip if PREFS_FILE exists)
-get_user_preferences
-if [ $? -ne 0 ]; then
-  echo "User cancelled or error in preferences dialog. Exiting build."
-  exit 1
+# Only call get_user_preferences if PREFS_FILE does not exist or is empty
+if [ ! -s "$PREFS_FILE" ]; then
+  get_user_preferences
+  if [ $? -ne 0 ]; then
+    echo "User cancelled or error in preferences dialog. Exiting build."
+    exit 1
+  fi
 fi
 
 # Always source the exported preferences so all variables are available for the build process
