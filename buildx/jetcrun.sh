@@ -413,13 +413,28 @@ fi
 
 # Prepare command based on whether we're using jetson-containers or direct docker run
 USE_JETSON_CONTAINERS=true
-FINAL_RUN_OPTS="$RUN_OPTS"
+FINAL_RUN_OPTS="$RUN_OPTS" # RUN_OPTS already contains --user root if USER_ROOT=on
+RUN_CMD=""
+USER_ARG=""
+
+# Determine the user argument based on USER_ROOT selection
+# Note: RUN_OPTS already includes '--user root' if USER_ROOT is 'on'/'y'
+if [[ "$USER_ROOT" != "on" && "$USER_ROOT" != "y" ]]; then
+  # Define the non-root user (could be made configurable via .env later)
+  NON_ROOT_USER="kkk"
+  USER_ARG="--user $NON_ROOT_USER"
+  echo "Running as non-root user: $NON_ROOT_USER"
+else
+  echo "Running as root user (or default container user if --user root not in RUN_OPTS)"
+fi
+
 
 if [ "$USE_JETSON_CONTAINERS" = true ]; then
   # When using jetson-containers, don't add X11 arguments as they're handled internally
   echo "Using jetson-containers for container execution"
-  RUN_CMD="jetson-containers run --user kkk" # change here remove user kkk to get back root
-  
+  # Remove hardcoded user, apply USER_ARG if needed
+  RUN_CMD="jetson-containers run $USER_ARG"
+
   # Add X11 flag for jetson-containers if needed
   if [ "$X11_ENABLED" = "true" ]; then
     # jetson-containers already handles X11 forwarding internally
@@ -428,22 +443,26 @@ if [ "$USE_JETSON_CONTAINERS" = true ]; then
 else
   # For direct Docker execution, add X11 settings explicitly
   echo "Using direct Docker execution"
-  RUN_CMD="docker run"
+  # Apply USER_ARG if needed (note: --user root might already be in FINAL_RUN_OPTS)
+  RUN_CMD="docker run $USER_ARG"
   if [ "$X11_ENABLED" = "true" ]; then
     FINAL_RUN_OPTS="$FINAL_RUN_OPTS -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY"
   fi
 fi
 
 echo "Running container with image: $IMAGE_NAME"
+# Display FINAL_RUN_OPTS which includes GPU, mounts, root user (if selected), -it, --rm
 echo "Run options: $FINAL_RUN_OPTS"
 
 # Add confirmation step
 echo ""
-echo "The container will be run with the following options:"
-echo "  - Image: $IMAGE_NAME"
-echo "  - Options: $FINAL_RUN_OPTS"
+echo "The container will be run with the following command and options:"
+# Display the base command (docker run or jetson-containers run, potentially with --user kkk)
 echo "  - Command: $RUN_CMD"
-read -p "Do you want to continue with these options? (y/n) [y]: " confirm
+# Display the options added regardless of command (--gpus, -v, --user root, -it, --rm, X11 for docker)
+echo "  - Options: $FINAL_RUN_OPTS"
+echo "  - Image:   $IMAGE_NAME"
+read -p "Do you want to continue? (y/n) [y]: " confirm
 confirm=${confirm:-y}
 if [[ $confirm != [Yy]* ]]; then
   echo "Operation cancelled."
@@ -465,8 +484,9 @@ if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
   fi
 fi
 
-# Run the container with the appropriate command
+# Run the container with the appropriate command and combined options
 echo "Starting container..."
+# Combine RUN_CMD (which might have --user kkk) with FINAL_RUN_OPTS
 $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 
 # Automatically update commit tracking UUID timestamp in this file after run
@@ -483,6 +503,6 @@ fi
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Use export instead of temp file for options.
+# Description: Interactive script to launch Jetson containers. Consistent user flag handling.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-160000-EXPORTVAR
+# COMMIT-TRACKING: UUID-20250424-170000-USERFLAG
