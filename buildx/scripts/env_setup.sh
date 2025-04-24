@@ -3,159 +3,119 @@
 
 # =========================================================================
 # Environment Setup Script
-# Responsibility: Load .env variables, set up global environment vars (non-logging).
-# Logging functions are now in logging.sh
+# Responsibility: Initialize logging, load .env, set global variables,
+#                 and provide basic utility functions if others fail.
 # =========================================================================
 
+# Set strict mode early
+set -euo pipefail
+
 # --- Basic Setup ---
-SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR_ENV/.." && pwd)" # Assumes scripts is one level down
-ENV_FILE="$PROJECT_ROOT/.env"
+export SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+export PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)" # Assuming scripts is one level down from buildx
+export BUILD_DIR="$PROJECT_ROOT/build"
+export LOG_DIR="$PROJECT_ROOT/logs"
+export ENV_FILE="$PROJECT_ROOT/.env"
 
-# --- Global Variables (Defaults - Non-Logging) ---
-export ARCH="${ARCH:-linux/arm64}"
-export PLATFORM="${PLATFORM:-$ARCH}" # Default PLATFORM to ARCH if not set
-export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}" # Default builder name
-export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-}"
-export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
-export DOCKER_USERNAME="${DOCKER_USERNAME:-}"
-export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-}"
-export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}"
-# Logging related defaults are now in logging.sh
-# export LOG_DIR, MAIN_LOG, ERROR_LOG, LOG_LEVEL, JETC_DEBUG (Defaults in logging.sh)
-
-# --- Logging Function Placeholders (If logging.sh wasn't sourced) ---
-# Define basic fallbacks ONLY if the real functions don't exist yet.
-if ! declare -f log_info > /dev/null; then
-    echo "Warning: Logging functions not found (logging.sh likely not sourced yet). Defining basic fallbacks for env_setup." >&2
+# --- Source Core Utilities FIRST ---
+# Source utils.sh for core functions like validate_variable
+if [ -f "$SCRIPT_DIR/utils.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/utils.sh"
+else
+    echo "CRITICAL ERROR: utils.sh not found. Essential functions missing." >&2
+    # Define minimal fallbacks ONLY if utils.sh is missing
+    validate_variable() { echo "WARNING: validate_variable (fallback): Checking $1" >&2; [[ -n "$2" ]]; }
+    get_system_datetime() { date +"%Y%m%d-%H%M%S"; }
+    # Minimal logging fallbacks if utils.sh (and thus logging) is missing
     log_info() { echo "INFO: $1"; }
     log_warning() { echo "WARNING: $1" >&2; }
     log_error() { echo "ERROR: $1" >&2; }
     log_success() { echo "SUCCESS: $1"; }
-    log_debug() { :; } # Debug does nothing in fallback
+    log_debug() { if [[ "${JETC_DEBUG:-0}" == "1" ]]; then echo "[DEBUG] $1" >&2; fi; }
 fi
 
-# =========================================================================
-# Function: Load variables from .env file
-# Arguments: None
-# Returns: 0 on success, 1 if file not found
-# Exports: Variables found in the .env file
-# =========================================================================
-load_env_variables() {
-    log_debug "Attempting to load environment variables from: $ENV_FILE"
-    if [ ! -f "$ENV_FILE" ]; then
-        log_warning ".env file not found at $ENV_FILE. Using default values."
-        # Ensure required defaults are explicitly exported if file missing
-        export ARCH="${ARCH:-linux/arm64}"
-        export PLATFORM="${PLATFORM:-$ARCH}"
-        export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}"
-        # Logging vars defaults are handled by logging.sh
-        return 1 # Indicate file not found, but don't exit
-    fi
+# --- Logging Initialization ---
+# Source logging.sh (which might be part of utils.sh or separate)
+# If logging.sh is separate and needed:
+# if [ -f "$SCRIPT_DIR/logging.sh" ]; then
+#     # shellcheck disable=SC1091
+#     source "$SCRIPT_DIR/logging.sh"
+# else
+#     echo "WARNING: logging.sh not found. Using basic logging." >&2
+# fi
+# Initialize logging (assuming init_logging is defined in utils.sh or logging.sh)
+if command -v init_logging &> /dev/null; then
+    init_logging # Call the initialization function
+else
+    log_warning "init_logging function not found. Logging might be incomplete."
+fi
 
-    log_debug "Reading variables from $ENV_FILE"
-    # Use set -a to automatically export variables read from the file
-    set -a
-    # shellcheck disable=SC1090
-    source "$ENV_FILE"
-    set +a
-
-    # Explicitly export potentially loaded variables with defaults if they are still empty
-    export ARCH="${ARCH:-linux/arm64}"
-    export PLATFORM="${PLATFORM:-$ARCH}"
-    export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}"
-    export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-}"
-    export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
-    export DOCKER_USERNAME="${DOCKER_USERNAME:-}"
-    export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-}"
-    export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}"
-    # Export logging vars loaded from .env so they override defaults in logging.sh
-    export LOG_DIR="${LOG_DIR:-}" # Allow override
-    export LOG_LEVEL="${LOG_LEVEL:-INFO}" # Allow override
-    export JETC_DEBUG="${JETC_DEBUG:-false}" # Allow override
-
-    log_debug "Finished loading variables from $ENV_FILE"
-    log_debug "  -> ARCH=$ARCH"
-    log_debug "  -> PLATFORM=$PLATFORM"
-    log_debug "  -> BUILDER_NAME=$BUILDER_NAME"
-    log_debug "  -> DOCKER_USERNAME=$DOCKER_USERNAME"
-    log_debug "  -> LOG_LEVEL=$LOG_LEVEL"
-    log_debug "  -> JETC_DEBUG=$JETC_DEBUG"
-
-    return 0
-}
+# --- Debug Mode ---
+export JETC_DEBUG="${JETC_DEBUG:-0}" # Default to 0 (off) if not set
+if [[ "$JETC_DEBUG" == "1" || "$JETC_DEBUG" == "true" ]]; then
+    log_debug "Debug mode enabled."
+    set -x # Enable command tracing in debug mode
+fi
 
 # --- Load .env file ---
-# Use set -a to export all variables defined in .env
-# Use set +a to return to default behavior
+# Use a more robust method to read variables without executing
 load_dotenv() {
     local dotenv_path="$1"
     if [ -f "$dotenv_path" ]; then
         log_debug "Loading environment variables from $dotenv_path"
-        set -a # Automatically export all variables defined from now on
-        # shellcheck disable=SC1090 # Source file dynamically
-        source "$dotenv_path"
-        set +a # Stop automatically exporting variables
+        # Read line by line, ignore comments/empty lines, export valid VAR=value pairs
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            # Remove leading/trailing whitespace
+            line=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            # Ignore empty lines and comments
+            if [[ -z "$line" || "$line" =~ ^# ]]; then
+                continue
+            fi
+            # Check if it looks like a variable assignment
+            if [[ "$line" =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
+                 log_debug "Exporting from .env: $line"
+                 export "$line" # Export the valid assignment line
+            else
+                 log_warning "Ignoring invalid line in $dotenv_path: $line"
+            fi
+        done < "$dotenv_path"
         log_debug ".env file loaded."
-        # Explicitly re-export potentially overwritten critical vars if needed
-        export SCRIPT_DIR LOG_DIR LOG_FILE ERROR_LOG_FILE SUMMARY_LOG_FILE JETC_DEBUG
     else
         log_warning "$dotenv_path not found. Using default values."
     fi
 }
 
-# Load the primary .env file
+# --- Default Values ---
+# Set defaults BEFORE loading .env, so .env can override them
+export DOCKER_USERNAME="${DOCKER_USERNAME:-default_user}"
+export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-jetson-container}"
+export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}" # Default empty (Docker Hub)
+export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-nvcr.io/nvidia/l4t-base:r35.4.1}" # Example default
+export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}"
+export PLATFORM="${PLATFORM:-linux/arm64}"
+export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}" # Initialize as empty string
+
+# Load the primary .env file using the robust method
 load_dotenv "$ENV_FILE"
 
 # --- Validate Essential Variables ---
-# Ensure critical variables loaded from .env or defaults are set
+# Now call validate_variable AFTER utils.sh is sourced and .env is loaded
+log_debug "Validating essential variables..."
 validate_variable "DOCKER_USERNAME" "$DOCKER_USERNAME" "Docker username is required." || exit 1
 validate_variable "DOCKER_REPO_PREFIX" "$DOCKER_REPO_PREFIX" "Docker repository prefix is required." || exit 1
 validate_variable "DEFAULT_BASE_IMAGE" "$DEFAULT_BASE_IMAGE" "Default base image is required." || exit 1
+validate_variable "BUILDER_NAME" "$BUILDER_NAME" "Buildx builder name is required." || exit 1
+validate_variable "PLATFORM" "$PLATFORM" "Target platform is required." || exit 1
 # Ensure AVAILABLE_IMAGES is treated as a string, even if empty initially
 export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
-log_debug "Initial AVAILABLE_IMAGES: '${AVAILABLE_IMAGES}'"
+log_debug "Final AVAILABLE_IMAGES after load: '${AVAILABLE_IMAGES}'"
 
-
-# =========================================================================
-# Function: Setup basic build environment variables (Non-Logging)
-# Arguments: None
-# Returns: 0 (always succeeds for now)
-# Exports: ARCH, PLATFORM
-# =========================================================================
-setup_build_environment() {
-    log_info "Setting up build environment..."
-    # ARCH and PLATFORM are now handled/defaulted during load_env_variables
-    log_debug "Using ARCH: ${ARCH}"
-    log_debug "Using PLATFORM: ${PLATFORM}"
-
-    # CURRENT_DATE_TIME is more related to logging/timestamps, handled there now
-    # export CURRENT_DATE_TIME; CURRENT_DATE_TIME=$(get_system_datetime)
-    # log_debug "Set CURRENT_DATE_TIME: $CURRENT_DATE_TIME"
-
-    log_success "Build environment setup complete."
-    return 0
-}
-
-
-# --- Initialization Call ---
-# Load .env variables automatically when this script is sourced
-load_env_variables
-
-
-# --- Main Execution (for testing) ---
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # If testing directly, source logging.sh first
-    if [ -f "$SCRIPT_DIR_ENV/logging.sh" ]; then source "$SCRIPT_DIR_ENV/logging.sh"; init_logging; else echo "ERROR: Cannot find logging.sh for test."; exit 1; fi
-
-    log_info "Running env_setup.sh directly for testing..."
-    # Test Setup, Execution, Cleanup ... (omitted for brevity, same as before)
-    log_info "env_setup.sh test finished."
-    exit 0
-fi
+# --- Final Checks ---
+log_debug "Environment setup script completed."
 
 # --- Footer ---
-# File location diagram: ... (omitted)
-# Description: Sets up non-logging environment variables, loads .env. Relies on logging.sh.
-# Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-204545-LOGGINGSCRIPT
+# File location diagram: ... (omitted for brevity)
+# Description: Initializes environment, loads .env safely, sets globals. Sourced utils.sh earlier.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250425-073000-ENVFIX2
