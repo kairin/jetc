@@ -46,6 +46,7 @@ pull_image() {
 # Function: Verify if a Docker image exists locally
 # Arguments: $1 = Full image tag (e.g., user/repo:tag)
 # Returns: 0 if image exists locally, 1 otherwise
+# Renamed from verify_image_locally for clarity
 # =========================================================================
 verify_image_exists() {
     local image_tag="$1"
@@ -68,16 +69,15 @@ verify_image_exists() {
 # =========================================================================
 # Function: Build a Docker image from a specific folder
 # Arguments:
-#   $1 = folder_path (full path to the build context directory)
-#   $2 = use_cache ('y' or 'n')
+#   $1 = folder_path
+#   $2 = use_cache ('y'/'n')
 #   $3 = docker_username
-#   $4 = platform (e.g., linux/arm64) - NOW USES GLOBAL ${PLATFORM}
-#   $5 = use_squash ('y' or 'n')
-#   $6 = skip_intermediate ('y' or 'n') - 'y' means build locally (--load), 'n' means push (--push)
-#   $7 = base_image_tag (tag of the image to use in FROM, passed via --build-arg)
-#   $8 = docker_repo_prefix
-#   $9 = docker_registry (optional)
-#   $10 = use_builder ('y' or 'n') - Whether to use buildx or default docker build
+#   $4 = use_squash ('y'/'n')
+#   $5 = skip_intermediate ('y'/'n')
+#   $6 = base_image_tag
+#   $7 = docker_repo_prefix
+#   $8 = docker_registry (optional)
+#   $9 = use_builder ('y'/'n')
 # Exports:
 #   fixed_tag (global variable with the constructed tag for the built image)
 # Returns: 0 on success, 1 on failure
@@ -86,13 +86,12 @@ build_folder_image() {
     local folder_path="$1"
     local use_cache="$2"
     local docker_username="$3"
-    # local platform_arg="$4" # No longer using argument, use global PLATFORM
-    local use_squash="$5"
-    local skip_intermediate="$6"
-    local base_image_tag="$7"
-    local docker_repo_prefix="$8"
-    local docker_registry="${9:-}" # Optional registry
-    local use_builder="${10:-y}"   # Default to using builder
+    local use_squash="$4" # Index shifted due to platform removal
+    local skip_intermediate="$5" # Index shifted
+    local base_image_tag="$6" # Index shifted
+    local docker_repo_prefix="$7" # Index shifted
+    local docker_registry="${8:-}" # Index shifted
+    local use_builder="${9:-y}"   # Index shifted
 
     local folder_basename
     folder_basename=$(basename "$folder_path")
@@ -102,93 +101,54 @@ build_folder_image() {
     if [[ -n "$docker_registry" ]]; then
         registry_prefix="${docker_registry}/"
     fi
-    # Correct Tag Format: <registry_prefix><username>/<repo_prefix>:<folder_basename>
     export fixed_tag="${registry_prefix}${docker_username}/${docker_repo_prefix}:${folder_basename}"
-    # Convert tag to lowercase as per Docker recommendations
     fixed_tag=$(echo "$fixed_tag" | tr '[:upper:]' '[:lower:]')
     # --- End Tag Construction ---
-
 
     log_info "--------------------------------------------------"
     log_info "Building image from folder: $folder_path"
     log_info "Image Name: $folder_basename"
-    log_info "Platform: ${PLATFORM:-linux/arm64}" # Log the global PLATFORM being used
+    log_info "Platform: ${PLATFORM:-linux/arm64}"
     log_info "Tag: $fixed_tag"
-    log_info "Base Image (FROM via ARG): $base_image_tag"
+    # --- FIX: Add quotes around variable expansion ---
+    log_info "Base Image (FROM via ARG): \"$base_image_tag\"" # Line 87 approx
     log_info "Skip Intermediate Push/Pull: $skip_intermediate"
     log_info "--------------------------------------------------"
 
     # Prepare build command options
     local build_cmd_opts=()
-
-    # Platform (using global PLATFORM)
     build_cmd_opts+=("--platform" "${PLATFORM:-linux/arm64}")
-
-    # Target tag
     build_cmd_opts+=("-t" "$fixed_tag")
-
-    # Base image build argument
     build_cmd_opts+=("--build-arg" "BASE_IMAGE=$base_image_tag")
 
-    # Cache option
-    if [[ "$use_cache" == "n" ]]; then
-        log_info "Using --no-cache"
-        build_cmd_opts+=("--no-cache")
-    fi
+    if [[ "$use_cache" == "n" ]]; then log_info "Using --no-cache"; build_cmd_opts+=("--no-cache"); fi
 
-    # Squash option (only with default build, not buildx?)
-    # Buildx might handle squash differently or not support the flag directly
-    if [[ "$use_squash" == "y" && "$use_builder" != "y" ]]; then
-         log_info "Using --squash (only for default docker build)"
-         build_cmd_opts+=("--squash")
-    elif [[ "$use_squash" == "y" && "$use_builder" == "y" ]]; then
-         log_warning "Squash option ignored when using buildx builder."
-    fi
+    if [[ "$use_squash" == "y" && "$use_builder" != "y" ]]; then log_info "Using --squash"; build_cmd_opts+=("--squash");
+    elif [[ "$use_squash" == "y" && "$use_builder" == "y" ]]; then log_warning "Squash ignored with buildx."; fi
 
-    # Output/Action option (Buildx specific)
     if [[ "$use_builder" == "y" ]]; then
-        if [[ "$skip_intermediate" == "y" ]]; then
-            log_info "Using --load (build locally)"
-            build_cmd_opts+=("--load") # Buildx: load image into local docker images
-        else
-            log_info "Using --push (build and push)"
-            build_cmd_opts+=("--push") # Buildx: push image to registry
-        fi
+        if [[ "$skip_intermediate" == "y" ]]; then log_info "Using --load"; build_cmd_opts+=("--load");
+        else log_info "Using --push"; build_cmd_opts+=("--push"); fi
     else
-        # Default docker build doesn't use --load or --push directly in build command
-        # The push happens as a separate step if skip_intermediate is 'n'
-         if [[ "$skip_intermediate" == "y" ]]; then
-            log_info "Building locally (default docker build)"
-         else
-             log_info "Building for push (default docker build - push happens later)"
-         fi
+         if [[ "$skip_intermediate" == "y" ]]; then log_info "Building locally (default docker build)";
+         else log_info "Building for push (default docker build - push happens later)"; fi
     fi
 
-
-    # Build context path
     build_cmd_opts+=("$folder_path")
 
     # --- Execute Build ---
-    local build_status=1 # Default to failure
+    local build_status=1
     log_info "Running Build Command:"
     if [[ "$use_builder" == "y" ]]; then
-        # Use docker buildx build
-        echo "docker buildx build ${build_cmd_opts[*]}" # Log the command
-        if docker buildx build "${build_cmd_opts[@]}"; then
-            build_status=0
-        fi
+        echo "docker buildx build ${build_cmd_opts[*]}"
+        if docker buildx build "${build_cmd_opts[@]}"; then build_status=0; fi
     else
-        # Use default docker build
-        echo "docker build ${build_cmd_opts[*]}" # Log the command
+        echo "docker build ${build_cmd_opts[*]}"
         if docker build "${build_cmd_opts[@]}"; then
              build_status=0
-             # If using default build and not skipping intermediate, push the image now
              if [[ "$skip_intermediate" != "y" ]]; then
                  log_info "Pushing image (default docker build): $fixed_tag"
-                 if ! docker push "$fixed_tag"; then
-                     log_error "Failed to push image $fixed_tag after default build."
-                     build_status=1 # Mark as failed if push fails
-                 fi
+                 if ! docker push "$fixed_tag"; then log_error "Push failed."; build_status=1; fi
              fi
         fi
     fi
@@ -198,45 +158,48 @@ build_folder_image() {
         log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         log_error "Error: Failed to build image for $folder_basename ($folder_path)."
         log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        # fixed_tag is already exported, even on failure, for logging purposes
         return 1
     fi
 
-    # If intermediate push/pull wasn't skipped, pull the image back to ensure it's the registry version
-    # Only do this if the build command itself succeeded (build_status == 0)
-    if [[ "$skip_intermediate" != "y" && $build_status -eq 0 ]]; then
+    # Verification after successful build
+    if [[ "$skip_intermediate" != "y" ]]; then
         log_info "Pulling built image to verify: $fixed_tag"
-        if ! pull_image "$fixed_tag"; then
-            log_error "Failed to pull back image $fixed_tag after successful build/push. Verification failed."
-            return 1 # Fail if pull-back fails
-        else
-             log_success "Successfully pulled back image $fixed_tag."
-        fi
-    elif [[ "$skip_intermediate" == "y" && $build_status -eq 0 ]]; then
-        # If built locally (--load or default build), verify it exists locally
+        if ! pull_image "$fixed_tag"; then log_error "Pull-back verification failed."; return 1;
+        else log_success "Pull-back verification successful."; fi
+    else
         log_info "Verifying locally built image exists: $fixed_tag"
-        if ! verify_image_exists "$fixed_tag"; then
-             log_error "Image $fixed_tag not found locally after successful local build. Verification failed."
-             return 1 # Fail if local verification fails
-        else
-             log_success "Successfully verified local image $fixed_tag."
-        fi
+        if ! verify_image_exists "$fixed_tag"; then log_error "Local verification failed."; return 1;
+        else log_success "Local verification successful."; fi
     fi
 
     log_success "Build process completed successfully for: $fixed_tag"
-    return 0 # Return success
+    return 0
+}
+
+# =========================================================================
+# Function: Generate a timestamped tag
+# Arguments: $1 = username, $2 = repo_prefix, $3 = registry (optional)
+# Returns: Echoes the generated tag
+# =========================================================================
+generate_timestamped_tag() {
+    local username="$1"
+    local repo_prefix="$2"
+    local registry="${3:-}"
+    local timestamp
+    timestamp=$(get_system_datetime) # Use function from env_setup.sh
+
+    local registry_prefix=""
+    if [[ -n "$registry" ]]; then
+        registry_prefix="${registry}/"
+    fi
+
+    local tag="${registry_prefix}${username}/${repo_prefix}:${timestamp}"
+    # Convert tag to lowercase
+    echo "$tag" | tr '[:upper:]' '[:lower:]'
 }
 
 
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── buildx/                    <- Parent directory
-# │   └── scripts/               <- Current directory
-# │       └── docker_helpers.sh  <- THIS FILE
-# └── ...                        <- Other project files
-#
-# Description: Docker helper functions (pull, verify, build).
-#              Corrected tag construction in build_folder_image.
-#              Ensured build_folder_image uses global PLATFORM.
+# File location diagram: ... (omitted)
+# Description: Docker helper functions (pull, verify, build, generate tag). Added quoting for log.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-201515-TAGFIX
+# COMMIT-TRACKING: UUID-20250424-203737-DOCKERHELPFIX
