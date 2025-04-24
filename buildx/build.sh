@@ -52,15 +52,8 @@ load_env_variables
 # Setup builder *before* getting preferences that might depend on it
 ensure_buildx_builder_running
 
-# Call the function that shows the dialogs and gets user preferences
-# Note: build_prefs.sh functionality integrated into build_ui.sh
-get_user_preferences
-if [ $? -ne 0 ]; then
-  echo "User cancelled or error in preferences dialog. Exiting build."
-  exit 1
-fi
-
 # --- Source the exported preferences so all variables are available ---
+PREFS_FILE="/tmp/build_prefs.sh"
 if [ -f "$PREFS_FILE" ]; then
   # shellcheck disable=SC1090
   source "$PREFS_FILE"

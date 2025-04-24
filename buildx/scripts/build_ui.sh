@@ -43,7 +43,7 @@ if [ ! -s "$PREFS_FILE" ]; then
   fi
 fi
 
-# Source the exported preferences so all variables are available for the build process
+# Always source the exported preferences so all variables are available for the build process
 if [ -f "$PREFS_FILE" ]; then
   # shellcheck disable=SC1090
   source "$PREFS_FILE"

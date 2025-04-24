@@ -26,6 +26,14 @@ if [ -f "$SCRIPT_DIR/check_install_dialog.sh" ]; then
   }
 fi
 
+# Always load .env using the robust loader if available
+SCRIPT_DIR_SCRIPTS="$(dirname "$(readlink -f "$0")")/scripts"
+if [ -f "$SCRIPT_DIR_SCRIPTS/env_helpers.sh" ]; then
+  # shellcheck disable=SC1090
+  source "$SCRIPT_DIR_SCRIPTS/env_helpers.sh"
+  load_env_variables
+fi
+
 get_run_options() {
   local temp_file
   temp_file=$(mktemp)
