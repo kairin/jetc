@@ -98,7 +98,9 @@ main() {
     # 6. Final Tagging - Generate timestamp tag
     log_message "Creating timestamp tag for final image..."
     local timestamp_tag
-    if ! timestamp_tag=$(create_final_timestamp_tag "${LAST_SUCCESSFUL_TAG}" "${DOCKER_USERNAME}" "${DOCKER_REPO_PREFIX}" "${DOCKER_REGISTRY:-}"); then
+    local build_target
+    [[ "${skip_intermediate_push_pull}" == "y" ]] && build_target="load" || build_target="push"
+    if ! timestamp_tag=$(create_final_timestamp_tag "${LAST_SUCCESSFUL_TAG}" "$build_target" "${DOCKER_USERNAME}" "${DOCKER_REPO_PREFIX}" "${DOCKER_REGISTRY:-}"); then
         log_warning "Failed to create timestamp tag for ${LAST_SUCCESSFUL_TAG}. Continuing without timestamp tag." "$ERROR_LOG"
     else
         log_success "Created timestamp tag: $timestamp_tag"
