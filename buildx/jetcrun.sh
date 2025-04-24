@@ -9,6 +9,25 @@ fi
 # Get script directory more robustly
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")/scripts
 
+# Source commit tracking early to generate runtime UUID
+if [ -f "$SCRIPT_DIR/commit_tracking.sh" ]; then
+    # shellcheck disable=SC1090
+    source "$SCRIPT_DIR/commit_tracking.sh" || { echo "Error sourcing commit_tracking.sh"; exit 1; }
+    # --- Generate and Store Runtime UUID ---
+    RUNTIME_UUID=$(generate_commit_uuid "JRUN")
+    GIT_DIR_PATH="$(git rev-parse --git-dir 2>/dev/null)"
+    if [[ -n "$GIT_DIR_PATH" && -d "$GIT_DIR_PATH" ]]; then
+        echo "$RUNTIME_UUID" > "$GIT_DIR_PATH/LAST_RUNTIME_UUID"
+        echo "Stored runtime UUID ($RUNTIME_UUID) in $GIT_DIR_PATH/LAST_RUNTIME_UUID"
+    else
+        echo "Warning: Could not determine .git directory. Runtime UUID not stored for hooks." >&2
+    fi
+    # --- End Runtime UUID ---
+else
+    echo "Warning: commit_tracking.sh not found. Cannot store runtime UUID." >&2
+fi
+
+
 # Embedded dialog check function in case external file can't be sourced
 check_dialog_installed() {
   if ! command -v dialog >/dev/null 2>&1; then
@@ -498,6 +517,6 @@ $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Removed auto commit tracking update.
+# Description: Interactive script to launch Jetson containers. Stores runtime UUID for Git hooks.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-190000-RMHOOKTRIG
+# COMMIT-TRACKING: UUID-20250424-210000-RUNTIMEUUID
