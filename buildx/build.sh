@@ -11,8 +11,11 @@ export SCRIPT_DIR # Export for use in sourced scripts
 # Source utility scripts
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
+# Source logging functions FIRST
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
+source "$SCRIPT_DIR/scripts/env_setup.sh" || { echo "Error: env_setup.sh not found."; exit 1; }
+# shellcheck disable=SC1091
+# source "$SCRIPT_DIR/scripts/logging.sh" || { echo "Error: logging.sh not found."; exit 1; } # DEPRECATED
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
 # shellcheck disable=SC1091
@@ -37,127 +40,190 @@ source "$SCRIPT_DIR/scripts/tagging.sh" || { echo "Error: tagging.sh not found."
 source "$SCRIPT_DIR/scripts/post_build_menu.sh" || { echo "Error: post_build_menu.sh not found."; exit 1; }
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/system_checks.sh" || { echo "Error: system_checks.sh not found."; exit 1; }
+# Source env update helpers (needed for update_env_var)
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/env_update.sh" || { echo "Error: env_update.sh not found."; exit 1; }
 
 
 # --- Configuration ---
 export BUILD_DIR="$SCRIPT_DIR/build"
 export LOG_DIR="$SCRIPT_DIR/logs"
-export MAIN_LOG="$LOG_DIR/build-$(get_system_datetime).log"
-export ERROR_LOG="$LOG_DIR/errors-$(get_system_datetime).log"
+# Generate log filenames using the function
+log_timestamp=$(get_system_datetime)
+export MAIN_LOG="$LOG_DIR/build-${log_timestamp}.log"
+export ERROR_LOG="$LOG_DIR/errors-${log_timestamp}.log"
 export JETC_DEBUG="${JETC_DEBUG:-false}" # Enable debug logging if JETC_DEBUG=true
 
 # --- Initialization ---
+# Initialize logging using defined variables
 init_logging "$LOG_DIR" "$MAIN_LOG" "$ERROR_LOG"
-log_start "$MAIN_LOG"
-check_dependencies "docker" "dialog" # Check essential dependencies
+log_start # Log script start
+
+# Check essential dependencies
+check_dependencies "docker" "dialog"
 
 # --- Main Build Process ---
 main() {
     log_message "Starting Jetson Container Build Process..."
+    log_debug "JETC_DEBUG is set to: ${JETC_DEBUG}"
     
     # Track overall build status
     BUILD_FAILED=0
     
     # 1. Handle User Interaction (Gets prefs, updates .env, exports vars for this run)
+    log_debug "Step 1: Handling user interaction..."
     if ! handle_user_interaction; then
-        log_error "Build cancelled by user or error during interaction." "$ERROR_LOG"
+        log_error "Build cancelled by user or error during interaction."
         BUILD_FAILED=1
-        return 1
+        # No return here, allow cleanup and exit at the end
     fi
-    # Variables like DOCKER_USERNAME, SELECTED_BASE_IMAGE, use_cache, etc.,
-    # SELECTED_FOLDERS_LIST are now exported by handle_user_interaction sourcing the prefs file.
     
-    # 2. Setup Buildx Builder
-    log_message "Setting up Docker buildx builder..."
-    if ! setup_buildx_builder; then
-        log_error "Failed to setup Docker buildx builder. Cannot proceed." "$ERROR_LOG"
-        BUILD_FAILED=1
-        return 1
+    # Proceed only if user interaction succeeded
+    if [[ $BUILD_FAILED -eq 0 ]]; then
+        log_debug "User interaction successful. Exported variables:"
+        log_debug "  DOCKER_USERNAME=${DOCKER_USERNAME:-<unset>}"
+        log_debug "  DOCKER_REPO_PREFIX=${DOCKER_REPO_PREFIX:-<unset>}"
+        log_debug "  DOCKER_REGISTRY=${DOCKER_REGISTRY:-<unset>}"
+        log_debug "  SELECTED_BASE_IMAGE=${SELECTED_BASE_IMAGE:-<unset>}"
+        log_debug "  SELECTED_FOLDERS_LIST=${SELECTED_FOLDERS_LIST:-<unset>}"
+        log_debug "  use_cache=${use_cache:-<unset>}"
+        log_debug "  use_squash=${use_squash:-<unset>}"
+        log_debug "  skip_intermediate_push_pull=${skip_intermediate_push_pull:-<unset>}"
+        log_debug "  use_builder=${use_builder:-<unset>}"
+        log_debug "  platform=${platform:-<unset>}"
+
+        # 2. Setup Buildx Builder
+        log_debug "Step 2: Setting up Docker buildx builder..."
+        if ! setup_buildx_builder; then
+            log_error "Failed to setup Docker buildx builder. Cannot proceed."
+            BUILD_FAILED=1
+        else
+            log_success "Docker buildx builder setup complete."
+        fi
     fi
-    log_message "Docker buildx builder setup complete."
 
-    # 3. Determine Build Order (Based on SELECTED_FOLDERS_LIST from user interaction)
-    # This function exports ORDERED_FOLDERS and SELECTED_FOLDERS_MAP
-    if ! determine_build_order "$BUILD_DIR" "${SELECTED_FOLDERS_LIST:-}"; then
-        log_error "Failed to determine build order. Check build directory structure and selections." "$ERROR_LOG"
-        BUILD_FAILED=1
-        return 1
+    # Proceed only if buildx setup succeeded
+    if [[ $BUILD_FAILED -eq 0 ]]; then
+        # 3. Determine Build Order (Based on SELECTED_FOLDERS_LIST from user interaction)
+        log_debug "Step 3: Determining build order..."
+        # This function exports ORDERED_FOLDERS and SELECTED_FOLDERS_MAP
+        if ! determine_build_order "$BUILD_DIR" "${SELECTED_FOLDERS_LIST:-}"; then
+            log_error "Failed to determine build order. Check build directory structure and selections."
+            BUILD_FAILED=1
+        else
+            log_success "Build order determined."
+            log_debug "ORDERED_FOLDERS: ${ORDERED_FOLDERS[*]}"
+            # log_debug "SELECTED_FOLDERS_MAP keys: ${!SELECTED_FOLDERS_MAP[@]}" # Requires Bash 4+
+        fi
     fi
-    # ORDERED_FOLDERS and SELECTED_FOLDERS_MAP are now available
 
-    # 4. Execute Build Stages (Uses exported variables from steps 1 & 2)
-    # build_selected_stages uses ORDERED_FOLDERS, SELECTED_FOLDERS_MAP, and other prefs
-    if ! build_selected_stages; then
-        log_error "Build process completed with errors. Check logs in $LOG_DIR." "$ERROR_LOG"
-        BUILD_FAILED=1
-        # Continue to post-build menu even on failure
-    else {
-        log_success "Build stages completed successfully."
-    }
+    # Proceed only if build order determined
+    if [[ $BUILD_FAILED -eq 0 ]]; then
+        # 4. Execute Build Stages (Uses exported variables from steps 1 & 2)
+        log_debug "Step 4: Executing build stages..."
+        # build_selected_stages uses ORDERED_FOLDERS, SELECTED_FOLDERS_MAP, and other prefs
+        # It exports LAST_SUCCESSFUL_TAG
+        if ! build_selected_stages; then
+            log_error "Build process completed with errors during stages. Check logs in $LOG_DIR."
+            BUILD_FAILED=1
+            # Continue to post-build menu even on failure
+        else
+            log_success "All selected build stages completed successfully."
+        fi
+        log_debug "LAST_SUCCESSFUL_TAG after build stages: ${LAST_SUCCESSFUL_TAG:-<unset>}"
+    fi
 
-    # Skip verification and tagging if build failed
+    # Skip verification and tagging if build failed during stages
     if [[ $BUILD_FAILED -eq 0 ]]; then
         # 5. Pre-Tagging Verification - Check the built image can be pulled
-        log_message "Performing pre-tagging verification on ${LAST_SUCCESSFUL_TAG}..."
-        if ! perform_pre_tagging_pull "${LAST_SUCCESSFUL_TAG}"; then
-            log_warning "Pre-tagging verification failed. Final tag may not be accessible." "$ERROR_LOG"
+        log_debug "Step 5: Performing pre-tagging verification..."
+        if [[ -z "${LAST_SUCCESSFUL_TAG:-}" ]]; then
+             log_error "Cannot perform pre-tagging verification: LAST_SUCCESSFUL_TAG is not set."
+             BUILD_FAILED=1
+        elif ! perform_pre_tagging_pull "${LAST_SUCCESSFUL_TAG}"; then
+            log_warning "Pre-tagging verification failed for ${LAST_SUCCESSFUL_TAG}. Final tag may not be accessible."
             # Continue despite warnings - this is just a verification step
-        } else {
-            log_success "Pre-tagging verification passed."
-        }
+        else
+            log_success "Pre-tagging verification passed for ${LAST_SUCCESSFUL_TAG}."
+        fi
+    fi
 
-        # 6. Final Tagging - Generate timestamp tag
-        log_message "Creating timestamp tag for final image..."
+    # Proceed only if build stages succeeded (pre-tagging warning is ok)
+    if [[ $BUILD_FAILED -eq 0 ]]; then
+         # 6. Final Tagging - Generate timestamp tag
+        log_debug "Step 6: Creating final timestamp tag..."
         local timestamp_tag
+        # Capture stdout from create_final_timestamp_tag
         if ! timestamp_tag=$(create_final_timestamp_tag "${LAST_SUCCESSFUL_TAG}" "${DOCKER_USERNAME}" "${DOCKER_REPO_PREFIX}" "${DOCKER_REGISTRY:-}"); then
-            log_warning "Failed to create timestamp tag for ${LAST_SUCCESSFUL_TAG}. Continuing without timestamp tag." "$ERROR_LOG"
-        } else {
+            log_warning "Failed to create timestamp tag for ${LAST_SUCCESSFUL_TAG}. Continuing without timestamp tag."
+            # Ensure FINAL_TIMESTAMP_TAG is unset or empty
+            export FINAL_TIMESTAMP_TAG=""
+        else
             log_success "Created timestamp tag: $timestamp_tag"
             export FINAL_TIMESTAMP_TAG="$timestamp_tag"
             
             # Update environment variables with the new tag
+            log_debug "Updating DEFAULT_IMAGE_NAME in .env to $timestamp_tag"
             if ! update_env_var "DEFAULT_IMAGE_NAME" "$timestamp_tag"; then
-                log_warning "Failed to update DEFAULT_IMAGE_NAME in .env file." "$ERROR_LOG"
-            }
-        }
+                log_warning "Failed to update DEFAULT_IMAGE_NAME in .env file."
+            fi
+        fi
+    fi
 
+    # Proceed only if build stages succeeded (tagging warning is ok)
+    if [[ $BUILD_FAILED -eq 0 ]]; then
         # 7. Verify all images exist locally
-        log_message "Verifying all built images exist locally..."
-        local all_tags=("${LAST_SUCCESSFUL_TAG}")
+        log_debug "Step 7: Verifying all built images exist locally..."
+        local all_tags=()
+        [[ -n "${LAST_SUCCESSFUL_TAG:-}" ]] && all_tags+=("$LAST_SUCCESSFUL_TAG")
         [[ -n "${FINAL_TIMESTAMP_TAG:-}" ]] && all_tags+=("$FINAL_TIMESTAMP_TAG")
         
-        if ! verify_all_images_exist_locally "${all_tags[@]}"; then
-            log_warning "Final verification failed. Some expected images might be missing locally." "$ERROR_LOG"
-            BUILD_FAILED=1
-        } else {
-            log_success "All built images verified locally."
-        }
-    }
+        if [[ ${#all_tags[@]} -eq 0 ]]; then
+             log_warning "No tags found to verify locally."
+        elif ! verify_all_images_exist_locally "${all_tags[@]}"; then
+            log_warning "Final local verification failed. Some expected images might be missing locally."
+            # Should this set BUILD_FAILED=1? Maybe not, as push might have succeeded. Keep as warning.
+        else
+            log_success "All built images verified locally: ${all_tags[*]}"
+        fi
+    fi
 
-    # 8. Post-Build Actions (Verification, Menu)
+    # 8. Post-Build Actions (Menu)
+    log_debug "Step 8: Post-Build Actions..."
     log_message "Build process completed."
     if [[ $BUILD_FAILED -eq 0 ]]; then
         log_success "Final Image Tag: ${LAST_SUCCESSFUL_TAG}"
         [[ -n "${FINAL_TIMESTAMP_TAG:-}" ]] && log_success "Timestamp Tag: ${FINAL_TIMESTAMP_TAG}"
-    } else {
+    else
+        log_error "Build process finished with errors."
         if [[ -n "${LAST_SUCCESSFUL_TAG:-}" ]]; then
-            log_message "Last Successful Image Tag: ${LAST_SUCCESSFUL_TAG}"
-        } else {
+            log_warning "Last Successful Image Tag: ${LAST_SUCCESSFUL_TAG}"
+        else
             log_error "No successful image was built."
-            return 1
-        }
+            # Allow post-build menu? Maybe not useful if nothing built. Exit early?
+            # For now, continue to menu if requested, but return failure code later.
+        fi
     }
 
-    # Run the post-build menu
-    run_post_build_menu "${LAST_SUCCESSFUL_TAG}" "${FINAL_TIMESTAMP_TAG:-}"
+    # Run the post-build menu regardless of BUILD_FAILED status?
+    # Only run if at least one image was successfully built.
+    if [[ -n "${LAST_SUCCESSFUL_TAG:-}" ]]; then
+        log_debug "Running post-build menu..."
+        run_post_build_menu "${LAST_SUCCESSFUL_TAG}" "${FINAL_TIMESTAMP_TAG:-}"
+    else
+        log_warning "Skipping post-build menu as no image was successfully built."
+    fi
 
-    log_end "$MAIN_LOG"
+    log_end # Log script end
+    # Return the overall build status
+    log_debug "Main function finished. Returning status: $BUILD_FAILED"
     return $BUILD_FAILED
 }
 
 # --- Script Execution ---
 # Ensure cleanup runs on exit
 trap cleanup EXIT INT TERM
-# Run the main function
+
+# Run the main function and exit with its status code
 main
 exit $?

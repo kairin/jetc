@@ -18,35 +18,43 @@ source "$SCRIPT_DIR_UI/interactive_ui.sh" || { echo "Error: interactive_ui.sh no
 handle_user_interaction() {
     local PREFS_FILE="/tmp/build_prefs.sh"
     
-    _log_debug "Starting user interaction to gather build preferences..."
+    log_debug "Starting user interaction to gather build preferences..."
     
     # Call get_build_preferences from interactive_ui.sh
-    if ! get_build_preferences; then
-        _log_debug "User cancelled or error during preference selection"
+    if (! get_build_preferences); then
+        log_error "User cancelled or error during preference selection"
         return 1
     fi
     
     # Check if the prefs file was created successfully
     if [[ ! -f "$PREFS_FILE" ]]; then
-        _log_debug "Error: Preferences file not created at $PREFS_FILE"
+        log_error "Preferences file not created at $PREFS_FILE"
         return 1
     fi
     
     # Source the prefs file to export variables back to the caller's environment
-    _log_debug "Sourcing preferences from $PREFS_FILE"
+    log_debug "Sourcing preferences from $PREFS_FILE"
     # shellcheck disable=SC1090
     source "$PREFS_FILE" || {
-        _log_debug "Error: Failed to source preferences file $PREFS_FILE"
+        log_error "Failed to source preferences file $PREFS_FILE"
         return 1
     }
     
     # Verify key variables were set
+    log_debug "Verifying sourced preferences..."
+    log_debug "DOCKER_USERNAME=${DOCKER_USERNAME:-<unset>}"
+    log_debug "DOCKER_REPO_PREFIX=${DOCKER_REPO_PREFIX:-<unset>}"
+    log_debug "SELECTED_BASE_IMAGE=${SELECTED_BASE_IMAGE:-<unset>}"
+    log_debug "SELECTED_FOLDERS_LIST=${SELECTED_FOLDERS_LIST:-<unset>}"
+    log_debug "use_cache=${use_cache:-<unset>}"
+    log_debug "skip_intermediate_push_pull=${skip_intermediate_push_pull:-<unset>}"
+
     if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" || -z "${SELECTED_BASE_IMAGE:-}" ]]; then
-        _log_debug "Error: Required variables not set after sourcing preferences"
+        log_error "Required variables not set after sourcing preferences"
         return 1
-    }
+    fi
     
-    _log_debug "User interaction completed successfully"
+    log_success "User interaction completed successfully"
     return 0
 }
 
@@ -64,6 +72,6 @@ fi
 # │       └── user_interaction.sh <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Handles user interaction for gathering build preferences.
+# Description: Handles user interaction for gathering build preferences. Added logging.
 # Author: GitHub Copilot
 # COMMIT-TRACKING: UUID-20240806-103000-MODULAR

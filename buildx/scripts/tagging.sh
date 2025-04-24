@@ -54,32 +54,34 @@ perform_pre_tagging_pull() {
     local image_tag="$1"
     
     if [[ -z "$image_tag" ]]; then
-        _log_debug "Error: perform_pre_tagging_pull called with empty tag"
+        log_error "perform_pre_tagging_pull called with empty tag" # Use log_error
         return 1
     }
     
-    _log_debug "Performing pre-tagging verification for $image_tag"
+    log_info "Performing pre-tagging verification for $image_tag" # Use log_info
     
     # First verify the image exists locally
     if ! verify_image_exists "$image_tag"; then
-        _log_debug "Error: Image $image_tag not found locally"
+        log_error "Image $image_tag not found locally for pre-tagging verification" # Use log_error
         return 1
-    }
+    fi
     
     # Images built with --load are only available locally
     # No need to try pulling in this case
+    # Need skip_intermediate_push_pull variable from sourced prefs
     if [[ "${skip_intermediate_push_pull:-y}" == "y" ]]; then
-        _log_debug "Image built with --load, skipping pull verification"
+        log_info "Image built with --load, skipping pull verification" # Use log_info
         return 0
-    }
+    fi
     
     # Try pulling the image as verification
+    log_debug "Attempting pull for pre-tagging verification: $image_tag"
     if ! pull_image "$image_tag"; then
-        _log_debug "Warning: Failed to pull $image_tag during pre-tagging verification"
+        log_warning "Failed to pull $image_tag during pre-tagging verification" # Use log_warning
         return 1
-    }
+    fi
     
-    _log_debug "Pre-tagging verification successful for $image_tag"
+    log_success "Pre-tagging verification successful for $image_tag" # Use log_success
     return 0
 }
 
@@ -94,35 +96,43 @@ create_final_timestamp_tag() {
     local repo_prefix="$3"
     local registry="${4:-}"
     
+    log_debug "Creating final timestamp tag for source: $source_tag"
     if [[ -z "$source_tag" || -z "$username" || -z "$repo_prefix" ]]; then
-        _log_debug "Error: create_final_timestamp_tag missing required arguments"
+        log_error "create_final_timestamp_tag missing required arguments" # Use log_error
         return 1
     }
     
     # Generate a timestamp tag
     local timestamp_tag
+    # Capture stdout from generate_timestamped_tag
     timestamp_tag=$(generate_timestamped_tag "$username" "$repo_prefix" "$registry")
     if [[ -z "$timestamp_tag" ]]; then
-        _log_debug "Error: Failed to generate timestamp tag"
+        log_error "Failed to generate timestamp tag" # Use log_error
         return 1
-    }
+    fi
+    log_debug "Generated timestamp tag: $timestamp_tag"
     
-    _log_debug "Tagging $source_tag as $timestamp_tag"
+    log_info "Tagging $source_tag as $timestamp_tag" # Use log_info
     
     # Tag the image
     if ! docker tag "$source_tag" "$timestamp_tag"; then
-        _log_debug "Error: Failed to tag $source_tag as $timestamp_tag"
+        log_error "Failed to tag $source_tag as $timestamp_tag" # Use log_error
         return 1
-    }
+    fi
     
     # If using push mode, push the new tag to registry
+    # Need skip_intermediate_push_pull variable from sourced prefs
     if [[ "${skip_intermediate_push_pull:-y}" != "y" ]]; then
-        _log_debug "Pushing timestamp tag $timestamp_tag to registry"
+        log_info "Pushing timestamp tag $timestamp_tag to registry" # Use log_info
         if ! docker push "$timestamp_tag"; then
-            _log_debug "Error: Failed to push $timestamp_tag to registry"
+            log_error "Failed to push $timestamp_tag to registry" # Use log_error
+            # Optionally try to remove the local tag? Or leave it? Leave it for now.
             return 1
         }
-    }
+        log_success "Successfully pushed $timestamp_tag" # Use log_success
+    else
+        log_debug "Skipping push for timestamp tag (local build mode)."
+    fi
     
     # Echo the tag name for capture by the caller
     echo "$timestamp_tag"
@@ -138,26 +148,26 @@ verify_all_images_exist_locally() {
     local missing=0
     
     if [[ $# -eq 0 ]]; then
-        _log_debug "No images provided to verify_all_images_exist_locally"
+        log_debug "No images provided to verify_all_images_exist_locally"
         return 0
     }
     
-    _log_debug "Verifying local existence of $# images"
+    log_info "Verifying local existence of $# images: $*" # Use log_info
     
     for img in "$@"; do
-        _log_debug "Checking if $img exists locally"
+        log_debug "Checking if $img exists locally"
         if ! verify_image_exists "$img"; then
-            _log_debug "Image $img not found locally"
+            log_error "Image $img not found locally" # Use log_error
             missing=1
         fi
     done
     
     if [[ $missing -eq 1 ]]; then
-        _log_debug "Some images are missing locally"
+        log_error "One or more expected images are missing locally." # Use log_error
         return 1
     fi
     
-    _log_debug "All images verified locally"
+    log_success "All expected images verified locally." # Use log_success
     return 0
 }
 

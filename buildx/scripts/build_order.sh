@@ -34,6 +34,7 @@ fi
 determine_build_order() {
     local selected_list="$1"
     log_info "--- Determining Build Order ---"
+    log_debug "Selected folders list input: '$selected_list'"
 
     if [ ! -d "$BUILD_DIR" ]; then
         log_error "Build directory not found: $BUILD_DIR"
@@ -43,6 +44,7 @@ determine_build_order() {
     # Find all numbered directories and sort them naturally
     local all_folders=()
     mapfile -t all_folders < <(find "$BUILD_DIR" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
+    log_debug "Found ${#all_folders[@]} potential build stages."
 
     if [ ${#all_folders[@]} -eq 0 ]; then
         log_warning "No numbered build stage directories found in $BUILD_DIR."

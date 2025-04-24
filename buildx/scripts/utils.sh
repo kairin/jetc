@@ -3,34 +3,48 @@
 # Define canonical path for .env file relative to this script's parent directory
 export ENV_CANONICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
 
+# Conditional debug logging (requires logging functions to be sourced *before* calling this)
+# Define a minimal version here in case logging.sh/env_setup.sh isn't sourced yet during early calls
+_log_debug() {
+  if [[ "${JETC_DEBUG}" == "true" || "${JETC_DEBUG}" == "1" ]]; then
+    echo "[DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - ${FUNCNAME[1]:-utils.sh}: $1" >&2
+  fi
+}
+
 # =========================================================================
 # Function: Check if dialog is installed, optionally install it.
 # Returns: 0 if dialog is available, 1 otherwise.
 # =========================================================================
 check_install_dialog() {
+  _log_debug "Checking for 'dialog' command..."
   echo "Checking for 'dialog' command..." >&2
   if (! command -v dialog &> /dev/null); then
+    _log_debug "'dialog' not found. Attempting installation..."
     echo "'dialog' not found. Attempting installation..." >&2
     # Try common package managers
     if command -v apt-get &> /dev/null; then
-      sudo apt-get update -y && sudo apt-get install -y dialog || { echo "Failed to install dialog via apt-get." >&2; return 1; }
+      sudo apt-get update -y && sudo apt-get install -y dialog || { _log_debug "Failed to install dialog via apt-get."; echo "Failed to install dialog via apt-get." >&2; return 1; }
     elif command -v yum &> /dev/null; then
-      sudo yum install -y dialog || { echo "Failed to install dialog via yum." >&2; return 1; }
+      sudo yum install -y dialog || { _log_debug "Failed to install dialog via yum."; echo "Failed to install dialog via yum." >&2; return 1; }
     elif command -v dnf &> /dev/null; then
-      sudo dnf install -y dialog || { echo "Failed to install dialog via dnf." >&2; return 1; }
+      sudo dnf install -y dialog || { _log_debug "Failed to install dialog via dnf."; echo "Failed to install dialog via dnf." >&2; return 1; }
     elif command -v pacman &> /dev/null; then
-      sudo pacman -S --noconfirm dialog || { echo "Failed to install dialog via pacman." >&2; return 1; }
+      sudo pacman -S --noconfirm dialog || { _log_debug "Failed to install dialog via pacman."; echo "Failed to install dialog via pacman." >&2; return 1; }
     else
+      _log_debug "Could not attempt dialog installation: Unsupported package manager."
       echo "Could not attempt dialog installation: Unsupported package manager." >&2
       return 1
     fi
     # Verify installation succeeded
     if (! command -v dialog &> /dev/null); then
+       _log_debug "Installation command ran, but 'dialog' still not found. Falling back to basic prompts."
        echo "Installation command ran, but 'dialog' still not found. Falling back to basic prompts." >&2
        return 1
     fi
+    _log_debug "'dialog' installed successfully."
     echo "'dialog' installed successfully." >&2
   else
+    _log_debug "'dialog' command found."
     echo "'dialog' command found." >&2
   fi
   return 0

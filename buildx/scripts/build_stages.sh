@@ -9,11 +9,15 @@ SCRIPT_DIR_BSTAGES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR_BSTAGES/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_BSTAGES/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
+# Source logging functions if available
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR_BSTAGES/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
-# Source env_update to update AVAILABLE_IMAGES (though env_helpers might be enough if loaded)
+source "$SCRIPT_DIR_BSTAGES/env_setup.sh" 2>/dev/null || true
+# Source env_update to update AVAILABLE_IMAGES
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_BSTAGES/env_update.sh" || { echo "Error: env_update.sh not found."; exit 1; }
+# Source system checks for handle_build_error
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_BSTAGES/system_checks.sh" || { echo "Error: system_checks.sh not found."; exit 1; }
 
 
 # =========================================================================
@@ -26,11 +30,12 @@ source "$SCRIPT_DIR_BSTAGES/env_update.sh" || { echo "Error: env_update.sh not f
 # Returns: 0 if all selected stages build successfully, 1 otherwise
 # =========================================================================
 build_selected_stages() {
-    echo "=================================================="
-    echo "Starting Build Stages..."
-    echo "=================================================="
+    log_info "==================================================" # Use log_info
+    log_info "Starting Build Stages..." # Use log_info
+    log_info "==================================================" # Use log_info
 
     # Ensure required variables are set (should be sourced from PREFS_FILE by build.sh/user_interaction.sh)
+    log_debug "Checking required build variables..."
     : "${use_cache?Variable use_cache not set}"
     : "${platform?Variable platform not set}"
     : "${use_squash?Variable use_squash not set}"
@@ -41,25 +46,28 @@ build_selected_stages() {
     # DOCKER_REGISTRY is optional
     # ORDERED_FOLDERS and SELECTED_FOLDERS_MAP must be exported by build_order.sh
     if [[ -z "${ORDERED_FOLDERS[*]}" ]]; then
-        echo "Error: ORDERED_FOLDERS array is empty or not set. Cannot proceed." >&2
+        log_error "ORDERED_FOLDERS array is empty or not set. Cannot proceed." # Use log_error
         return 1
     fi
      if [[ -z "${!SELECTED_FOLDERS_MAP[@]}" && -n "${SELECTED_FOLDERS_LIST:-}" ]]; then
         # If the map is empty but the list wasn't, it indicates an issue in build_order.sh
-        echo "Warning: SELECTED_FOLDERS_MAP is empty, but SELECTED_FOLDERS_LIST was not. Check build_order.sh." >&2
+        log_warning "SELECTED_FOLDERS_MAP is empty, but SELECTED_FOLDERS_LIST was not. Check build_order.sh." # Use log_warning
         # Depending on desired behavior, could return 1 here or try to rebuild map from list.
         # For now, proceed, but builds might be skipped unexpectedly.
     fi
+    log_debug "Required variables checked."
 
     # SKIP_APPS_LIST is optional, default to empty if not set
     SKIP_APPS_LIST="${SKIP_APPS_LIST:-}"
+    log_debug "SKIP_APPS_LIST: '$SKIP_APPS_LIST'"
 
     # Convert SKIP_APPS_LIST to an associative array for faster lookups
     declare -A skip_apps_map
     if [[ -n "$SKIP_APPS_LIST" ]]; then
-        echo "Apps selected to SKIP installation (if already present): $SKIP_APPS_LIST"
+        log_info "Apps selected to SKIP installation (if already present): $SKIP_APPS_LIST" # Use log_info
         for app_to_skip in $SKIP_APPS_LIST; do
             skip_apps_map["$app_to_skip"]=1
+            log_debug "Added '$app_to_skip' to skip_apps_map."
         done
     fi
 
@@ -67,21 +75,25 @@ build_selected_stages() {
     export LAST_SUCCESSFUL_TAG="$current_base_image" # Initialize with the starting base image
     local build_failed=0
     local build_dir_path # Define outside loop for use in update_available_images_in_env
+    log_debug "Initial base image: $current_base_image"
+    log_debug "Initial LAST_SUCCESSFUL_TAG: $LAST_SUCCESSFUL_TAG"
 
     # Iterate through the ordered list of folders provided by build_order.sh
+    log_debug "Iterating through ORDERED_FOLDERS..."
     for folder_path in "${ORDERED_FOLDERS[@]}"; do
         local folder_name
         folder_name=$(basename "$folder_path")
         build_dir_path=$(dirname "$folder_path") # Store the parent build dir path
+        log_debug "Processing folder: $folder_name ($folder_path)"
 
         # Check if this folder was selected for building using the map from build_order.sh
         if [[ -z "${SELECTED_FOLDERS_MAP[$folder_name]}" ]]; then
-            _log_debug "Skipping folder (not selected): $folder_name"
+            log_debug "Skipping folder (not selected): $folder_name"
             continue
         fi
+        log_debug "Folder '$folder_name' is selected for build."
 
         # --- Check if app should be skipped ---
-        # ... existing skip logic ...
         local app_name="${folder_name#*-}" # Heuristic: app name is after first dash
         # Refine heuristic: handle multi-part prefixes like 01-01-00-
         if [[ "$folder_name" =~ ^[0-9]+(-[0-9]+)*-(.*) ]]; then
@@ -89,92 +101,107 @@ build_selected_stages() {
         else
              app_name="${folder_name#*-}" # Fallback
         fi
+        log_debug "Derived app name for skip check: '$app_name'"
 
         if [[ -n "${skip_apps_map[$app_name]}" ]]; then
-            echo "==================================================" | tee -a "${MAIN_LOG}"
-            echo "SKIPPING build stage for '$app_name' ($folder_name) as requested (already present in base)." | tee -a "${MAIN_LOG}"
-            echo "Using previous stage's image as input for next stage: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}"
-            echo "==================================================" | tee -a "${MAIN_LOG}"
+            log_warning "==================================================" # Use log_warning for skipped section
+            log_warning "SKIPPING build stage for '$app_name' ($folder_name) as requested (already present in base)." # Use log_warning
+            log_warning "Using previous stage's image as input for next stage: $LAST_SUCCESSFUL_TAG" # Use log_warning
+            log_warning "==================================================" # Use log_warning
             # The LAST_SUCCESSFUL_TAG remains unchanged, acting as the base for the next stage
             continue # Move to the next folder
         fi
         # --- End skip check ---
 
-        set_stage "$folder_name" # Set current stage for logging
+        # Set current stage for logging context
+        # Check if function exists before calling
+        if command -v set_stage &> /dev/null; then
+            set_stage "$folder_name"
+        else
+            log_debug "set_stage function not found."
+        fi
 
         # Disable exit on error temporarily for build_folder_image
         set +e
+        log_debug "Calling build_folder_image for $folder_name..."
         # Call build_folder_image from docker_helpers.sh
         # It exports 'fixed_tag' on success
-        build_folder_image "$folder_path" "$use_cache" "$platform" "$use_squash" "$skip_intermediate_push_pull" "$current_base_image" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
+        build_folder_image "$folder_path" "$use_cache" "$platform" "$use_squash" "$skip_intermediate_push_pull" "$current_base_image" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "${DOCKER_REGISTRY:-}"
         local build_status=$?
         set -e # Re-enable exit on error
+        log_debug "build_folder_image for $folder_name exited with status: $build_status"
 
         if [ $build_status -eq 0 ]; then
             # Build succeeded, update the base image for the next stage
             # 'fixed_tag' is exported by build_folder_image
             if [[ -z "${fixed_tag:-}" ]]; then
-                echo "Error: fixed_tag not set after successful build of folder $folder_name" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+                log_error "fixed_tag not set after successful build of folder $folder_name" # Use log_error
                 build_failed=1
-                continue
+                # Decide whether to continue or break based on FAIL_FAST
+                if [[ "${FAIL_FAST:-false}" == "true" ]]; then break; else continue; fi
             fi
             
             current_base_image="$fixed_tag"
             export LAST_SUCCESSFUL_TAG="$fixed_tag" # Update the last known good tag
-            echo "Successfully built stage: $folder_name. Output image: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}"
+            log_success "Successfully built stage: $folder_name. Output image: $LAST_SUCCESSFUL_TAG" # Use log_success
 
             # Update AVAILABLE_IMAGES in .env immediately after successful build
             # Use the dedicated function from env_update.sh
             if [[ -n "$build_dir_path" ]]; then # Ensure path is valid
-                 local env_file_path="$(dirname "$build_dir_path")/.env" # Assumes .env is one level above build/
+                 # Assumes .env is one level above build/
+                 local env_file_path="$(dirname "$build_dir_path")/.env"
+                 log_debug "Attempting to update AVAILABLE_IMAGES in $env_file_path with tag $LAST_SUCCESSFUL_TAG"
                  if ! update_available_images_in_env "$env_file_path" "$LAST_SUCCESSFUL_TAG"; then
-                     echo "Warning: Failed to update AVAILABLE_IMAGES in .env with new tag." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+                     log_warning "Failed to update AVAILABLE_IMAGES in .env with new tag." # Use log_warning
+                 else
+                     log_debug "Successfully updated AVAILABLE_IMAGES in .env."
                  fi
             else
-                 echo "Warning: Could not determine .env file path to update AVAILABLE_IMAGES." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+                 log_warning "Could not determine .env file path to update AVAILABLE_IMAGES." # Use log_warning
             fi
 
         else
             # Build failed
-            handle_build_error "$folder_path" "$build_status" # Log error but continue
+            handle_build_error "$folder_path" "$build_status" # Log error using function from system_checks.sh
             build_failed=1
             # Do NOT update LAST_SUCCESSFUL_TAG or current_base_image
-            echo "Build failed for stage: $folder_name. Last successful image remains: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+            log_warning "Build failed for stage: $folder_name. Last successful image remains: $LAST_SUCCESSFUL_TAG" # Use log_warning
         fi
         
         # Check if we should stop the build after a failure
         if [[ $build_failed -eq 1 && "${FAIL_FAST:-false}" == "true" ]]; then
-            echo "Exiting build early due to failure (FAIL_FAST=true)" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+            log_error "Exiting build early due to failure (FAIL_FAST=true)" # Use log_error
             break
         fi
     done
+    log_debug "Finished iterating through ORDERED_FOLDERS."
 
-    echo "=================================================="
-    echo "Finished Building Selected Stages."
+    log_info "==================================================" # Use log_info
+    log_info "Finished Building Selected Stages." # Use log_info
     if [ $build_failed -eq 1 ]; then
-        echo "One or more build stages failed. Final image is the last successful one: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+        log_error "One or more build stages failed. Final image is the last successful one: $LAST_SUCCESSFUL_TAG" # Use log_error
         return 1 # Indicate failure
     else
-        echo "All selected build stages completed successfully. Final image: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}"
+        log_success "All selected build stages completed successfully. Final image: $LAST_SUCCESSFUL_TAG" # Use log_success
         return 0 # Indicate success
     fi
 }
 
 # Execute the function if the script is run directly (for testing or modular use)
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Running build_stages.sh directly..."
+    log_info "Running build_stages.sh directly..." # Use log_info
     # Load prefs from temp file if it exists (for testing)
     PREFS_FILE="/tmp/build_prefs.sh"
     if [ -f "$PREFS_FILE" ]; then
-        echo "Sourcing preferences from $PREFS_FILE"
+        log_info "Sourcing preferences from $PREFS_FILE" # Use log_info
         # shellcheck disable=SC1090
         source "$PREFS_FILE"
     else
-        echo "Warning: $PREFS_FILE not found. Using potentially unset variables."
+        log_warning "$PREFS_FILE not found. Using potentially unset variables." # Use log_warning
     fi
 
     # Need to manually set up ORDERED_FOLDERS and SELECTED_FOLDERS_MAP for direct execution
-    echo "Note: Direct execution requires ORDERED_FOLDERS and SELECTED_FOLDERS_MAP to be set manually."
+    log_warning "Note: Direct execution requires ORDERED_FOLDERS and SELECTED_FOLDERS_MAP to be set manually." # Use log_warning
     # Example setup for testing:
     # BUILDX_DIR=$(dirname "$SCRIPT_DIR_BSTAGES")
     # export ORDERED_FOLDERS=("$BUILDX_DIR/build/01-00-build-essential" "$BUILDX_DIR/build/04-python")
@@ -185,11 +212,11 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # export use_cache="n"; export platform="linux/arm64"; export use_squash="n"; export skip_intermediate_push_pull="y";
 
     if [[ -z "${ORDERED_FOLDERS[*]}" ]]; then
-        echo "Error: ORDERED_FOLDERS not set. Cannot run directly without manual setup."
+        log_error "ORDERED_FOLDERS not set. Cannot run directly without manual setup." # Use log_error
         exit 1
     fi
      if [[ -z "${!SELECTED_FOLDERS_MAP[@]}" ]]; then
-        echo "Error: SELECTED_FOLDERS_MAP not set. Cannot run directly without manual setup."
+        log_error "SELECTED_FOLDERS_MAP not set. Cannot run directly without manual setup." # Use log_error
         exit 1
     fi
 
@@ -205,6 +232,6 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Builds Docker stages based on ORDERED_FOLDERS and SELECTED_FOLDERS_MAP. Updates AVAILABLE_IMAGES in .env.
+# Description: Builds Docker stages based on ORDERED_FOLDERS and SELECTED_FOLDERS_MAP. Updates AVAILABLE_IMAGES in .env. Added logging. Verified .env updates.
 # Author: Mr K / GitHub Copilot
 # COMMIT-TRACKING: UUID-20250424-095000-BSTAGESREF

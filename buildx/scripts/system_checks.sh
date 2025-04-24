@@ -20,22 +20,23 @@ source "$SCRIPT_DIR_SYS/logging.sh" || { echo "Error: logging.sh not found."; ex
 check_dependencies() {
     local missing=0
     
-    _log_debug "Checking dependencies: $*"
+    log_info "Checking dependencies: $*" # Use log_info
     
     for cmd in "$@"; do
         if ! command -v "$cmd" &>/dev/null; then
-            echo "Error: Required dependency '$cmd' is not installed." >&2
+            log_error "Required dependency '$cmd' is not installed." # Use log_error
             missing=1
         else
-            _log_debug "Dependency '$cmd' found: $(command -v "$cmd")"
+            log_debug "Dependency '$cmd' found: $(command -v "$cmd")"
         fi
     done
     
     if [[ $missing -eq 1 ]]; then
-        echo "Please install missing dependencies before continuing." >&2
+        log_error "Please install missing dependencies before continuing." # Use log_error
         return 1
     fi
     
+    log_success "All dependencies verified." # Use log_success
     return 0
 }
 
@@ -116,17 +117,21 @@ check_system_tools() {
 # Returns: 0 (always successful)
 # =========================================================================
 cleanup() {
-    _log_debug "Running cleanup function"
+    log_debug "Running cleanup function"
     
     # Remove temporary files if they exist
     if [[ -f "/tmp/build_prefs.sh" ]]; then
-        _log_debug "Removing temporary build preferences file"
+        log_debug "Removing temporary build preferences file /tmp/build_prefs.sh"
         rm -f "/tmp/build_prefs.sh"
     fi
     
+    # Add cleanup for other potential temp files created by dialog/interactive_ui
+    log_debug "Removing potential interactive_ui temp files..."
+    rm -f /tmp/dialog_* # Example pattern, adjust if needed
+    
     # Additional cleanup tasks can be added here
     
-    _log_debug "Cleanup completed"
+    log_debug "Cleanup completed"
     return 0
 }
 
@@ -141,13 +146,13 @@ handle_build_error() {
     
     local folder_name=$(basename "$folder_path")
     
-    echo "=================================================="
-    echo "ERROR: Build failed for stage: $folder_name"
-    echo "Exit status: $exit_status"
-    echo "=================================================="
+    log_error "==================================================" # Use log_error
+    log_error "ERROR: Build failed for stage: $folder_name" # Use log_error
+    log_error "Exit status: $exit_status" # Use log_error
+    log_error "==================================================" # Use log_error
     
-    # Log the error
-    log_error "Build failed for $folder_name with exit code $exit_status" "$ERROR_LOG"
+    # Log the error (already done by log_error)
+    # log_error "Build failed for $folder_name with exit code $exit_status" "$ERROR_LOG"
     
     return 0
 }
