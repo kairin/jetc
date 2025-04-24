@@ -75,8 +75,7 @@ perform_pre_tagging_pull() {
     if [[ "$skip_push_pull" == "y" ]]; then
         log_info "Image built with --load (skip_push_pull=y), skipping pull verification" # Use log_info
         return 0
-    # Removed extra '}' here
-    fi # End of skip_push_pull check
+    fi # End of skip_push_pull check - Removed extra '}' that was likely here
 
     # Try pulling the image as verification if push mode was used
     log_debug "Attempting pull for pre-tagging verification (push mode): $image_tag"
