@@ -3,6 +3,9 @@
 # Define canonical path for .env file relative to this script's parent directory
 export ENV_CANONICAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.env"
 
+# Initialize SCREENSHOT_TOOL_MISSING (default to true, meaning missing)
+export SCREENSHOT_TOOL_MISSING="true" # <-- ADDED INITIALIZATION
+
 # Conditional debug logging (requires logging functions to be sourced *before* calling this)
 # Define a minimal version here in case logging.sh/env_setup.sh isn't sourced yet during early calls
 _log_debug() {
@@ -78,10 +81,10 @@ get_system_datetime() {
 # =========================================================================
 # Function: Check if scrot is installed, optionally install it.
 # Returns: 0 if scrot is available, 1 otherwise.
-# Exports: SCREENSHOT_TOOL_MISSING (true/false)
+# Exports: SCREENSHOT_TOOL_MISSING (true/false) - sets it to false on success
 # =========================================================================
 check_install_screenshot_tool() {
-  export SCREENSHOT_TOOL_MISSING="false"
+  # SCREENSHOT_TOOL_MISSING is initialized to "true" at the top of the script
   _log_debug "Checking for 'scrot' command..."
   echo "Checking for screenshot tool 'scrot'..." >&2
   if (! command -v scrot &> /dev/null); then
@@ -89,24 +92,22 @@ check_install_screenshot_tool() {
     echo "'scrot' not found. Attempting installation..." >&2
     # Try common package managers
     if command -v apt-get &> /dev/null; then
-      sudo apt-get update -y && sudo apt-get install -y scrot || { _log_debug "Failed to install scrot via apt-get."; echo "Failed to install scrot via apt-get." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+      sudo apt-get update -y && sudo apt-get install -y scrot || { _log_debug "Failed to install scrot via apt-get."; echo "Failed to install scrot via apt-get." >&2; return 1; }
     elif command -v yum &> /dev/null; then
-      sudo yum install -y scrot || { _log_debug "Failed to install scrot via yum."; echo "Failed to install scrot via yum." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+      sudo yum install -y scrot || { _log_debug "Failed to install scrot via yum."; echo "Failed to install scrot via yum." >&2; return 1; }
     elif command -v dnf &> /dev/null; then
-      sudo dnf install -y scrot || { _log_debug "Failed to install scrot via dnf."; echo "Failed to install scrot via dnf." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+      sudo dnf install -y scrot || { _log_debug "Failed to install scrot via dnf."; echo "Failed to install scrot via dnf." >&2; return 1; }
     elif command -v pacman &> /dev/null; then
-      sudo pacman -S --noconfirm scrot || { _log_debug "Failed to install scrot via pacman."; echo "Failed to install scrot via pacman." >&2; export SCREENSHOT_TOOL_MISSING="true"; return 1; }
+      sudo pacman -S --noconfirm scrot || { _log_debug "Failed to install scrot via pacman."; echo "Failed to install scrot via pacman." >&2; return 1; }
     else
       _log_debug "Could not attempt scrot installation: Unsupported package manager."
       echo "Could not attempt scrot installation: Unsupported package manager." >&2
-      export SCREENSHOT_TOOL_MISSING="true"
       return 1
     fi
     # Verify installation succeeded
     if (! command -v scrot &> /dev/null); then
        _log_debug "Installation command ran, but 'scrot' still not found."
        echo "Installation command ran, but 'scrot' still not found." >&2
-       export SCREENSHOT_TOOL_MISSING="true"
        return 1
     fi
     _log_debug "'scrot' installed successfully."
@@ -115,6 +116,8 @@ check_install_screenshot_tool() {
     _log_debug "'scrot' command found."
     echo "'scrot' command found." >&2
   fi
+  # If we reach here, scrot is available
+  export SCREENSHOT_TOOL_MISSING="false" # <-- SET TO FALSE ON SUCCESS
   return 0
 }
 
@@ -134,7 +137,7 @@ capture_screenshot() {
     # Check if the tool is available (using the exported variable)
     if [[ "${SCREENSHOT_TOOL_MISSING}" == "true" ]]; then
         _log_debug "Screenshot tool missing, skipping capture for '$name_suffix'."
-        return 0
+        return 0 # Skip silently if tool is missing
     fi
 
     # Define screenshot directory relative to the script's parent (buildx/)
@@ -143,7 +146,7 @@ capture_screenshot() {
     mkdir -p "$screenshot_dir" || {
         _log_debug "Failed to create screenshot directory: $screenshot_dir"
         echo "Warning: Failed to create screenshot directory: $screenshot_dir" >&2
-        return 1
+        return 1 # Return error if directory creation fails
     }
 
     local timestamp
@@ -159,7 +162,7 @@ capture_screenshot() {
     else
         _log_debug "Failed to capture screenshot using scrot."
         echo "Warning: Failed to capture screenshot: $filename" >&2
-        return 1
+        return 1 # Return error if scrot command fails
     fi
 }
 
@@ -194,6 +197,6 @@ store_current_datetime() {
 # │       └── utils.sh           <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: General utility functions. Centralized ENV_CANONICAL definition. Added _log_debug.
-# Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR # Updated UUID to match refactor
+# Description: General utility functions. Centralized ENV_CANONICAL definition. Added _log_debug. Initialized SCREENSHOT_TOOL_MISSING.
+# Author: Mr K / GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250424-194340-UNBOUNDFIX
