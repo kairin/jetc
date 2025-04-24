@@ -80,15 +80,14 @@ EOF
         log_debug "Created default .env file at $env_file"
     else
         log_debug ".env file already exists at $env_file"
-    }
-    
+
     # Validate the .env file has required variables
     load_env_variables
     
     if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" ]]; then
         log_error ".env file missing required variables (DOCKER_USERNAME, DOCKER_REPO_PREFIX)" # Use log_error
         return 1
-    }
+    fi
     
     return 0
 }
