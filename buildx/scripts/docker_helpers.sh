@@ -424,7 +424,7 @@ ensure_buildx_builder_running() {
 build_folder_image() {
     local folder_path=$1
     local use_cache=$2
-    local platform=$3
+    local platform_arg=$3 # Or whichever argument number platform is
     local use_squash=$4
     local skip_intermediate_push_pull=$5
     local base_image_tag=$6 # Base image tag passed from build.sh
@@ -462,7 +462,7 @@ build_folder_image() {
     log_info "Skip Intermediate Push/Pull: $skip_intermediate_push_pull" # Use log_info
     log_info "--------------------------------------------------" # Use log_info
 
-    local build_cmd="docker buildx build --platform $platform -t $fixed_tag"
+    local build_cmd="docker buildx build --platform "${PLATFORM:-linux/arm64}" -t $fixed_tag" # Use global PLATFORM
 
     # --- Add BASE_IMAGE build-arg ---
     # Capture stdout from generate_base_image_args
