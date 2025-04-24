@@ -60,7 +60,7 @@ get_user_preferences() {
              "Repository Prefix (required):"          3 1 "$temp_prefix" 3 40 70 0 \
              2>"$temp_docker_info"
 
-      capture_screenshot "step0_docker_info" # <-- ADDED
+      capture_screenshot "step0_docker_info"
       local form_exit_status=$?
       if [ $form_exit_status -ne 0 ]; then
         # Only exit if user pressed Cancel or Esc, not if defaults are present
@@ -80,7 +80,7 @@ get_user_preferences() {
       # Accept pre-filled or default values as valid if non-empty
       if [[ -z "$temp_username" || -z "$temp_prefix" ]]; then
         dialog --msgbox "Validation Error:\\n\\nUsername and Repository Prefix are required.\\nPlease correct the entries." 10 $DIALOG_WIDTH
-        capture_screenshot "step0_docker_info_validation_error" # <-- ADDED (Optional)
+        capture_screenshot "step0_docker_info_validation_error"
         continue
       fi
 
@@ -96,32 +96,40 @@ get_user_preferences() {
     local numbered_folders=()
     local folder_count=0
     if [ -d "$build_dir" ]; then
-        mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+        mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V) # Use -V for natural sort
         for folder_path in "${numbered_folders[@]}"; do
             folder_name=$(basename "$folder_path")
-            folder_checklist_items+=("$folder_name" "$folder_name" "on")
+            # Default to ON for now, might need adjustment later if list is long
+            folder_checklist_items+=("$folder_name" "" "on") # No description needed here
             ((folder_count++))
         done
     fi
 
     local selected_folders_list=""
     if [[ $folder_count -gt 0 ]]; then
+        # Adjust height dynamically? For now, use fixed height.
+        local list_height=$(( FOLDER_LIST_HEIGHT < folder_count ? FOLDER_LIST_HEIGHT : folder_count ))
         dialog --backtitle "Docker Build Configuration" \
                --title "Step 0.5: Select Build Stages" \
                --ok-label "Next: Build Options" \
                --cancel-label "Exit Build" \
-               --checklist "Select the build stages (folders) to include (Spacebar to toggle):" $DIALOG_HEIGHT $DIALOG_WIDTH $FOLDER_LIST_HEIGHT \
+               --checklist "Select the build stages (folders) to include (Spacebar to toggle):" $DIALOG_HEIGHT $DIALOG_WIDTH $list_height \
                "${folder_checklist_items[@]}" \
                2>"$temp_folders"
         local folders_exit_status=$?
-        capture_screenshot "step0.5_select_stages" # <-- ADDED
+        capture_screenshot "step0.5_select_stages"
         if [ $folders_exit_status -ne 0 ]; then
             echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
             exit 1
         fi
-        selected_folders_list=$(cat "$temp_folders" | sed 's/"//g')
+        # Read selection - dialog returns quoted strings, remove them and handle potential spaces
+        # Use mapfile to read lines safely, then join with space
+        local temp_sel_array=()
+        mapfile -t temp_sel_array < <(sed 's/"//g' "$temp_folders")
+        selected_folders_list="${temp_sel_array[*]}" # Join array elements with space
+
     else
-        selected_folders_list=""
+        selected_folders_list="" # No folders found
     fi
 
     local use_cache="n"
@@ -140,7 +148,7 @@ get_user_preferences() {
            "use_builder"   "Use Optimized Jetson Builder (Recommended)"            "$([ "$use_builder" == "y" ] && echo "on" || echo "off")" \
             2>"$temp_options"
 
-    capture_screenshot "step1_build_options" # <-- ADDED
+    capture_screenshot "step1_build_options"
     local checklist_exit_status=$?
     if [ $checklist_exit_status -ne 0 ]; then
       echo "Build options selection canceled (exit code: $checklist_exit_status). Exiting." >&2
@@ -168,7 +176,7 @@ get_user_preferences() {
            "specify_custom" "Specify Custom Image (will attempt pull)"                "off" \
            2>"$temp_base_choice"
 
-    capture_screenshot "step2_base_image_selection" # <-- ADDED
+    capture_screenshot "step2_base_image_selection"
     local menu_exit_status=$?
     if [ $menu_exit_status -ne 0 ]; then
       echo "Base image selection canceled (exit code: $menu_exit_status). Exiting." >&2
@@ -185,7 +193,7 @@ get_user_preferences() {
                --inputbox "Enter the full Docker image tag (e.g., user/repo:tag):" 10 $DIALOG_WIDTH "$current_default_base_image_display" \
                2>"$temp_custom_image"
         local input_exit_status=$?
-        capture_screenshot "step2a_custom_base_image_input" # <-- ADDED (before potential error/info dialogs)
+        capture_screenshot "step2a_custom_base_image_input"
         if [ $input_exit_status -ne 0 ]; then
           echo "Custom base image input canceled (exit code: $input_exit_status). Exiting." >&2
           exit 1
@@ -194,53 +202,53 @@ get_user_preferences() {
         entered_image=$(cat "$temp_custom_image")
         if [ -z "$entered_image" ]; then
           dialog --msgbox "No custom image entered. Reverting to default:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
-          capture_screenshot "step2a_custom_base_image_revert" # <-- ADDED (Optional)
+          capture_screenshot "step2a_custom_base_image_revert"
           if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
           SELECTED_IMAGE_TAG="$current_default_base_image_display"
-          BASE_IMAGE_ACTION="use_default"
+          BASE_IMAGE_ACTION="use_default" # Update action for summary
         else
           SELECTED_IMAGE_TAG="$entered_image"
           dialog --infobox "Attempting to pull custom base image:\\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH
-          capture_screenshot "step2a_custom_base_image_pull_attempt" # <-- ADDED (Optional)
-          sleep 1
+          capture_screenshot "step2a_custom_base_image_pull_attempt"
+          sleep 1 # Give user time to see infobox
           if ! pull_image "$SELECTED_IMAGE_TAG"; then
             if dialog --yesno "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nCheck tag/URL.\\n\\nContinue build using default ($current_default_base_image_display)? Warning: Build might fail." 15 $DIALOG_WIDTH; then
-               capture_screenshot "step2a_custom_base_image_pull_fail_continue" # <-- ADDED (Optional)
+               capture_screenshot "step2a_custom_base_image_pull_fail_continue"
                SELECTED_IMAGE_TAG="$current_default_base_image_display"
-               BASE_IMAGE_ACTION="use_default"
+               BASE_IMAGE_ACTION="use_default" # Update action for summary
                dialog --msgbox "Proceeding with default base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-               capture_screenshot "step2a_custom_base_image_pull_fail_revert_msg" # <-- ADDED (Optional)
+               capture_screenshot "step2a_custom_base_image_pull_fail_revert_msg"
                if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
             else
-               capture_screenshot "step2a_custom_base_image_pull_fail_exit" # <-- ADDED (Optional)
+               capture_screenshot "step2a_custom_base_image_pull_fail_exit"
                echo "User chose to exit after failed custom image pull." >&2
                exit 1
             fi
           else
             dialog --msgbox "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-            capture_screenshot "step2a_custom_base_image_pull_success" # <-- ADDED (Optional)
+            capture_screenshot "step2a_custom_base_image_pull_success"
             if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
           fi
         fi
         ;;
       "pull_default")
         dialog --infobox "Attempting to pull default base image:\\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
-        capture_screenshot "step2_pull_default_attempt" # <-- ADDED (Optional)
-        sleep 1
+        capture_screenshot "step2_pull_default_attempt"
+        sleep 1 # Give user time to see infobox
         if ! pull_image "$current_default_base_image_display"; then
            if dialog --yesno "Failed to pull default base image:\\n$current_default_base_image_display.\\nBuild might fail if not local.\\n\\nContinue anyway?" 12 $DIALOG_WIDTH; then
-              capture_screenshot "step2_pull_default_fail_continue" # <-- ADDED (Optional)
+              capture_screenshot "step2_pull_default_fail_continue"
               dialog --msgbox "Warning: Default image not pulled. Using local if available." 8 $DIALOG_WIDTH
-              capture_screenshot "step2_pull_default_fail_continue_msg" # <-- ADDED (Optional)
+              capture_screenshot "step2_pull_default_fail_continue_msg"
               if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
            else
-              capture_screenshot "step2_pull_default_fail_exit" # <-- ADDED (Optional)
+              capture_screenshot "step2_pull_default_fail_exit"
               echo "User chose to exit after failed default image pull." >&2
               exit 1
            fi
         else
           dialog --msgbox "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
-          capture_screenshot "step2_pull_default_success" # <-- ADDED (Optional)
+          capture_screenshot "step2_pull_default_success"
           if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
         fi
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
@@ -248,7 +256,7 @@ get_user_preferences() {
       "use_default")
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
         dialog --msgbox "Using default base image (local version if available):\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
-        capture_screenshot "step2_use_default_msg" # <-- ADDED (Optional)
+        capture_screenshot "step2_use_default_msg"
         if [ $? -ne 0 ]; then echo "Msgbox closed unexpectedly. Exiting." >&2; exit 1; fi
         ;;
       *)
@@ -265,7 +273,10 @@ get_user_preferences() {
     confirmation_message+="  - Repo Prefix:      $DOCKER_REPO_PREFIX\\n\\n"
     confirmation_message+="Selected Build Stages:\\n"
     if [[ -n "$selected_folders_list" ]]; then
-        confirmation_message+="  - $(echo "$selected_folders_list" | wc -w) stages selected: $selected_folders_list\\n\\n"
+        # Count words in the list for a more accurate count
+        local stage_count
+        stage_count=$(echo "$selected_folders_list" | wc -w)
+        confirmation_message+="  - $stage_count stages selected: $selected_folders_list\\n\\n"
     else
         confirmation_message+="  - No numbered stages selected (or none found).\\n\\n"
     fi
@@ -278,34 +289,36 @@ get_user_preferences() {
     confirmation_message+="  - Action Chosen:      $BASE_IMAGE_ACTION\\n"
     confirmation_message+="  - Image Tag To Use:   $SELECTED_IMAGE_TAG"
 
+    # Adjust dialog height for confirmation dynamically? For now, use fixed 25.
     if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then
-        capture_screenshot "final_confirmation_cancel" # <-- ADDED
+        capture_screenshot "final_confirmation_cancel"
         echo "Build canceled by user at confirmation screen. Exiting." >&2
         exit 1
     fi
-    capture_screenshot "final_confirmation_proceed" # <-- ADDED
+    capture_screenshot "final_confirmation_proceed"
 
+    # Write selected preferences to the temp file
+    # Ensure PLATFORM uses the globally determined value
     {
       echo "export DOCKER_USERNAME=\"${DOCKER_USERNAME:-}\""
       echo "export DOCKER_REPO_PREFIX=\"${DOCKER_REPO_PREFIX:-}\""
       echo "export DOCKER_REGISTRY=\"${DOCKER_REGISTRY:-}\""
       echo "export use_cache=\"${use_cache:-n}\""
       echo "export use_squash=\"${use_squash:-n}\""
-      echo "export skip_intermediate_push_pull=\"${skip_intermediate_push_pull:-n}\""
+      echo "export skip_intermediate_push_pull=\"${skip_intermediate_push_pull:-y}\"" # Corrected default
       echo "export use_builder=\"${use_builder:-y}\""
       echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\""
+      # Use the already exported PLATFORM variable, defaulting if necessary
       echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\""
-      echo "export platform=\"${PLATFORM:-linux/arm64}\""
-      echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\""
+      # echo "export platform=\"${PLATFORM:-linux/arm64}\"" # <-- REMOVED lowercase export
+      echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Ensure list is quoted if it contains spaces
     } > "$PREFS_FILE"
     echo "DEBUG: Dialog subshell finished internal commands." >&2
     exit 0
   )
   local subshell_exit_code=$?
   echo "DEBUG: Dialog subshell exited with code: $subshell_exit_code" >&2
-  # Check if temp files were created, indicating dialogs likely ran
-  if [ -f "$temp_options" ]; then echo "DEBUG: temp_options exists." >&2; else echo "DEBUG: temp_options NOT found." >&2; fi
-  if [ -f "$temp_base_choice" ]; then echo "DEBUG: temp_base_choice exists." >&2; else echo "DEBUG: temp_base_choice NOT found." >&2; fi
+
   # Clean up temp files regardless of subshell exit code
   rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders"
   echo "DEBUG: Cleaned up temp files." >&2
@@ -313,12 +326,14 @@ get_user_preferences() {
   return $subshell_exit_code
 }
 
+# --- Fallback Basic Prompts (No dialog) ---
 get_user_preferences_basic() {
   echo "DEBUG: Entering get_user_preferences_basic function." >&2
   # Always load .env before presenting prompts
   load_env_variables
 
   local PREFS_FILE="/tmp/build_prefs.sh"
+  # Ensure trap cleans up PREFS_FILE on exit/error
   trap 'rm -f "$PREFS_FILE"' EXIT TERM INT
 
   local temp_registry="$DOCKER_REGISTRY"
@@ -352,7 +367,7 @@ get_user_preferences_basic() {
   local folder_count=0
 
   if [ -d "$build_dir" ]; then
-      mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort)
+      mapfile -t numbered_folders < <(find "$build_dir" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-*' | sort -V)
       if [[ ${#numbered_folders[@]} -gt 0 ]]; then
           echo "Available build stages (folders):"
           for i in "${!numbered_folders[@]}"; do
@@ -363,18 +378,19 @@ get_user_preferences_basic() {
           done
           read -p "Enter numbers of stages to build (e.g., '1 3 4'), or leave empty for ALL: " selection_input
           if [[ -z "$selection_input" ]]; then
-              selected_folders_list="${folder_options[*]}"
+              selected_folders_list="${folder_options[*]}" # Assign all options if empty
               echo "Building ALL stages."
           else
               local temp_selected=()
               for num in $selection_input; do
                   if [[ "$num" =~ ^[0-9]+$ ]] && (( num >= 1 && num <= folder_count )); then
+                      # Add the folder name corresponding to the number
                       temp_selected+=("${folder_options[$((num-1))]}")
                   else
                       echo "Warning: Invalid selection '$num' ignored." >&2
                   fi
               done
-              selected_folders_list="${temp_selected[*]}"
+              selected_folders_list="${temp_selected[*]}" # Join selected names with spaces
           fi
       else
           echo "No numbered build folders found in $build_dir."
@@ -439,28 +455,33 @@ get_user_preferences_basic() {
   read -p "Proceed with build? (y/n) [y]: " confirm_build
   if [[ "${confirm_build:-y}" != "y" ]]; then
       echo "Build cancelled." >&2
+      # Explicitly remove trap and temp file on cancellation
       trap - EXIT TERM INT
       rm -f "$PREFS_FILE"
-      return 1
+      return 1 # Return failure code
   fi
 
+  # Write selected preferences to the temp file
   {
     echo "export DOCKER_USERNAME=\"${DOCKER_USERNAME:-}\""
     echo "export DOCKER_REPO_PREFIX=\"${DOCKER_REPO_PREFIX:-}\""
     echo "export DOCKER_REGISTRY=\"${DOCKER_REGISTRY:-}\""
     echo "export use_cache=\"${use_cache:-n}\""
     echo "export use_squash=\"${use_squash:-n}\""
-    echo "export skip_intermediate_push_pull=\"${skip_intermediate_push_pull:-n}\""
+    echo "export skip_intermediate_push_pull=\"${skip_intermediate_push_pull:-y}\"" # Corrected default
     echo "export use_builder=\"${use_builder:-y}\""
     echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\""
+    # Use the already exported PLATFORM variable, defaulting if necessary
     echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\""
-    echo "export platform=\"${PLATFORM:-linux/arm64}\""
-    echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\""
+    # echo "export platform=\"${PLATFORM:-linux/arm64}\"" # <-- REMOVED lowercase export
+    echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\"" # Quote list
   } > "$PREFS_FILE"
   echo "DEBUG: Exiting get_user_preferences_basic function." >&2
+  # Remove the trap *only* on successful completion, PREFS_FILE will be sourced by caller
   trap - EXIT TERM INT
   return 0
 }
+
 
 # File location diagram:
 # jetc/                          <- Main project folder
@@ -469,6 +490,6 @@ get_user_preferences_basic() {
 # │       └── dialog_ui.sh       <- THIS FILE (was interactive_ui.sh)
 # └── ...                        <- Other project files
 #
-# Description: Dialog UI logic. Removed direct .env update, now exports prefs to /tmp/build_prefs.sh. Sources docker_helpers. Added screenshot captures.
+# Description: Dialog UI logic. Exports prefs to /tmp/build_prefs.sh. Added screenshots. Removed lowercase platform export.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-193806-SCREENSHT2
+# COMMIT-TRACKING: UUID-20250424-200808-PLATFORMFX
