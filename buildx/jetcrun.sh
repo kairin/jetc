@@ -394,20 +394,13 @@ get_run_options() {
   [ "$USER_ROOT" = "on" ] || [ "$USER_ROOT" = "y" ] && RUN_OPTS="$RUN_OPTS --user root"
   RUN_OPTS="$RUN_OPTS -it --rm"
 
-  # Make sure to capture the image name in the main script context
-  echo "IMAGE_NAME=$IMAGE_NAME" > /tmp/jetcrun_vars.sh
-  echo "RUN_OPTS=$RUN_OPTS" >> /tmp/jetcrun_vars.sh
-  echo "X11_ENABLED=$X11_ENABLED" >> /tmp/jetcrun_vars.sh
-
+  # Export variables directly
   export IMAGE_NAME
   export RUN_OPTS
   export X11_ENABLED
 }
 
 get_run_options
-
-# Source the variables to ensure they're available in main script context
-[ -f /tmp/jetcrun_vars.sh ] && source /tmp/jetcrun_vars.sh && rm -f /tmp/jetcrun_vars.sh
 
 # Add debug line
 echo "After function, image name is: '$IMAGE_NAME'"
@@ -490,6 +483,6 @@ fi
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Uses ENV_CANONICAL from utils.sh via env_helpers.sh.
+# Description: Interactive script to launch Jetson containers. Use export instead of temp file for options.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-143000-ENVPATH
+# COMMIT-TRACKING: UUID-20250424-160000-EXPORTVAR
