@@ -80,6 +80,7 @@ EOF
         log_debug "Created default .env file at $env_file"
     else
         log_debug ".env file already exists at $env_file"
+    fi
 
     # Validate the .env file has required variables
     load_env_variables
@@ -89,6 +90,7 @@ EOF
         return 1
     fi
     
+    log_debug "Finished setting up environment file."
     return 0
 }
 
