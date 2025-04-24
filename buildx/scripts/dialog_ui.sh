@@ -9,15 +9,18 @@ source "$SCRIPT_DIR_DLG/utils.sh" || { echo "Error: utils.sh not found."; exit 1
 source "$SCRIPT_DIR_DLG/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
 
 get_user_preferences() {
+  echo "DEBUG: Entering get_user_preferences function." >&2
   # Always load .env before presenting dialogs
   load_env_variables
 
   # Check if dialog is available, fallback if not
+  echo "DEBUG: Checking dialog availability..." >&2
   if ! check_install_dialog; then
-    echo "Dialog not available or failed to install. Falling back to basic prompts." >&2
+    echo "DEBUG: Dialog check failed or not available. Falling back to basic prompts." >&2
     get_user_preferences_basic
     return $?
   fi
+  echo "DEBUG: Dialog check succeeded. Proceeding with dialog UI." >&2
 
   load_env_variables
 
@@ -29,6 +32,7 @@ get_user_preferences() {
   temp_docker_info=$(mktemp) || { echo "Failed to create temp file"; rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image"; return 1; }
   temp_folders=$(mktemp) || { echo "Failed to create temp file"; rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info"; return 1; }
 
+  echo "DEBUG: Starting dialog subshell..." >&2
   (
     trap 'rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders"' EXIT TERM INT
 
@@ -277,13 +281,23 @@ get_user_preferences() {
       echo "export platform=\"${PLATFORM:-linux/arm64}\""
       echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\""
     } > "$PREFS_FILE"
+    echo "DEBUG: Dialog subshell finished internal commands." >&2
     exit 0
   )
   local subshell_exit_code=$?
+  echo "DEBUG: Dialog subshell exited with code: $subshell_exit_code" >&2
+  # Check if temp files were created, indicating dialogs likely ran
+  if [ -f "$temp_options" ]; then echo "DEBUG: temp_options exists." >&2; else echo "DEBUG: temp_options NOT found." >&2; fi
+  if [ -f "$temp_base_choice" ]; then echo "DEBUG: temp_base_choice exists." >&2; else echo "DEBUG: temp_base_choice NOT found." >&2; fi
+  # Clean up temp files regardless of subshell exit code
+  rm -f "$temp_options" "$temp_base_choice" "$temp_custom_image" "$temp_docker_info" "$temp_folders"
+  echo "DEBUG: Cleaned up temp files." >&2
+
   return $subshell_exit_code
 }
 
 get_user_preferences_basic() {
+  echo "DEBUG: Entering get_user_preferences_basic function." >&2
   # Always load .env before presenting prompts
   load_env_variables
 
@@ -432,6 +446,7 @@ get_user_preferences_basic() {
     echo "export platform=\"${PLATFORM:-linux/arm64}\""
     echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\""
   } > "$PREFS_FILE"
+  echo "DEBUG: Exiting get_user_preferences_basic function." >&2
   trap - EXIT TERM INT
   return 0
 }

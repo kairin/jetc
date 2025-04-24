@@ -5,27 +5,30 @@
 # Returns: 0 if dialog is available, 1 otherwise.
 # =========================================================================
 check_install_dialog() {
+  echo "Checking for 'dialog' command..." >&2
   if (! command -v dialog &> /dev/null); then
-    echo "Dialog package not found. Attempting to install..." >&2
+    echo "'dialog' not found. Attempting installation..." >&2
     # Try common package managers
     if command -v apt-get &> /dev/null; then
-      sudo apt-get update -y && sudo apt-get install -y dialog || { echo "Failed via apt-get." >&2; return 1; }
+      sudo apt-get update -y && sudo apt-get install -y dialog || { echo "Failed to install dialog via apt-get." >&2; return 1; }
     elif command -v yum &> /dev/null; then
-      sudo yum install -y dialog || { echo "Failed via yum." >&2; return 1; }
+      sudo yum install -y dialog || { echo "Failed to install dialog via yum." >&2; return 1; }
     elif command -v dnf &> /dev/null; then
-      sudo dnf install -y dialog || { echo "Failed via dnf." >&2; return 1; }
+      sudo dnf install -y dialog || { echo "Failed to install dialog via dnf." >&2; return 1; }
     elif command -v pacman &> /dev/null; then
-      sudo pacman -S --noconfirm dialog || { echo "Failed via pacman." >&2; return 1; }
+      sudo pacman -S --noconfirm dialog || { echo "Failed to install dialog via pacman." >&2; return 1; }
     else
       echo "Could not attempt dialog installation: Unsupported package manager." >&2
       return 1
     fi
     # Verify installation succeeded
     if (! command -v dialog &> /dev/null); then
-       echo "Failed to install dialog. Falling back to basic prompts." >&2
+       echo "Installation command ran, but 'dialog' still not found. Falling back to basic prompts." >&2
        return 1
     fi
-    echo "Dialog installed successfully." >&2
+    echo "'dialog' installed successfully." >&2
+  else
+    echo "'dialog' command found." >&2
   fi
   return 0
 }
@@ -81,6 +84,6 @@ store_current_datetime() {
 # │       └── utils.sh           <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: General utility functions for dialog, datetime, and system checks.
+# Description: General utility functions. Added verbose logging to dialog check.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-UTIL
+# COMMIT-TRACKING: UUID-20250424-101500-DLGDBG
