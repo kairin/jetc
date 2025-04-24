@@ -179,6 +179,30 @@ All scripts (build, run, tagging, verification) read and update `.env` for confi
 
 ---
 
+## Development Workflow
+
+### Commit Tracking (Automated via Git Hooks)
+
+This project uses an automated commit tracking system integrated with Git hooks to ensure consistency and traceability.
+
+1.  **Runtime UUID Generation:** When you run key scripts like `buildx/build.sh` or `buildx/jetcrun.sh`, they generate a unique UUID based on the current system time (e.g., `UUID-20250424-210000-BLDX`). This UUID is temporarily stored in `.git/LAST_RUNTIME_UUID`.
+2.  **Commit Message Preparation (`prepare-commit-msg` hook):** When you run `git commit`, this hook activates:
+    *   It checks for the `.git/LAST_RUNTIME_UUID` file.
+    *   If a valid runtime UUID is found, it uses that UUID and deletes the temporary file.
+    *   If no valid runtime UUID is found (e.g., for commits not related to running `build.sh` or `jetcrun.sh`), it generates a new UUID based on the *commit* time (e.g., `UUID-20250424-220000-COMM`).
+    *   It prepends the chosen UUID to your commit message (e.g., `UUID-20250424-220000-COMM: Your commit summary`). You only need to write the summary part.
+3.  **File Footer Update (`pre-commit` hook):** Before the commit is finalized, this hook runs:
+    *   It reads the UUID from the commit message prepared in the previous step.
+    *   It finds all staged files (`.sh`, `.md`, `Dockerfile`, etc.) that should contain a tracking footer.
+    *   It updates the `COMMIT-TRACKING:` line in the footer of each staged file with the single UUID from the commit message.
+    *   It automatically re-stages these modified files (`git add`).
+
+**Result:** All files modified within a single commit will share the same `COMMIT-TRACKING:` UUID, which is also present in the commit message itself, linking the code changes directly to the commit record. The UUID reflects the runtime if triggered by `build.sh` or `jetcrun.sh`, otherwise it reflects the commit time.
+
+**Setup:** Ensure you have run `./.github/install-hooks.sh` once to copy the hooks into your local `.git/hooks` directory.
+
+---
+
 ## More Information
 
 - [Features & FAQ](buildx/readme/features.md)
@@ -207,7 +231,7 @@ This project is licensed under the Creative Commons Attribution-NonCommercial 4.
 # │   └── copilot-instructions.md<- Coding standards and commit tracking
 # └── ...                        <- Other project files
 #
-# Description: Main README. Updated build steps description. Removed LOCAL_DOCKER_IMAGES. Added JETC_DEBUG note.
+# Description: Main README. Added documentation for automated commit tracking via Git hooks.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-150000-DOCSTEPS
+# COMMIT-TRACKING: UUID-20250424-220000-HOOKIMPL
 -->
