@@ -65,11 +65,7 @@ fi
 # Verify contents of the selected base image before building
 if [ -n "$SELECTED_BASE_IMAGE" ]; then
   echo "Verifying installed apps in base image: $SELECTED_BASE_IMAGE"
-  if [ -f "$SCRIPT_DIR/verification.sh" ]; then
-    bash "$SCRIPT_DIR/verification.sh" verify_container_apps "$SELECTED_BASE_IMAGE" "all"
-  else
-    echo "verification.sh not found, skipping base image verification."
-  fi
+  verify_container_apps "$SELECTED_BASE_IMAGE" "all"
 fi
 
 # Determine build order and prepare selected folders map
