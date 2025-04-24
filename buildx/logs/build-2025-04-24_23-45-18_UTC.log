@@ -1,0 +1,5 @@
+2025-04-24 23:45:18 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-24_23-45-18_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-24_23-45-18_UTC.log
+2025-04-24 23:45:18 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-24 23:45:18 - [INFO]: Detected platform: linux/arm64
+2025-04-24 23:45:18 - [INFO]: --- Environment Setup Complete ---
+2025-04-24 23:45:18 - [ERROR]: Buildx Setup not found at: /media/kkk/Apps/jetc/buildx/scripts/scripts/buildx_setup.sh
