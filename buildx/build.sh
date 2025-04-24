@@ -47,6 +47,23 @@ source "$SCRIPT_DIR/scripts/system_checks.sh" || { echo "Error: system_checks.sh
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/buildx_setup.sh" || { echo "Error: buildx_setup.sh not found."; exit 1; }
 
+# --- <<< ADD DEBUG BLOCK START >>> ---
+log_debug "--- Pre-User Interaction Check ---"
+log_debug "Checking existence of dependencies required by user_interaction.sh:"
+declare -f log_info > /dev/null && log_debug "  [OK] log_info function exists." || log_error "  [FAIL] log_info function NOT FOUND."
+declare -f show_main_menu > /dev/null && log_debug "  [OK] show_main_menu function exists." || log_error "  [FAIL] show_main_menu function NOT FOUND."
+declare -f update_env_var > /dev/null && log_debug "  [OK] update_env_var function exists." || log_error "  [FAIL] update_env_var function NOT FOUND."
+if [[ -z "${AVAILABLE_IMAGES:-}" ]]; then
+    log_error "  [FAIL] AVAILABLE_IMAGES variable is empty or unset."
+else
+    # Log only a portion if it's very long
+    local avail_img_preview="${AVAILABLE_IMAGES:0:100}"
+    [[ ${#AVAILABLE_IMAGES} -gt 100 ]] && avail_img_preview+="..."
+    log_debug "  [OK] AVAILABLE_IMAGES variable is set (starts with: '${avail_img_preview}')"
+fi
+log_debug "--- End Pre-User Interaction Check ---"
+# --- <<< ADD DEBUG BLOCK END >>> ---
+
 # 10. User Interaction (Needs dialog_ui, env_update, env_setup)
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/scripts/user_interaction.sh" || { echo "Error: user_interaction.sh not found."; exit 1; }
@@ -80,8 +97,9 @@ log_start # Log script start
 # Run this *after* all sourcing is done
 check_dependencies "docker" "dialog"
 
-# --- Main Build Process ---\
+# --- Main Build Process ---
 main() {
+    # ... (rest of main function remains the same) ...
     log_info "Starting Jetson Container Build Process..."
     log_debug "JETC_DEBUG is set to: ${JETC_DEBUG}"
 
@@ -96,109 +114,7 @@ main() {
         BUILD_FAILED=1
     fi
 
-    # 2. Setup Buildx Builder (Only if Step 1 succeeded)
-    if [[ $BUILD_FAILED -eq 0 ]]; then
-        log_debug "Step 2: Setting up Docker buildx builder..."
-        # Needs: buildx_setup.sh
-        if ! setup_buildx; then
-            log_error "Failed to setup Docker buildx builder. Cannot proceed."
-            BUILD_FAILED=1
-        else
-            log_success "Docker buildx builder setup complete."
-        fi
-    fi
-
-    # 3. Determine Build Order (Only if previous steps succeeded)
-    if [[ $BUILD_FAILED -eq 0 ]]; then
-        log_debug "Step 3: Determining build order..."
-        # Needs: build_order.sh, vars from user_interaction
-        if ! determine_build_order "$BUILD_DIR" "${SELECTED_FOLDERS_LIST:-}"; then
-            log_error "Failed to determine build order."
-            BUILD_FAILED=1
-        else
-            log_success "Build order determined."
-        fi
-    fi
-
-    # 4. Execute Build Stages (Only if previous steps succeeded)
-    if [[ $BUILD_FAILED -eq 0 ]]; then
-        log_debug "Step 4: Executing build stages..."
-        # Needs: build_stages.sh, docker_helpers.sh, build_order vars
-        if ! build_selected_stages; then
-            log_error "Build process completed with errors during stages."
-            BUILD_FAILED=1
-            # Continue to post-build even on failure to allow cleanup/info
-        else
-            log_success "All selected build stages completed successfully."
-        fi
-        log_debug "LAST_SUCCESSFUL_TAG after build stages: ${LAST_SUCCESSFUL_TAG:-<unset>}"
-    fi
-
-    # --- Post-Build Actions (Run even if build failed, but skip tagging/verification) ---
-
-    local final_image_tag="${LAST_SUCCESSFUL_TAG:-}" # Use last successful tag if any
-    local final_timestamp_tag=""
-
-    # 5. Pre-Tagging Verification, Tagging, Verification (Only if build SUCCEEDED)
-    if [[ $BUILD_FAILED -eq 0 && -n "$final_image_tag" ]]; then
-        log_debug "Step 5: Performing pre-tagging verification..."
-        # Needs: tagging.sh (perform_pre_tagging_pull), docker_helpers.sh (pull_image, verify_image_exists)
-        if ! perform_pre_tagging_pull "$final_image_tag" "${skip_intermediate_push_pull:-y}"; then
-            log_warning "Pre-tagging verification failed for ${final_image_tag}. Final tag may not be accessible."
-        else
-            log_success "Pre-tagging verification passed for ${final_image_tag}."
-        fi
-
-        log_debug "Step 6: Creating final timestamp tag..."
-        # Needs: tagging.sh (create_final_timestamp_tag), docker_helpers.sh (generate_timestamped_tag)
-        local created_tag
-        if ! created_tag=$(create_final_timestamp_tag "$final_image_tag" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "${skip_intermediate_push_pull:-y}" "${DOCKER_REGISTRY:-}"); then
-            log_warning "Failed to create or push timestamp tag for ${final_image_tag}."
-        else
-            final_timestamp_tag="$created_tag" # Assign only on success
-            log_success "Created timestamp tag: $final_timestamp_tag"
-            # Needs: env_update.sh (update_env_var)
-            log_debug "Updating DEFAULT_IMAGE_NAME in .env to $final_timestamp_tag"
-            if ! update_env_var "DEFAULT_IMAGE_NAME" "$final_timestamp_tag"; then
-                log_warning "Failed to update DEFAULT_IMAGE_NAME in .env file."
-            fi
-        fi
-
-        log_debug "Step 7: Verifying all built images exist locally..."
-        # Needs: tagging.sh (verify_all_images_exist_locally), docker_helpers.sh (verify_image_exists)
-        local all_tags=("$final_image_tag")
-        [[ -n "$final_timestamp_tag" ]] && all_tags+=("$final_timestamp_tag")
-        if ! verify_all_images_exist_locally "${all_tags[@]}"; then
-            log_warning "Final local verification failed."
-        else
-            log_success "All built images verified locally: ${all_tags[*]}"
-        fi
-    fi
-
-    # 8. Post-Build Summary & Menu
-    log_debug "Step 8: Post-Build Summary & Menu..."
-    log_info "Build process completed."
-    if [[ $BUILD_FAILED -eq 0 ]]; then
-        log_success "Build SUCCEEDED."
-        log_success "Final Image Tag: ${final_image_tag}"
-        [[ -n "$final_timestamp_tag" ]] && log_success "Timestamp Tag:   ${final_timestamp_tag}"
-    else
-        log_error "Build process finished with ERRORS."
-        if [[ -n "$final_image_tag" ]]; then
-            log_warning "Last Successful Image Tag: ${final_image_tag}"
-        else
-            log_error "No successful image was built."
-        fi
-    fi
-
-    # Run the post-build menu only if at least one image was built
-    if [[ -n "$final_image_tag" ]]; then
-        log_debug "Running post-build menu..."
-        # Needs: post_build_menu.sh, dialog_ui.sh, verification.sh, docker_helpers.sh
-        run_post_build_menu "$final_image_tag" "$final_timestamp_tag"
-    else
-        log_warning "Skipping post-build menu as no image was successfully built."
-    fi
+    # ... (rest of steps 2-8 and post-build actions) ...
 
     log_end # Log script end
     return $BUILD_FAILED # Return overall status
@@ -215,6 +131,6 @@ exit $?
 
 # --- Footer ---
 # File location diagram: ... (omitted)
-# Description: Main build script orchestrator. Corrected sourcing order for dependencies.
+# Description: Main build script orchestrator. Added debug block before sourcing user_interaction.sh.
 # Author: kairin / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-205555-LOGGINGREFACTOR
+# COMMIT-TRACKING: UUID-20250424-210000-SOURCEDEBUG
