@@ -37,18 +37,21 @@ log_debug() {
 # =========================================================================
 setup_env_file() {
     local env_file="$ENV_CANONICAL"
-    
+
     log_debug "Setting up .env file at $env_file"
-    
+
     # If .env file doesn't exist, create it with defaults
     if [[ ! -f "$env_file" ]]; then
         log_debug ".env file not found, creating with defaults"
-        
+
         # Create directory if it doesn't exist
-        mkdir -p "$(dirname "$env_file")"
-        
+        mkdir -p "$(dirname "$env_file")" || {
+            log_error "Failed to create directory for .env file: $(dirname "$env_file")"
+            return 1
+        }
+
         # Create the file with default content
-        cat > "$env_file" << EOF
+        cat > "$env_file" << EOF || { log_error "Failed to create default .env file at $env_file"; return 1; }
 # Docker registry URL (optional, leave empty for Docker Hub)
 DOCKER_REGISTRY=
 
@@ -71,25 +74,21 @@ DEFAULT_ENABLE_GPU=on
 DEFAULT_MOUNT_WORKSPACE=on
 DEFAULT_USER_ROOT=on
 EOF
-    
-        if [[ $? -ne 0 ]]; then
-            log_error "Failed to create default .env file" # Use log_error
-            return 1
-        fi
-        
+        # Note: Error handling for 'cat' moved inline above using || { ... }
+
         log_debug "Created default .env file at $env_file"
     else
         log_debug ".env file already exists at $env_file"
     fi
 
     # Validate the .env file has required variables
-    load_env_variables
-    
+    load_env_variables # Assumes this function is defined in env_helpers.sh
+
     if [[ -z "${DOCKER_USERNAME:-}" || -z "${DOCKER_REPO_PREFIX:-}" ]]; then
-        log_error ".env file missing required variables (DOCKER_USERNAME, DOCKER_REPO_PREFIX)" # Use log_error
+        log_error ".env file missing required variables (DOCKER_USERNAME, DOCKER_REPO_PREFIX)"
         return 1
     fi
-    
+
     log_debug "Finished setting up environment file."
     return 0
 }
@@ -103,7 +102,7 @@ init_logging() {
     local log_dir="${1:-logs}"
     local main_log="${2:-build.log}"
     local error_log="${3:-errors.log}"
-    
+
     # Create log directory if it doesn't exist
     if [[ ! -d "$log_dir" ]]; then
         log_debug "Creating log directory: $log_dir"
@@ -111,22 +110,23 @@ init_logging() {
             echo -e "${C_ERROR}Error: Failed to create log directory: $log_dir${C_RESET}" >&2 # Direct echo before logging is fully setup
             return 1
         }
-    
+    fi # Added missing 'fi' here based on standard if block structure
+
     # Initialize log files
     > "$main_log" || {
         echo -e "${C_ERROR}Error: Failed to create/clear main log file: $main_log${C_RESET}" >&2
         return 1
     }
-    
+
     > "$error_log" || {
         echo -e "${C_ERROR}Error: Failed to create/clear error log file: $error_log${C_RESET}" >&2
         return 1
     }
-    
+
     # Export log file paths for use in other scripts
     export MAIN_LOG="$main_log"
     export ERROR_LOG="$error_log"
-    
+
     log_debug "Logging initialized: MAIN_LOG=$main_log, ERROR_LOG=$error_log"
     return 0
 }
@@ -237,6 +237,7 @@ log_end() {
 set_stage() {
     export CURRENT_STAGE="$1"
     log_debug "Entering stage: $CURRENT_STAGE"
+    return 0 # Added explicit return 0 for consistency
 }
 
 # File location diagram:
@@ -249,3 +250,4 @@ set_stage() {
 # Description: Environment setup and logging functions. Updated logging for consistency, debug, and origin.
 # Author: GitHub Copilot
 # COMMIT-TRACKING: UUID-20240806-103000-MODULAR
+
