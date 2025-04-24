@@ -1,3 +1,9 @@
+######################################################################
+# THIS FILE CAN BE DELETED
+# All relevant content consolidated in /workspaces/jetc/README.md
+# You do NOT need this file anymore.
+######################################################################
+
 # Proposed Interface for build.sh (Jetson Containers)
 
 > **This document reflects the modular build steps as described in the README ("Modular Build Steps (Reflected in build.sh and scripts/)") and the actual build.sh workflow.**
@@ -50,11 +56,10 @@ The build process is orchestrated by `build.sh` and utilizes modular scripts:
 <!--
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
 # ├── proposed-app-build-sh.md   <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Proposed interface/workflow for build.sh, updated build steps.
+# Description: Marked for deletion - content moved to main README.md
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-150000-DOCSTEPS
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
 -->

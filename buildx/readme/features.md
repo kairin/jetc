@@ -1,3 +1,9 @@
+######################################################################
+# THIS FILE CAN BE DELETED
+# All relevant content consolidated in /workspaces/jetc/README.md
+# You do NOT need this file anymore.
+######################################################################
+
 # JETC Features & FAQ
 
 > **This file expands on the "Features" section of the main README.**
@@ -48,11 +54,12 @@ A: Use `./jetcrun.sh` for an interactive menu of available images and runtime op
 <!--
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── buildx/                    <- Build system and scripts
-# │   └── readme/                <- THIS FILE and related docs
+# ├── buildx/                    <- Parent directory
+# │   └── readme/                <- Current directory
+# │       └── features.md        <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Features and FAQ for Jetson Container project.
+# Description: Marked for deletion - content moved to main README.md
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240805-210000-FEATURES
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
 -->

@@ -1,3 +1,9 @@
+######################################################################
+# THIS FILE CAN BE DELETED
+# All relevant content consolidated in /workspaces/jetc/README.md and .github/copilot-instructions.md
+# You do NOT need this file anymore.
+######################################################################
+
 # JETC Development Guidelines
 
 > **This file expands on the "Development Guidelines" section of the main README.**
@@ -35,11 +41,12 @@
 <!--
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── buildx/                    <- Build system and scripts
-# │   └── readme/                <- THIS FILE and related docs
+# ├── buildx/                    <- Parent directory
+# │   └── readme/                <- Current directory
+# │       └── dev-guidelines.md  <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Development guidelines for Jetson Container project.
+# Description: Marked for deletion - content moved to main README.md and coding standards.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240805-210000-DEVGUIDE
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
 -->

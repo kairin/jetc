@@ -1,3 +1,9 @@
+######################################################################
+# THIS FILE CAN BE DELETED
+# All relevant content consolidated in /workspaces/jetc/README.md
+# You do NOT need this file anymore.
+######################################################################
+
 # JETC Generative AI Components
 
 > **This file expands on the "Generative AI Components" section of the main README.**
@@ -28,11 +34,12 @@
 <!--
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── buildx/                    <- Build system and scripts
-# │   └── readme/                <- THIS FILE and related docs
+# ├── buildx/                    <- Parent directory
+# │   └── readme/                <- Current directory
+# │       └── ai-components.md   <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Generative AI component documentation for Jetson Container project.
+# Description: Marked for deletion - content moved to main README.md
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240805-210000-AICOMP
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
 -->

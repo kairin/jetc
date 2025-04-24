@@ -1,3 +1,9 @@
+######################################################################
+# THIS FILE CAN BE DELETED
+# All relevant content consolidated in /workspaces/jetc/README.md
+# You do NOT need this file anymore.
+######################################################################
+
 # Proposed Interface for jetcrun.sh (Jetson Containers)
 
 > **This document reflects the image selection and runtime options as described in the README ("After the Build: Using Your AI Applications") and the modular build system's `.env` image tracking.**
@@ -62,36 +68,10 @@ This proposed interface aims to make running Jetson containers as simple and rob
 <!--
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── README.md                  <- Main project README
-# ├── proposed-app-build-sh.md   <- Proposed build.sh UI/workflow
 # ├── proposed-app-jetcrun-sh.md <- THIS FILE
-# ├── .env                       <- Environment/config file
-# ├── .gitattributes
-# ├── .gitignore
-# ├── .github/                   <- Copilot and git integration
-# │   ├── copilot-instructions.md
-# │   ├── git-template-setup.md
-# │   ├── install-hooks.sh
-# │   ├── pre-commit-hook.sh
-# │   ├── prepare-commit-msg-hook.sh
-# │   ├── setup-git-template.sh
-# │   └── vs-code-snippets-guide.md
-# ├── buildx/                    <- Build system and scripts
-# │   ├── build/                 <- Build stages and Dockerfiles
-# │   ├── build.sh               <- Main build orchestrator
-# │   ├── jetcrun.sh             <- Container run utility
-# │   ├── scripts/               <- Modular build scripts
-# │   │   ├── build_ui.sh
-# │   │   ├── commit_tracking.sh
-# │   │   ├── copilot-must-follow.md
-# │   │   ├── docker_helpers.sh
-# │   │   ├── logging.sh
-# │   │   ├── utils.sh
-# │   │   └── verification.sh
-# │   └── logs/                  <- Build logs
 # └── ...                        <- Other project files
 #
-# Description: Proposed interactive UI and workflow for jetcrun.sh script, including image selection, runtime options, and integration with jetson-containers.
+# Description: Marked for deletion - content moved to main README.md
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-PRPJ
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
 -->

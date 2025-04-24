@@ -1,6 +1,6 @@
 <!--
-# COMMIT-TRACKING: UUID-20250422-083100-RDME
-# Description: Updated README to reflect .env usage for AVAILABLE_IMAGES.
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
+# Description: Main README. Consolidated documentation from various files. Added structure, features, usage, workflow, troubleshooting.
 # Author: Mr K / GitHub Copilot
 #
 # File location diagram:
@@ -11,175 +11,138 @@
 # │   ├── build.sh               <- Main build orchestrator
 # │   ├── jetcrun.sh             <- Container run utility
 # │   └── scripts/               <- Modular build scripts
+# │   └── readme/                <- Extended documentation
 # ├── .github/                   <- Copilot and git integration
 # │   └── copilot-instructions.md<- Coding standards and commit tracking
 # └── ...                        <- Other project files
 -->
-# JETC: Jetson Containers for Targeted Use Cases
+# Jetson Container Toolkit (jetc)
 
-> **Based on [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers).**  
-> This repo focuses on modular, interactive, and robust Docker buildx-based container building for NVIDIA Jetson devices.
+A collection of scripts and Dockerfiles designed to simplify building and running customized container images for NVIDIA Jetson devices, focusing on AI/ML development environments.
 
----
+## Overview
 
-## Quick Start
-
-1. **Clone and enter the repo**
-   ```bash
-   git clone https://github.com/kairin/jetc.git
-   cd jetc/buildx
-   ```
-
-2. **(Optional) Run pre-run check**
-   ```bash
-   ./scripts/pre-run.sh
-   ```
-
-3. **(Optional) Create `.env` for defaults**
-   ```bash
-   cp .env.example .env
-   # Edit as needed
-   ```
-
-4. **Run the build script**
-   ```bash
-   ./build.sh
-   ```
-
-5. **Run a container**
-   ```bash
-   ./jetcrun.sh
-   ```
-
----
-
-## Modular Build Steps (Reflected in `build.sh` and `scripts/`)
-
-The build process is orchestrated by `build.sh` and utilizes modular scripts:
-
-1.  **Initialization & Logging:** (`build.sh`, `scripts/logging.sh`)
-    *   Sources helper scripts.
-    *   Initializes logging for the build process.
-
-2.  **User Preferences & .env:** (`scripts/build_ui.sh`, `scripts/dialog_ui.sh`, `scripts/env_helpers.sh`)
-    *   Presents dialogs or prompts to gather user preferences (Docker info, build options, base image, stages).
-    *   Loads initial settings from `.env`.
-    *   Exports selected preferences to `/tmp/build_prefs.sh`.
-    *   Updates `.env` with Docker info and selected base image.
-
-3.  **Environment & Builder Setup:** (`build.sh`, `scripts/env_helpers.sh`, `scripts/docker_helpers.sh`)
-    *   Loads environment variables from `.env`.
-    *   Ensures the `buildx` builder (`jetson-builder`) is running.
-
-4.  **Load Preferences:** (`build.sh`)
-    *   Sources the preferences exported by the UI step (`/tmp/build_prefs.sh`).
-
-5.  **Determine Build Order:** (`build.sh`)
-    *   Calculates the order of build stages based on user selection and folder structure.
-
-6.  **Build Stages:** (`build.sh`, `scripts/build_stages.sh`, `scripts/docker_helpers.sh`, `scripts/env_helpers.sh`)
-    *   Iterates through the selected build folders (`buildx/build/*`).
-    *   Calls `build_folder_image` for each stage, passing the output of the previous stage as the base image.
-    *   Updates `AVAILABLE_IMAGES` in `.env` after each successful stage build.
-
-7.  **Base Image Verification (Optional):** (`build.sh`, `scripts/verification.sh`)
-    *   Optionally verifies the contents of the selected base image before starting stage builds.
-
-8.  **Final Tagging & Push:** (`build.sh`, `scripts/build_tagging.sh`, `scripts/docker_helpers.sh`)
-    *   Generates a timestamped tag for the last successfully built image.
-    *   Tags the image.
-    *   Pushes the image if `Build Locally Only` was not selected.
-
-9.  **Post-Build Menu:** (`build.sh`, `scripts/post_build_menu.sh`)
-    *   Presents options to interact with the final built image (run shell, verify, etc.).
-
-10. **Final Verification (Optional):** (`build.sh`, `scripts/verification.sh`)
-    *   Optionally runs verification checks inside the final built image.
-
----
+This toolkit provides a modular and interactive approach to building complex Docker images layer by layer. It allows users to select specific components (like PyTorch, TensorFlow, OpenCV, etc.) and build options through a user-friendly interface (using `dialog` or basic text prompts).
 
 ## Features
 
-- Interactive build and run scripts with persistent `.env` config
-- Modular, maintainable build steps
-- Automatic image tracking and verification
-- Easy container selection and runtime options
-- [More details...](buildx/readme/features.md)
+*   **Modular Build System:** Build images incrementally by selecting specific numbered folders in `buildx/build/`. Each folder represents a component or configuration step.
+*   **Interactive UI:** Uses `dialog` (if installed) or text prompts to guide users through build options, base image selection, and component choices.
+*   **Configuration Management:** Uses a central `.env` file (`buildx/.env`) to store Docker Hub credentials, repository prefix, default base images, and last used settings.
+*   **Buildx Integration:** Leverages Docker Buildx for multi-platform builds (though primarily focused on `linux/arm64` for Jetson) and optimized builder instances.
+*   **Caching & Squashing:** Options to enable/disable build cache and experimental layer squashing.
+*   **Local Builds:** Option to build images locally (`--load`) without pushing to a registry.
+*   **Verification:** Includes scripts to verify installed components within the built container (`verification.sh`).
+*   **Runtime Utility (`jetcrun.sh`):** An interactive script to easily run containers based on built images, managing common options like GPU access, X11 forwarding, and workspace mounting.
+*   **Logging:** Comprehensive logging of the build process, including main output, errors, and a summary markdown file.
+*   **Automated Commit Tracking:** Integrates with Git hooks (`prepare-commit-msg`, `pre-commit`) to automatically manage `COMMIT-TRACKING:` footers in modified files.
 
----
+## Project Structure
 
-## Repository Structure
+```
+jetc/
+├── .git/                     # Git directory (hooks installed here)
+├── .github/                  # GitHub Actions, Issue Templates, Copilot instructions, Git hooks source
+│   ├── copilot-instructions.md # Canonical coding standards for Copilot
+│   ├── INSTRUCTIONS.md       # Summary of standards and enforcement
+│   ├── install-hooks.sh      # Script to install Git hooks locally
+│   ├── pre-commit-hook.sh    # Hook source: Updates footers before commit
+│   ├── prepare-commit-msg-hook.sh # Hook source: Prepends UUID to commit message
+│   └── setup-git-template.sh # Script to setup Git template dir with hooks
+├── .gitignore                # Files ignored by Git
+├── .gitattributes            # Git attributes (e.g., for git-crypt)
+├── LICENSE                   # Project license file
+├── README.md                 # This file: Main project documentation
+├── buildx/                   # Core build system directory
+│   ├── .env                  # **IMPORTANT**: Stores Docker creds, defaults, last used settings
+│   ├── build/                # Contains subdirectories for build stages/components
+│   │   ├── 01-base/          # Example base setup stage
+│   │   └── ...               # Other numbered component folders (e.g., 02-pytorch, 03-opencv)
+│   ├── build.sh              # **Main build script** - Run this to build images
+│   ├── jetcrun.sh            # **Main run script** - Run this to launch containers
+│   ├── logs/                 # Build logs are stored here
+│   └── scripts/              # Helper scripts used by build.sh and jetcrun.sh
+│       ├── build_stages.sh   # Logic for building selected stages
+│       ├── build_tagging.sh  # Logic for tagging images
+│       ├── build_ui.sh       # Main UI interaction logic (calls dialog/basic)
+│       ├── commit_tracking.sh# Functions for UUID/footer management
+│       ├── dialog_ui.sh      # Dialog-based UI functions
+│       ├── docker_helpers.sh # Docker command wrappers (build, pull, tag)
+│       ├── env_helpers.sh    # .env file reading/writing functions
+│       ├── logging.sh        # Build logging functions
+│       ├── post_build_menu.sh# Menu shown after successful build
+│       ├── utils.sh          # General utility functions (datetime, dialog check)
+│       └── verification.sh   # Functions to verify container contents
+└── ...                       # Other project files/directories (e.g., specific app code)
+```
 
-See [structure.md](buildx/readme/structure.md) for a full breakdown.
+## Prerequisites
 
----
+*   Docker & Docker Buildx installed and running.
+*   Git installed.
+*   (Optional but Recommended) `dialog` package for a better UI (`sudo apt install dialog`).
+*   An NVIDIA Jetson device or an environment capable of running/building ARM64 containers.
 
-## Usage Examples
+## Setup
 
-- [Build process walkthrough](buildx/readme/proposed-app-build-sh.md)
-- [Running containers with jetcrun.sh](buildx/readme/proposed-app-jetcrun-sh.md)
-
----
-
-## Troubleshooting
-
-### .env Variable Errors
-
-- If you see errors like `No such file or directory` with an image name, check your `.env` file for invalid lines.
-- Only lines of the form `VAR=value` are allowed. Do not add arbitrary text or commands.
-- Never source or execute the value of a variable from `.env`.
-
-### Docker buildx Builder
-
-- The build system requires a working Docker buildx builder named `jetson-builder`.
-- If you see errors about buildx or builder not found, run:
-  ```bash
-  docker buildx create --name jetson-builder --driver docker-container --use
-  docker buildx start jetson-builder
-  ```
-- The build script will attempt to create and start the builder automatically if needed.
-
-### Dialog Form Issues
-
-If the build process stops after the Docker information dialog or does not proceed:
-
-- Ensure you enter a **non-empty Docker Username** and **Repository Prefix**. These are required.
-- If you leave these fields blank, the script will prompt you to correct them.
-- If you see repeated prompts or the script exits, check your terminal for error messages.
-- If the `.env` file is missing or incomplete, the script will prompt for all required values.
-
-### Required .env Variables
-
-The `buildx/.env` file stores configuration. Key variables include:
-
-*   `DOCKER_REGISTRY`: (Optional) Your Docker registry URL (default: Docker Hub).
-*   `DOCKER_USERNAME`: Your Docker username (required).
-*   `DOCKER_REPO_PREFIX`: Prefix for your image repository (required, e.g., `jetc`).
-*   `DEFAULT_BASE_IMAGE`: Base image used if not specified otherwise (updated on selection).
-*   `AVAILABLE_IMAGES`: Semicolon-separated list of built/known images (managed by scripts).
-*   `DEFAULT_IMAGE_NAME`: Last image used by `jetcrun.sh`.
-*   `DEFAULT_ENABLE_X11`, `DEFAULT_ENABLE_GPU`, `DEFAULT_MOUNT_WORKSPACE`, `DEFAULT_USER_ROOT`: Default runtime options for `jetcrun.sh`.
-
-All scripts (build, run, tagging, verification) read and update `.env` for configuration and image state. Do not edit `.env` while a build or run is in progress.
-
-### Additional Troubleshooting Tips
-
-*   **.env File:** Ensure the `.env` file exists in the `buildx/` directory and contains valid `DOCKER_USERNAME` and `DOCKER_REPO_PREFIX`. The script will prompt if missing, but defaults might not be ideal.
-*   **Buildx Builder:** The scripts attempt to create and use a `jetson-builder` buildx instance. If you encounter errors like `ERROR: docker-container driver requires remote context or docker server running with experimental mode`, ensure Docker Desktop or your Docker daemon is running correctly and buildx is set up. You might need to manually run `docker buildx create --name jetson-builder --use` or troubleshoot your Docker installation.
-*   **Dialog Errors:** If `dialog` isn't installed, the scripts should fall back to basic text prompts. If dialog installation fails or prompts don't appear, check permissions and package manager status.
-*   **Debug Output:** For more detailed output during builds or runs, set the `JETC_DEBUG` environment variable:
+1.  **Clone the Repository:**
     ```bash
-    export JETC_DEBUG=true
-    ./buildx/build.sh
-    # or
-    JETC_DEBUG=1 ./buildx/jetcrun.sh
+    git clone <repository_url> jetc
+    cd jetc
     ```
-*   **Pull Errors (`jetcrun.sh`):** If `jetcrun.sh` fails to find an image locally. If the automatic pull fails, verify the correct image tag and pull it manually using `docker pull <correct-image-tag>`.
-*   **Pull Errors (Build):** If pulling base images during the build process fails, check your network connection, registry URL (if not Docker Hub), and authentication (`docker login`).
+2.  **Install Git Hooks:** (Run once)
+    ```bash
+    ./.github/install-hooks.sh
+    ```
+    This copies the necessary hooks (`prepare-commit-msg`, `pre-commit`) to your local `.git/hooks` directory to enable automated commit tracking.
+3.  **Configure `.env`:**
+    *   Navigate to the `buildx` directory: `cd buildx`
+    *   Copy the example if it exists, or create `.env`.
+    *   Edit `buildx/.env` and set at least `DOCKER_USERNAME` and `DOCKER_REPO_PREFIX`. The scripts will prompt if these are missing.
+    ```bash
+    # Example buildx/.env
+    DOCKER_REGISTRY= # Optional: leave empty for Docker Hub
+    DOCKER_USERNAME=your_dockerhub_username
+    DOCKER_REPO_PREFIX=myjetson_images
+    # Other defaults will be added/updated by the scripts
+    ```
 
----
+## Usage
+
+### Building Images (`build.sh`)
+
+1.  Navigate to the `buildx` directory: `cd /path/to/jetc/buildx`
+2.  Run the build script: `./build.sh`
+3.  Follow the interactive prompts:
+    *   Confirm/edit Docker registry, username, and prefix.
+    *   Select build stages (numbered folders in `buildx/build/`).
+    *   Choose build options (cache, squash, local build).
+    *   Select the base image for the first stage (use default, pull default, specify custom).
+    *   Confirm the build summary.
+4.  The script will build the selected stages sequentially, tagging each intermediate image. The final image tag will be based on the last successful stage.
+5.  After the build, a post-build menu allows you to run verification checks or start a shell in the final container.
+
+### Running Containers (`jetcrun.sh`)
+
+1.  Navigate to the `buildx` directory: `cd /path/to/jetc/buildx`
+2.  Run the container launch script: `./jetcrun.sh`
+3.  Follow the interactive prompts:
+    *   Select the image to run from a list of previously built/used images or enter a custom tag.
+    *   Choose runtime options (X11 forwarding, GPU access, workspace mount, run as root).
+    *   Confirm the `docker run` command.
+4.  The script launches the container with the selected options.
 
 ## Development Workflow
+
+### Adding New Components
+
+1.  Create a new numbered directory in `buildx/build/` (e.g., `buildx/build/05-my-component`). The numbering determines the build order.
+2.  Add a `Dockerfile` inside the new directory.
+    *   Use `ARG BASE_IMAGE` and `FROM $BASE_IMAGE` to inherit from the previous stage.
+    *   Add instructions to install your component.
+    *   Include the standard commit tracking footer at the bottom.
+3.  (Optional) Add a `.buildargs` file in the component directory if you need to pass specific build arguments during that stage.
+4.  Run `./buildx/build.sh` and select your new stage along with any prerequisites.
 
 ### Commit Tracking (Automated via Git Hooks)
 
@@ -201,37 +164,40 @@ This project uses an automated commit tracking system integrated with Git hooks 
 
 **Setup:** Ensure you have run `./.github/install-hooks.sh` once to copy the hooks into your local `.git/hooks` directory.
 
----
+### Coding Standards
 
-## More Information
+Refer to `.github/copilot-instructions.md` for detailed coding standards, minimal diff rules, and footer requirements. Key points:
+*   Footers go at the **bottom** of the file.
+*   Use the automated Git hooks for UUID management.
+*   Follow minimal diff rules for changes.
 
-- [Features & FAQ](buildx/readme/features.md)
-- [Troubleshooting](buildx/readme/troubleshooting.md)
-- [Development guidelines](buildx/readme/dev-guidelines.md)
-- [Container verification system](buildx/readme/verification.md)
-- [Generative AI components](buildx/readme/ai-components.md)
+## Troubleshooting
 
----
+*   **`.env` File:** Ensure `buildx/.env` exists and contains valid `DOCKER_USERNAME` and `DOCKER_REPO_PREFIX`. The scripts will prompt if missing, but defaults might not be ideal. Check permissions if scripts fail to read/write.
+*   **Buildx Builder:** The scripts attempt to create and use a `jetson-builder` buildx instance. If you encounter errors like `ERROR: docker-container driver requires remote context or docker server running with experimental mode`, ensure Docker Desktop or your Docker daemon is running correctly and buildx is set up. You might need to manually run `docker buildx create --name jetson-builder --use` or troubleshoot your Docker installation.
+*   **Dialog Errors:** If `dialog` isn't installed, the scripts should fall back to basic text prompts. If dialog installation fails or prompts don't appear, check permissions and package manager status (`sudo apt update && sudo apt install dialog`).
+*   **Pull Errors (`jetcrun.sh`):** If `jetcrun.sh` fails to find an image locally, it currently attempts a fallback pull by appending `-py3` to the image name (e.g., trying `my/image:tag-py3` if `my/image:tag` isn't found). This is a heuristic and might not match the actual tag in the registry. If the automatic pull fails, verify the correct image tag and pull it manually using `docker pull <correct-image-tag>`.
+*   **Pull Errors (Build):** If pulling base images during the build process fails, check your network connection, registry URL (if not Docker Hub), and authentication (`docker login`). Ensure the base image tag specified exists for the `linux/arm64` platform.
+*   **Git Hook Errors:** If commits fail with messages related to UUIDs or footers, ensure the hooks were installed correctly (`./.github/install-hooks.sh`) and have execute permissions (`chmod +x .git/hooks/*`). Check the error messages from the hooks for specific issues (e.g., missing `commit_tracking.sh`, invalid UUID format).
+*   **Debug Output:** For more detailed script output, set the `JETC_DEBUG` environment variable:
+    ```bash
+    export JETC_DEBUG=true
+    ./buildx/build.sh
+    # or
+    JETC_DEBUG=1 ./buildx/jetcrun.sh
+    ```
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). This means that you are free to use, share, and adapt the project for non-commercial purposes. Commercial use and monetization are explicitly prohibited. See the LICENSE file for full details.
+See the [LICENSE](LICENSE) file for details.
 
 <!--
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── README.md                  <- THIS FILE
-# ├── buildx/                    <- Build system and scripts
-# │   ├── build/                 <- Build stages and Dockerfiles
-# │   ├── build.sh               <- Main build orchestrator
-# │   ├── jetcrun.sh             <- Container run utility
-# │   └── scripts/               <- Modular build scripts
-# │   └── readme/                <- Extended documentation
-# ├── .github/                   <- Copilot and git integration
-# │   └── copilot-instructions.md<- Coding standards and commit tracking
 # └── ...                        <- Other project files
 #
-# Description: Main README. Added documentation for automated commit tracking via Git hooks.
+# Description: Main README. Consolidated documentation from various files. Added structure, features, usage, workflow, troubleshooting.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-220000-HOOKIMPL
+# COMMIT-TRACKING: UUID-20250424-230000-DOCCONSOL
 -->
