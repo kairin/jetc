@@ -62,22 +62,27 @@ else
   exit 1
 fi
 
+# Prepare build order and selected folders from user preferences
+ORDERED_FOLDERS=()
+declare -A SELECTED_FOLDERS_MAP
+if [[ -n "$SELECTED_FOLDERS_LIST" ]]; then
+  for folder in $SELECTED_FOLDERS_LIST; do
+    ORDERED_FOLDERS+=("$(realpath "$(dirname "$0")/build/$folder")")
+    SELECTED_FOLDERS_MAP["$folder"]=1
+  done
+fi
+export ORDERED_FOLDERS
+export SELECTED_FOLDERS_MAP
+
+# Build selected numbered and other directories
+source "$SCRIPT_DIR/build_stages.sh" || exit 1
+build_selected_stages
+
 # Verify contents of the selected base image before building
 if [ -n "$SELECTED_BASE_IMAGE" ]; then
   echo "Verifying installed apps in base image: $SELECTED_BASE_IMAGE"
   verify_container_apps "$SELECTED_BASE_IMAGE" "all"
 fi
-
-# Determine build order and prepare selected folders map
-# Build selected numbered and other directories
-build_selected_stages
-
-# Build Process - Selected Numbered Directories First
-for dir in "${numbered_dirs[@]}"; do
-    # ...existing code...
-    build_folder_image "$dir" "$local_use_cache" "$DOCKER_USERNAME" "$local_platform" "$local_use_squash" "$local_skip_intermediate" "$CURRENT_BASE_IMAGE" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
-    # ...existing code...
-done
 
 # Tag and push final image
 source "$SCRIPT_DIR/build_tagging.sh" || exit 1
@@ -107,7 +112,7 @@ for f in "$0" "$SCRIPT_DIR"/*.sh; do
   fi
 done
 
-# COMMIT-TRACKING: UUID-20250421-020700-REFA
+# COMMIT-TRACKING: UUID-20240805-221000-BLDX
 generate_error_summary
 
 # File location diagram:
