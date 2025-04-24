@@ -46,7 +46,6 @@ else
      # Define fallback if needed, though docker_helpers likely already exited
 fi
 
-
 # =========================================================================
 # Function: Perform pre-tagging verification to ensure the image can be pulled
 # Arguments: $1 = image tag to verify
@@ -60,7 +59,7 @@ perform_pre_tagging_pull() {
     if [[ -z "$image_tag" ]]; then
         log_error "perform_pre_tagging_pull called with empty tag" # Use log_error
         return 1
-    }
+    fi # <--- CORRECTED LINE
 
     log_info "Performing pre-tagging verification for $image_tag" # Use log_info
 
@@ -75,7 +74,7 @@ perform_pre_tagging_pull() {
     if [[ "$skip_push_pull" == "y" ]]; then
         log_info "Image built with --load (skip_push_pull=y), skipping pull verification" # Use log_info
         return 0
-    fi # End of skip_push_pull check - Removed extra '}' that was likely here
+    fi # End of skip_push_pull check
 
     # Try pulling the image as verification if push mode was used
     log_debug "Attempting pull for pre-tagging verification (push mode): $image_tag"
@@ -89,6 +88,7 @@ perform_pre_tagging_pull() {
     log_success "Pre-tagging verification successful for $image_tag (pull verified)" # Use log_success
     return 0
 }
+
 
 # =========================================================================
 # Function: Create a final timestamp tag for the image
