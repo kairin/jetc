@@ -8,13 +8,17 @@ source "$SCRIPT_DIR_BSTAGES/utils.sh" || { echo "Error: utils.sh not found."; ex
 source "$SCRIPT_DIR_BSTAGES/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_BSTAGES/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
+# Source env_update to update AVAILABLE_IMAGES (though env_helpers might be enough if loaded)
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_BSTAGES/env_update.sh" || { echo "Error: env_update.sh not found."; exit 1; }
+
 
 # =========================================================================
 # Function: Build selected numbered and other directories
 # Relies on: Variables exported by build_prefs.sh (use_cache, platform, etc.)
-#            SELECTED_FOLDERS_MAP (associative array from build_order.sh)
-#            ORDERED_FOLDERS (array from build_order.sh)
-#            SKIP_APPS_LIST (space-separated list from build_prefs.sh)
+#            ORDERED_FOLDERS (array exported by build_order.sh)
+#            SELECTED_FOLDERS_MAP (associative array exported by build_order.sh)
+#            SKIP_APPS_LIST (space-separated list from build_prefs.sh, optional)
 # Exports:   LAST_SUCCESSFUL_TAG (tag of the final successfully built image)
 # Returns: 0 if all selected stages build successfully, 1 otherwise
 # =========================================================================
@@ -23,7 +27,7 @@ build_selected_stages() {
     echo "Starting Build Stages..."
     echo "=================================================="
 
-    # Ensure required variables are set (should be sourced from PREFS_FILE by build.sh)
+    # Ensure required variables are set (should be sourced from PREFS_FILE by build.sh/user_interaction.sh)
     : "${use_cache?Variable use_cache not set}"
     : "${platform?Variable platform not set}"
     : "${use_squash?Variable use_squash not set}"
@@ -32,7 +36,18 @@ build_selected_stages() {
     : "${DOCKER_USERNAME?Variable DOCKER_USERNAME not set}"
     : "${DOCKER_REPO_PREFIX?Variable DOCKER_REPO_PREFIX not set}"
     # DOCKER_REGISTRY is optional
-    # SELECTED_FOLDERS_MAP and ORDERED_FOLDERS should be exported by build_order.sh
+    # ORDERED_FOLDERS and SELECTED_FOLDERS_MAP must be exported by build_order.sh
+    if [[ -z "${ORDERED_FOLDERS[*]}" ]]; then
+        echo "Error: ORDERED_FOLDERS array is empty or not set. Cannot proceed." >&2
+        return 1
+    fi
+     if [[ -z "${!SELECTED_FOLDERS_MAP[@]}" && -n "${SELECTED_FOLDERS_LIST:-}" ]]; then
+        # If the map is empty but the list wasn't, it indicates an issue in build_order.sh
+        echo "Warning: SELECTED_FOLDERS_MAP is empty, but SELECTED_FOLDERS_LIST was not. Check build_order.sh." >&2
+        # Depending on desired behavior, could return 1 here or try to rebuild map from list.
+        # For now, proceed, but builds might be skipped unexpectedly.
+    fi
+
     # SKIP_APPS_LIST is optional, default to empty if not set
     SKIP_APPS_LIST="${SKIP_APPS_LIST:-}"
 
@@ -48,22 +63,30 @@ build_selected_stages() {
     local current_base_image="$SELECTED_BASE_IMAGE" # Start with the base image selected by the user
     export LAST_SUCCESSFUL_TAG="$current_base_image" # Initialize with the starting base image
     local build_failed=0
+    local build_dir_path # Define outside loop for use in update_available_images_in_env
 
-    # Iterate through the ordered list of folders to build
+    # Iterate through the ordered list of folders provided by build_order.sh
     for folder_path in "${ORDERED_FOLDERS[@]}"; do
         local folder_name
         folder_name=$(basename "$folder_path")
+        build_dir_path=$(dirname "$folder_path") # Store the parent build dir path
 
-        # Check if this folder was selected for building
+        # Check if this folder was selected for building using the map from build_order.sh
         if [[ -z "${SELECTED_FOLDERS_MAP[$folder_name]}" ]]; then
             echo "Skipping folder (not selected): $folder_name"
             continue
         fi
 
         # --- Check if app should be skipped ---
-        # Heuristic: app name is after first dash, e.g. 01-03-numpy -> numpy
-        local app_name="${folder_name#*-}"
-        app_name="${app_name%%-*}" # Handle cases like 01-01-00-protobuf_apt -> protobuf_apt
+        # ... existing skip logic ...
+        local app_name="${folder_name#*-}" # Heuristic: app name is after first dash
+        # Refine heuristic: handle multi-part prefixes like 01-01-00-
+        if [[ "$folder_name" =~ ^[0-9]+(-[0-9]+)*-(.*) ]]; then
+            app_name="${BASH_REMATCH[2]}" # Capture everything after the last numbered prefix dash
+        else
+             app_name="${folder_name#*-}" # Fallback
+        fi
+
         if [[ -n "${skip_apps_map[$app_name]}" ]]; then
             echo "==================================================" | tee -a "${MAIN_LOG}"
             echo "SKIPPING build stage for '$app_name' ($folder_name) as requested (already present in base)." | tee -a "${MAIN_LOG}"
@@ -78,6 +101,8 @@ build_selected_stages() {
 
         # Disable exit on error temporarily for build_folder_image
         set +e
+        # Call build_folder_image from docker_helpers.sh
+        # It exports 'fixed_tag' on success
         build_folder_image "$folder_path" "$use_cache" "$platform" "$use_squash" "$skip_intermediate_push_pull" "$current_base_image" "$DOCKER_USERNAME" "$DOCKER_REPO_PREFIX" "$DOCKER_REGISTRY"
         local build_status=$?
         set -e # Re-enable exit on error
@@ -90,38 +115,12 @@ build_selected_stages() {
             echo "Successfully built stage: $folder_name. Output image: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}"
 
             # Update AVAILABLE_IMAGES in .env immediately after successful build
-            local env_file_path="$(dirname "$SCRIPT_DIR_BSTAGES")/.env"
-            if [ -f "$env_file_path" ]; then
-                local current_available_images
-                # Read the line carefully, handling potential missing line
-                current_available_images=$(grep "^AVAILABLE_IMAGES=" "$env_file_path" | head -n 1 | cut -d'=' -f2-) || current_available_images=""
-
-                # Add the new tag if it's not already present (robust check)
-                if ! echo ";${current_available_images};" | grep -q ";${LAST_SUCCESSFUL_TAG};"; then
-                    local updated_images
-                    if [ -z "$current_available_images" ]; then
-                        updated_images="$LAST_SUCCESSFUL_TAG"
-                    else
-                        # Append with semicolon separator
-                        updated_images="${current_available_images};${LAST_SUCCESSFUL_TAG}"
-                    fi
-                    # Use sed with a different delimiter (#) and escape potential special chars in tag for safety
-                    local escaped_tag
-                    escaped_tag=$(printf '%s\n' "$LAST_SUCCESSFUL_TAG" | sed 's/[&/\]/\\&/g') # Basic escaping for sed
-                    local escaped_updated_images
-                    escaped_updated_images=$(printf '%s\n' "$updated_images" | sed 's/[&/\]/\\&/g')
-
-                    if grep -q "^AVAILABLE_IMAGES=" "$env_file_path"; then
-                         # Update existing line
-                         sed -i "s#^AVAILABLE_IMAGES=.*#AVAILABLE_IMAGES=${escaped_updated_images}#" "$env_file_path"
-                    else
-                         # Add new line if it doesn't exist
-                         echo "" >> "$env_file_path" # Ensure newline
-                         echo "# Available container images (semicolon-separated)" >> "$env_file_path"
-                         echo "AVAILABLE_IMAGES=${escaped_updated_images}" >> "$env_file_path"
-                    fi
-                    echo "Updated AVAILABLE_IMAGES in $env_file_path" | tee -a "${MAIN_LOG}"
-                fi
+            # Use the dedicated function from env_update.sh
+            if [[ -n "$build_dir_path" ]]; then # Ensure path is valid
+                 local env_file_path="$(dirname "$build_dir_path")/.env" # Assumes .env is one level above build/
+                 update_available_images_in_env "$env_file_path" "$LAST_SUCCESSFUL_TAG"
+            else
+                 echo "Warning: Could not determine .env file path to update AVAILABLE_IMAGES." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
             fi
 
         else
@@ -131,6 +130,12 @@ build_selected_stages() {
             # Do NOT update LAST_SUCCESSFUL_TAG or current_base_image
             echo "Build failed for stage: $folder_name. Last successful image remains: $LAST_SUCCESSFUL_TAG" | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
             # Optionally, ask user if they want to continue? For now, continue automatically.
+            # Consider adding a prompt here or an overall build strategy flag (fail fast vs continue)
+            # read -p "Stage $folder_name failed. Continue with next stage? (y/n) [y]: " continue_on_fail
+            # if [[ "${continue_on_fail:-y}" != "y" ]]; then
+            #     echo "Exiting build due to stage failure." | tee -a "${MAIN_LOG}" "${ERROR_LOG}"
+            #     return 1 # Exit immediately
+            # fi
         fi
     done
 
@@ -159,16 +164,25 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     fi
 
     # Need to manually set up ORDERED_FOLDERS and SELECTED_FOLDERS_MAP for direct execution
-    # This part is complex and depends on build_order.sh, so direct execution might be limited
     echo "Note: Direct execution requires ORDERED_FOLDERS and SELECTED_FOLDERS_MAP to be set manually."
     # Example setup for testing:
-    # export ORDERED_FOLDERS=("/path/to/buildx/build/01-folder" "/path/to/buildx/build/02-folder")
-    # declare -A SELECTED_FOLDERS_MAP=( ["01-folder"]=1 ["02-folder"]=1 )
+    # BUILDX_DIR=$(dirname "$SCRIPT_DIR_BSTAGES")
+    # export ORDERED_FOLDERS=("$BUILDX_DIR/build/01-00-build-essential" "$BUILDX_DIR/build/04-python")
+    # declare -gA SELECTED_FOLDERS_MAP=( ["01-00-build-essential"]=1 ["04-python"]=1 )
+    # export SELECTED_BASE_IMAGE="ubuntu:22.04" # Example base
+    # export DOCKER_USERNAME="testuser"
+    # export DOCKER_REPO_PREFIX="testprefix"
+    # export use_cache="n"; export platform="linux/arm64"; export use_squash="n"; export skip_intermediate_push_pull="y";
 
     if [[ -z "${ORDERED_FOLDERS[*]}" ]]; then
-        echo "Error: ORDERED_FOLDERS not set. Cannot run directly without setup."
+        echo "Error: ORDERED_FOLDERS not set. Cannot run directly without manual setup."
         exit 1
     fi
+     if [[ -z "${!SELECTED_FOLDERS_MAP[@]}" ]]; then
+        echo "Error: SELECTED_FOLDERS_MAP not set. Cannot run directly without manual setup."
+        exit 1
+    fi
+
 
     build_selected_stages
     exit $?
@@ -181,6 +195,6 @@ fi
 # │       └── build_stages.sh    <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Script to build selected Docker stages in order. Uses helpers for build and logging.
+# Description: Builds Docker stages based on ORDERED_FOLDERS and SELECTED_FOLDERS_MAP. Updates AVAILABLE_IMAGES in .env.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR # Updated UUID to match refactor
+# COMMIT-TRACKING: UUID-20250424-095000-BSTAGESREF

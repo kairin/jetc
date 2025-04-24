@@ -220,17 +220,6 @@ update_default_run_options() {
     fi
 }
 
-# Deprecated function (kept for reference, but update_env_variable is preferred)
-update_env_file() {
-    echo "Warning: update_env_file is deprecated. Use update_env_variable instead." >&2
-    # Simplified logic: just call update_env_variable for the specific known fields
-    update_env_variable "DOCKER_USERNAME" "${1:-$(get_env_variable DOCKER_USERNAME)}"
-    update_env_variable "DOCKER_REGISTRY" "${2:-$(get_env_variable DOCKER_REGISTRY)}"
-    update_env_variable "DOCKER_REPO_PREFIX" "${3:-$(get_env_variable DOCKER_REPO_PREFIX)}"
-    update_env_variable "DEFAULT_BASE_IMAGE" "${4:-$(get_env_variable DEFAULT_BASE_IMAGE)}"
-}
-
-
 # File location diagram:
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory

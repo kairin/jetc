@@ -7,6 +7,9 @@ SCRIPT_DIR_DLG="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR_DLG/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_DLG/env_helpers.sh" || { echo "Error: env_helpers.sh not found."; exit 1; }
+# Source docker_helpers for pull_image and check_install_dialog
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR_DLG/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
 
 get_user_preferences() {
   echo "DEBUG: Entering get_user_preferences function." >&2
@@ -262,12 +265,6 @@ get_user_preferences() {
         exit 1
     fi
 
-    update_env_file "$DOCKER_USERNAME" "$DOCKER_REGISTRY" "$DOCKER_REPO_PREFIX" "$SELECTED_IMAGE_TAG"
-    local update_status=$?
-    if [[ $update_status -ne 0 ]]; then
-        echo "Warning: Failed to update .env file. Proceeding with current settings for this run only." >&2
-    fi
-
     {
       echo "export DOCKER_USERNAME=\"${DOCKER_USERNAME:-}\""
       echo "export DOCKER_REPO_PREFIX=\"${DOCKER_REPO_PREFIX:-}\""
@@ -427,12 +424,6 @@ get_user_preferences_basic() {
       return 1
   fi
 
-  update_env_file "$DOCKER_USERNAME" "$DOCKER_REGISTRY" "$DOCKER_REPO_PREFIX" "$SELECTED_IMAGE_TAG"
-  local update_status=$?
-   if [[ $update_status -ne 0 ]]; then
-      echo "Warning: Failed to update .env file. Proceeding with current settings for this run only." >&2
-  fi
-
   {
     echo "export DOCKER_USERNAME=\"${DOCKER_USERNAME:-}\""
     echo "export DOCKER_REPO_PREFIX=\"${DOCKER_REPO_PREFIX:-}\""
@@ -455,9 +446,9 @@ get_user_preferences_basic() {
 # jetc/                          <- Main project folder
 # ├── buildx/                    <- Parent directory
 # │   └── scripts/               <- Current directory
-# │       └── interactive_ui.sh  <- THIS FILE
+# │       └── dialog_ui.sh       <- THIS FILE (was interactive_ui.sh)
 # └── ...                        <- Other project files
 #
-# Description: Dialog UI logic for Jetson Container build system (user preferences, build options, folder selection).
+# Description: Dialog UI logic. Removed direct .env update, now exports prefs to /tmp/build_prefs.sh. Sources docker_helpers.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250424-074238-DLGUI
+# COMMIT-TRACKING: UUID-20250424-095000-DLGUIREF

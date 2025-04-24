@@ -321,3 +321,123 @@ fi
 # Description: Verification functions for checking installed apps and packages in Jetson containers.
 # Author: Mr K / GitHub Copilot
 # COMMIT-TRACKING: UUID-20240806-103000-MODULAR # Updated UUID to match refactor
+
+# =========================================================================
+# Image Verification and Pulling Script
+# Responsibility: Verify local image existence and pull images from registry.
+# =========================================================================
+
+# --- Dependencies ---
+SCRIPT_DIR_VERIFY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source required scripts (use fallbacks if sourcing fails)
+if [ -f "$SCRIPT_DIR_VERIFY/env_setup.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR_VERIFY/env_setup.sh"
+else
+    echo "Warning: env_setup.sh not found. Logging/colors may be basic." >&2
+    log_info() { echo "INFO: $1"; }
+    log_warning() { echo "WARNING: $1" >&2; }
+    log_error() { echo "ERROR: $1" >&2; }
+    log_success() { echo "SUCCESS: $1"; }
+    log_debug() { :; }
+fi
+
+# --- Functions --- #
+
+# Verify if a Docker image exists locally
+# Input: $1 = image_tag (full tag, e.g., user/repo:tag)
+# Return: 0 if image exists locally, 1 otherwise.
+verify_image_locally() {
+    local image_tag="$1"
+    if [ -z "$image_tag" ]; then
+        log_error "verify_image_locally: No image tag provided."
+        return 1
+    fi
+
+    log_debug "Checking for local image: $image_tag"
+    if docker image inspect "$image_tag" >/dev/null 2>&1; then
+        log_debug " -> Image found locally: $image_tag"
+        return 0
+    else
+        log_debug " -> Image not found locally: $image_tag"
+        return 1
+    fi
+}
+
+# Pull a Docker image from the registry
+# Input: $1 = image_tag (full tag, e.g., user/repo:tag)
+# Return: 0 on successful pull, 1 on failure.
+pull_image() {
+    local image_tag="$1"
+    if [ -z "$image_tag" ]; then
+        log_error "pull_image: No image tag provided."
+        return 1
+    fi
+
+    log_info "Attempting to pull image: $image_tag"
+    if docker pull "$image_tag"; then
+        log_success " -> Successfully pulled image: $image_tag"
+        # Optionally, verify again locally after pull
+        if verify_image_locally "$image_tag"; then
+            return 0
+        else
+            log_error " -> Pulled image '$image_tag' but could not verify it locally immediately."
+            return 1
+        fi
+    else
+        log_error " -> Failed to pull image: $image_tag"
+        log_error "    Check image tag, registry access, and network connection."
+        return 1
+    fi
+}
+
+# --- Main Execution (for testing) ---
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    log_info "Running verification.sh directly for testing..."
+
+    # Test Case 1: Verify a common image (likely exists or is easily pulled)
+    test_image_1="ubuntu:22.04"
+    log_info "Test 1: Verifying/Pulling '$test_image_1'"
+    if verify_image_locally "$test_image_1"; then
+        log_success " -> '$test_image_1' exists locally."
+    else
+        log_info " -> '$test_image_1' not found locally. Attempting pull..."
+        if pull_image "$test_image_1"; then
+            log_success " -> Pull successful for '$test_image_1'."
+        else
+            log_error " -> Pull failed for '$test_image_1'."
+        fi
+    fi
+
+    # Test Case 2: Verify a non-existent image
+    test_image_2="nonexistent-repo/nonexistent-image:latest-$(date +%s)"
+    log_info "Test 2: Verifying '$test_image_2' (expected not found)"
+    if verify_image_locally "$test_image_2"; then
+        log_warning " -> '$test_image_2' unexpectedly found locally."
+    else
+        log_success " -> '$test_image_2' correctly not found locally."
+    fi
+
+    # Test Case 3: Attempt to pull a non-existent image
+    log_info "Test 3: Attempting to pull '$test_image_2' (expected failure)"
+    if pull_image "$test_image_2"; then
+        log_error " -> Pull unexpectedly succeeded for '$test_image_2'."
+    else
+        log_success " -> Pull correctly failed for '$test_image_2'."
+    fi
+
+    log_info "Verification script test finished."
+    exit 0
+fi
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── verification.sh    <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Provides functions to verify local Docker image existence and pull images from a registry.
+# Author: Mr K / GitHub Copilot
+# COMMIT-TRACKING: UUID-20250424-093000-VERIFY
