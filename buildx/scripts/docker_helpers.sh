@@ -5,8 +5,11 @@
 # Docker Helper Functions
 # =========================================================================
 
+# Set strict mode early
+set -euo pipefail
+
 # --- Dependencies ---
-SCRIPT_DIR_DOCKER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR_DOCKER="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
 # Source ONLY env_setup.sh - It provides necessary env vars and fallbacks if logging wasn't sourced yet.
 # DO NOT source logging.sh here.
@@ -21,7 +24,7 @@ else
     log_warning() { echo "WARNING: $1" >&2; }
     log_error() { echo "ERROR: $1" >&2; }
     log_success() { echo "SUCCESS: $1"; }
-    log_debug() { :; }
+    log_debug() { if [[ "${JETC_DEBUG}" == "true" ]]; then echo "[DEBUG] $1" >&2; fi; } # Basic debug
     get_system_datetime() { date +%s; } # Basic fallback
     PLATFORM="linux/arm64" # Basic fallback
 fi
@@ -63,6 +66,21 @@ verify_image_exists() {
 # Function: Build a Docker image from a specific folder
 # =========================================================================
 build_folder_image() {
+    # <<< --- ADDED DEBUGGING --- >>>
+    log_debug "--- Entering build_folder_image ---"
+    log_debug "  Received \$1 (folder_path):         '$1'"
+    log_debug "  Received \$2 (use_cache):           '$2'"
+    log_debug "  Received \$3 (docker_username):     '$3'"
+    log_debug "  Received \$4 (use_squash):          '$4'"
+    log_debug "  Received \$5 (skip_intermediate):   '$5'"
+    log_debug "  Received \$6 (base_image_tag):      '$6'"
+    log_debug "  Received \$7 (docker_repo_prefix):  '$7'"
+    log_debug "  Received \$8 (docker_registry):     '${8:-}'" # Show default if empty
+    log_debug "  Received \$9 (use_builder):         '${9:-y}'" # Show default if empty
+    log_debug "  Global PLATFORM:                  '${PLATFORM:-}'"
+    log_debug "-------------------------------------"
+    # <<< --- END DEBUGGING --- >>>
+
     local folder_path="$1"
     local use_cache="$2"
     local docker_username="$3"
@@ -70,25 +88,40 @@ build_folder_image() {
     local skip_intermediate="$5"
     local base_image_tag="$6"
     local docker_repo_prefix="$7"
-    local docker_registry="${8:-}"
-    local use_builder="${9:-y}"
+    local docker_registry="${8:-}" # Default to empty if $8 is unset/null
+    local use_builder="${9:-y}"   # Default to 'y' if $9 is unset/null
+
+    # --- Validate required arguments ---
+    # Check after assigning to local variables
+    if [ -z "$folder_path" ]; then log_error "build_folder_image: Missing required argument \$1 (folder_path)."; return 1; fi
+    if [ -z "$use_cache" ]; then log_error "build_folder_image: Missing required argument \$2 (use_cache)."; return 1; fi
+    if [ -z "$docker_username" ]; then log_error "build_folder_image: Missing required argument \$3 (docker_username)."; return 1; fi
+    if [ -z "$use_squash" ]; then log_error "build_folder_image: Missing required argument \$4 (use_squash)."; return 1; fi
+    if [ -z "$skip_intermediate" ]; then log_error "build_folder_image: Missing required argument \$5 (skip_intermediate)."; return 1; fi
+    if [ -z "$base_image_tag" ]; then log_error "build_folder_image: Missing required argument \$6 (base_image_tag)."; return 1; fi
+    if [ -z "$docker_repo_prefix" ]; then log_error "build_folder_image: Missing required argument \$7 (docker_repo_prefix)."; return 1; fi
+    # $8 (registry) and $9 (use_builder) have defaults, no need to check if empty
 
     local folder_basename
-    folder_basename=$(basename "$folder_path")
+    folder_basename=$(basename "$folder_path") # Line 67 approx
 
     # --- Construct Tag ---
     local registry_prefix=""
     [[ -n "$docker_registry" ]] && registry_prefix="${docker_registry}/"
+    # Export the tag so build_stages.sh can retrieve it
     export fixed_tag="${registry_prefix}${docker_username}/${docker_repo_prefix}:${folder_basename}"
-    fixed_tag=$(echo "$fixed_tag" | tr '[:upper:]' '[:lower:]')
+    fixed_tag=$(echo "$fixed_tag" | tr '[:upper:]' '[:lower:]') # Ensure lowercase
 
     log_info "--------------------------------------------------"
     log_info "Building image from folder: $folder_path"
     log_info "Image Name: $folder_basename"
     log_info "Platform: ${PLATFORM:-linux/arm64}" # Uses PLATFORM from env_setup.sh
     log_info "Tag: $fixed_tag"
-    log_info "Base Image (FROM via ARG): \"$base_image_tag\"" # Line 87 approx - relies on global log_info
+    log_info "Base Image (FROM via ARG): \"$base_image_tag\""
     log_info "Skip Intermediate Push/Pull: $skip_intermediate"
+    log_info "Use Buildx Builder: $use_builder"
+    log_info "Use Cache: $use_cache"
+    log_info "Use Squash: $use_squash"
     log_info "--------------------------------------------------"
 
     # --- Build Command ---
@@ -99,28 +132,36 @@ build_folder_image() {
     [[ "$use_cache" == "n" ]] && { log_info "Using --no-cache"; build_cmd_opts+=("--no-cache"); }
     if [[ "$use_squash" == "y" ]]; then
         if [[ "$use_builder" != "y" ]]; then log_info "Using --squash"; build_cmd_opts+=("--squash");
-        else log_warning "Squash ignored with buildx."; fi
+        else log_warning "Squash ignored when using buildx."; fi
     fi
     if [[ "$use_builder" == "y" ]]; then
-        if [[ "$skip_intermediate" == "y" ]]; then log_info "Using --load"; build_cmd_opts+=("--load");
-        else log_info "Using --push"; build_cmd_opts+=("--push"); fi
+        if [[ "$skip_intermediate" == "y" ]]; then log_info "Using --load (buildx)"; build_cmd_opts+=("--load");
+        else log_info "Using --push (buildx)"; build_cmd_opts+=("--push"); fi
     else
          [[ "$skip_intermediate" == "y" ]] && log_info "Building locally (default docker build)" || log_info "Building for push (default docker build - push happens later)"
     fi
+    # Add the context path last
     build_cmd_opts+=("$folder_path")
 
     # --- Execute ---
-    local build_status=1; log_info "Running Build Command:"
+    local build_status=1 # Default to failure
+    log_info "Running Build Command:"
     if [[ "$use_builder" == "y" ]]; then
-        echo "docker buildx build ${build_cmd_opts[*]}"
-        docker buildx build "${build_cmd_opts[@]}" && build_status=0
+        echo "CMD: docker buildx build ${build_cmd_opts[*]}" # Log the exact command
+        # Use $@ to handle spaces in arguments correctly
+        if docker buildx build "${build_cmd_opts[@]}"; then build_status=0; fi
     else
-        echo "docker build ${build_cmd_opts[*]}"
+        echo "CMD: docker build ${build_cmd_opts[*]}" # Log the exact command
+        # Use $@ to handle spaces in arguments correctly
         if docker build "${build_cmd_opts[@]}"; then
              build_status=0
+             # Push manually if not skipping and using default builder
              if [[ "$skip_intermediate" != "y" ]]; then
                  log_info "Pushing image (default docker build): $fixed_tag"
-                 docker push "$fixed_tag" || { log_error "Push failed."; build_status=1; }
+                 if ! docker push "$fixed_tag"; then
+                     log_error "Push failed for $fixed_tag (default docker build)."
+                     build_status=1 # Mark as failed if push fails
+                 fi
              fi
         fi
     fi
@@ -130,18 +171,31 @@ build_folder_image() {
         log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         log_error "Error: Failed to build image for $folder_basename ($folder_path)."
         log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        export fixed_tag="" # Clear exported tag on failure
         return 1
     fi
-    if [[ "$skip_intermediate" != "y" ]]; then
-        log_info "Pulling built image to verify: $fixed_tag"
-        pull_image "$fixed_tag" || { log_error "Pull-back verification failed."; return 1; }
-        log_success "Pull-back verification successful."
-    else
+
+    # Verification depends on whether we pushed or loaded
+    if [[ "$skip_intermediate" == "y" ]]; then
         log_info "Verifying locally built image exists: $fixed_tag"
-        verify_image_exists "$fixed_tag" || { log_error "Local verification failed."; return 1; }
+        if ! verify_image_exists "$fixed_tag"; then
+            log_error "Local verification failed for $fixed_tag."
+            export fixed_tag="" # Clear exported tag on failure
+            return 1
+        fi
         log_success "Local verification successful."
+    else # Pushed (either via buildx --push or manual push)
+        log_info "Pulling back pushed image to verify: $fixed_tag"
+        if ! pull_image "$fixed_tag"; then
+            log_error "Pull-back verification failed for $fixed_tag."
+            # Don't clear tag here, it might exist remotely, but log the error
+            return 1 # Treat failure to pull back as error
+        fi
+        log_success "Pull-back verification successful."
     fi
+
     log_success "Build process completed successfully for: $fixed_tag"
+    # fixed_tag is already exported
     return 0
 }
 
@@ -153,19 +207,27 @@ generate_timestamped_tag() {
     local repo_prefix="$2"
     local registry="${3:-}"
     local timestamp
-    timestamp=$(get_system_datetime) # Use function from env_setup.sh or logging.sh
+
+    # Use get_system_datetime from logging.sh for consistency
+    # Check if it exists first
+    if declare -f get_system_datetime > /dev/null; then
+        timestamp=$(get_system_datetime)
+    else
+        log_warning "get_system_datetime function not found, using basic date."
+        timestamp=$(date -u +'%Y%m%d-%H%M%S') # Basic fallback
+    fi
 
     local registry_prefix=""
     [[ -n "$registry" ]] && registry_prefix="${registry}/"
     local tag="${registry_prefix}${username}/${repo_prefix}:${timestamp}"
-    echo "$tag" | tr '[:upper:]' '[:lower:]'
+    echo "$tag" | tr '[:upper:]' '[:lower:]' # Ensure lowercase
 }
 
 
 # --- Main Execution (for testing) ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # If testing directly, source logging.sh first
-    if [ -f "$SCRIPT_DIR_DOCKER/logging.sh" ]; then source "$SCRIPT_DIR_DOCKER/logging.sh"; init_logging; else echo "ERROR: Cannot find logging.sh for test."; exit 1; fi
+    # If testing directly, source logging.sh first if available
+    if [ -f "$SCRIPT_DIR_DOCKER/logging.sh" ]; then source "$SCRIPT_DIR_DOCKER/logging.sh"; init_logging; fi
     log_info "Running docker_helpers.sh directly for testing..."
     # Add test cases if needed
     log_info "Docker helpers test finished."
@@ -173,5 +235,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Docker helper functions. Relies on logging.sh and env_setup.sh sourced by caller.
-# COMMIT-TRACKING: UUID-20250424-205555-LOGGINGREFACTOR
+# Description: Docker helper functions. Relies on logging.sh and env_setup.sh sourced by caller. Added debugging inside build_folder_image.
+# COMMIT-TRACKING: UUID-20250424-220000-STAGESDEBUG1
