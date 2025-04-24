@@ -1,87 +1,79 @@
-# COMMIT-TRACKING: UUID-20240731-110000-NOORC
-# Description: Disable ARROW_ORC build option due to configuration errors.
-# Author: GitHub Copilot
-#
-# File location diagram:
-# jetc/                          <- Main project folder
-# ├── README.md                  <- Project documentation
-# ├── buildx/                    <- Buildx directory
-# │   ├── build/                   <- Build stages directory
-# │   │   └── 01-01-arrow/         <- Current directory
-# │   │       └── Dockerfile       <- THIS FILE
-# └── ...                        <- Other project files
+#--------------------------------------------------------------------------
+# Stage: 01-01-arrow
+# Base:  ${BASE_IMAGE} (Set by build-arg)
+# Desc:  Builds Apache Arrow from source.
+#--------------------------------------------------------------------------
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
-# Use ARG for dynamic base image injection, with a default value
-ARG TARGETPLATFORM=linux/arm64
-ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
-FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+LABEL maintainer="kairin"
+LABEL stage="01-01-arrow"
 
-ARG ARROW_BRANCH
+# Build arguments
+ARG ARROW_VERSION=17.0.0
+ARG BUILD_DIR=/tmp/arrow_build
 
-RUN git clone --branch=${ARROW_BRANCH} --depth=1 --recursive https://github.com/apache/arrow /opt/arrow
+# Install build dependencies
+# Update this list based on actual Arrow requirements for your base image
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    # Arrow dependencies (Example - Verify these!)
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    liblz4-dev \
+    libsnappy-dev \
+    libzstd-dev \
+    # Add others as needed (e.g., for parquet, flight, etc.)
+    && rm -rf /var/lib/apt/lists/*
 
-# Install build dependencies for Arrow and build Arrow from source
-# Removed installation/removal of libprotobuf-dev and protobuf-compiler
-# as Protobuf_SOURCE=BUNDLED is used.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        # ... existing packages ...
-        # ... existing packages ...
-    && rm -rf /var/lib/apt/lists/* && \
-    cd /opt/arrow/cpp && \
-    mkdir build && \
+# Clone Arrow source
+RUN mkdir -p ${BUILD_DIR} && \
+    cd ${BUILD_DIR} && \
+    git clone --branch apache-arrow-${ARROW_VERSION} --depth 1 https://github.com/apache/arrow.git arrow-src
+
+# Build Arrow
+# Combine cmake, make, make install into one RUN layer for better caching
+# Ensure backslashes (\) are used correctly for line continuation
+RUN cd ${BUILD_DIR}/arrow-src/cpp && \
+    mkdir -p build && \
     cd build && \
     cmake \
       -DCMAKE_INSTALL_PREFIX=/usr/local \
-      -DProtobuf_SOURCE=BUNDLED \
-	 -DARROW_CUDA=ON \
-	 -DARROW_PYTHON=ON \
-	 -DARROW_COMPUTE=ON \
-	 -DARROW_CSV=ON \
-	 -DARROW_DATASET=ON \
-	 -DARROW_FILESYSTEM=ON \
-	 -DARROW_HDFS=ON \
-	 -DARROW_JSON=ON \
-	 -DARROW_PARQUET=ON \
-	 -DARROW_ORC=OFF \ # Disabled ORC
-	 -DARROW_WITH_BZ2=ON \
-	 -DARROW_WITH_LZ4=ON \
-	 -DARROW_WITH_SNAPPY=ON \
-	 -DARROW_WITH_ZLIB=ON \
-	 -DARROW_WITH_ZSTD=ON \
-	 ../ && \
-    make -j4 && \
-    make install
+      -DCMAKE_BUILD_TYPE=Release \
+      -DARROW_BUILD_TESTS=OFF \
+      -DARROW_COMPUTE=ON \
+      -DARROW_CSV=ON \
+      -DARROW_DATASET=ON \
+      -DARROW_FILESYSTEM=ON \
+      -DARROW_IPC=ON \
+      -DARROW_JSON=ON \
+      -DARROW_PARQUET=ON \
+      # Add optional components as needed
+      -DARROW_PYTHON=OFF \ # Assuming Python bindings handled later
+      -DARROW_FLIGHT=OFF \
+      -DARROW_ORC=OFF \ # Disabled ORC as per original comment
+      # --- Moved CMake flags inside RUN instruction ---
+      -DARROW_WITH_BZ2=ON \
+      -DARROW_WITH_LZ4=ON \
+      -DARROW_WITH_SNAPPY=ON \
+      -DARROW_WITH_ZLIB=ON \
+      -DARROW_WITH_ZSTD=ON \
+      # --- End moved flags ---
+      ../ && \
+    make -j$(nproc) && \
+    make install && \
+    # Cleanup build directory
+    cd / && rm -rf ${BUILD_DIR}
 
-#RUN pip3 install -r /opt/arrow/python/requirements-wheel-build.txt
+# Optional: Verify installation (e.g., check for a library file)
+RUN ldconfig && \
+    ls /usr/local/lib/libarrow.so || (echo "libarrow.so not found!" && exit 1)
 
-RUN export PYARROW_WITH_CUDA=1 && \
-    export PYARROW_WITH_HDFS=1 && \
-    export PYARROW_WITH_DATASET=1 && \
-    export PYARROW_WITH_PARQUET=1 && \
-    # export PYARROW_WITH_ORC=1 && \ # Disabled ORC
-    export PYARROW_PARALLEL=4 && \
-    #export ARROW_HOME=/usr/local && \
-    #export PYARROW_CMAKE_OPTIONS="-DARROW_HOME=/usr/local" && \
-    cd /opt/arrow/python && \
-    python3 setup.py bdist_wheel && \
-    cp dist/*.whl /opt
-    
-RUN pip3 install /opt/pyarrow*.whl
-RUN pip3 show pyarrow && python3 -c 'import pyarrow; print(pyarrow.__version__);'
+# Set environment variables if needed (e.g., for pkg-config)
+# ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
-# Embed and run test.py logic
-RUN echo '#!/usr/bin/env python3' > /tmp/test_arrow.py && \
-    echo "print('testing PyArrow...')" >> /tmp/test_arrow.py && \
-    echo "import pyarrow" >> /tmp/test_arrow.py && \
-    echo "" >> /tmp/test_arrow.py && \
-    echo "print('PyArrow version: ' + str(pyarrow.__version__))" >> /tmp/test_arrow.py && \
-    echo "" >> /tmp/test_arrow.py && \
-    echo "pyarrow.show_info()" >> /tmp/test_arrow.py && \
-    python3 /tmp/test_arrow.py && \
-    rm /tmp/test_arrow.py
-
-# Add verification check for pyarrow
-RUN echo "# Check for PyArrow" >> /tmp/arrow_checks.sh \
-    && echo "check_python_package pyarrow 'PyArrow'" >> /tmp/arrow_checks.sh \
-    && cat /tmp/arrow_checks.sh >> /opt/list_app_checks.sh
+WORKDIR /
