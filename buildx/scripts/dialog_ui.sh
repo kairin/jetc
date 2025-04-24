@@ -107,7 +107,7 @@ get_user_preferences() {
         local folders_exit_status=$?
         if [ $folders_exit_status -ne 0 ]; then
             echo "Folder selection canceled (exit code: $folders_exit_status). Exiting." >&2
-            return 1
+            exit 1
         fi
         selected_folders_list=$(cat "$temp_folders" | sed 's/"//g')
     else
@@ -133,7 +133,7 @@ get_user_preferences() {
     local checklist_exit_status=$?
     if [ $checklist_exit_status -ne 0 ]; then
       echo "Build options selection canceled (exit code: $checklist_exit_status). Exiting." >&2
-      return 1
+      exit 1
     fi
     local selected_options
     selected_options=$(cat "$temp_options")
@@ -255,7 +255,7 @@ get_user_preferences() {
 
     if ! dialog --yes-label "Start Build" --no-label "Cancel Build" --yesno "$confirmation_message\\n\\nProceed with build?" 25 $DIALOG_WIDTH; then
         echo "Build canceled by user at confirmation screen. Exiting." >&2
-        return 1
+        exit 1
     fi
 
     update_env_file "$DOCKER_USERNAME" "$DOCKER_REGISTRY" "$DOCKER_REPO_PREFIX" "$SELECTED_IMAGE_TAG"
