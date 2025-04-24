@@ -359,7 +359,7 @@ generate_cache_args() {
   else
     log_debug "Generated args: (empty)"
     echo "" # Output empty string to stdout
-  }
+  fi # Removed extra '}' here
 }
 
 # =========================================================================
@@ -429,11 +429,11 @@ build_folder_image() {
     local docker_username=$7
     local repo_prefix=$8
     local registry=${9:-}
-    
+
     log_debug "Entering build_folder_image for folder: $folder_path"
     log_debug "Build options: Cache=$use_cache, Platform=$platform, Squash=$use_squash, SkipPush=$skip_intermediate_push_pull"
     log_debug "BaseImage=$base_image_tag, User=$docker_username, Prefix=$repo_prefix, Registry=$registry"
-    
+
     # Unset the exported variable to ensure we detect failures
     unset fixed_tag 2>/dev/null || true
 
@@ -446,7 +446,7 @@ build_folder_image() {
         log_error "Failed to generate image tag for $folder_path" # Use log_error
         return 1
     fi
-    
+
     # 'tag' variable is now exported by generate_image_tag
     export fixed_tag="$tag" # Keep fixed_tag export for compatibility if needed elsewhere
     log_debug "Using tag: $fixed_tag"
@@ -521,7 +521,7 @@ build_folder_image() {
                 log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" # Use log_error
                 return 1 # Failure
             fi
-            
+
             # Verify image exists locally after pull
             if ! verify_image_exists "$fixed_tag"; then
                 log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" # Use log_error
@@ -529,7 +529,7 @@ build_folder_image() {
                 log_error "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" # Use log_error
                 return 1 # Failure
             fi
-            
+
             log_success "Image $fixed_tag verified locally after pull." >&2 # Use log_success
             return 0 # Success
         else # --load was used
