@@ -431,7 +431,7 @@ if [ -z "$IMAGE_NAME" ] || [ "$IMAGE_NAME" = '""' ] || [ "$IMAGE_NAME" = "''" ];
 fi
 
 # Prepare command based on whether we're using jetson-containers or direct docker run
-USE_JETSON_CONTAINERS=true
+USE_JETSON_CONTAINERS=false # Default to standard docker run
 FINAL_RUN_OPTS="$RUN_OPTS" # RUN_OPTS already contains --user root if USER_ROOT=on
 RUN_CMD=""
 USER_ARG=""
@@ -462,10 +462,15 @@ if [ "$USE_JETSON_CONTAINERS" = true ]; then
 else
   # For direct Docker execution, add X11 settings explicitly
   echo "Using direct Docker execution"
-  # Apply USER_ARG if needed (note: --user root might already be in FINAL_RUN_OPTS)
+  # Apply USER_ARG if needed (note: --user root might already be in FINAL_RUN_OPTS if USER_ROOT=on)
+  # If USER_ROOT is off, USER_ARG will contain '--user kkk' (or other non-root user)
+  # If USER_ROOT is on, USER_ARG is empty, and FINAL_RUN_OPTS already has '--user root'
   RUN_CMD="docker run $USER_ARG"
   if [ "$X11_ENABLED" = "true" ]; then
+    echo "Adding X11 forwarding options for docker run"
     FINAL_RUN_OPTS="$FINAL_RUN_OPTS -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY"
+    # Optionally add --ipc=host if needed for specific X11 applications
+    # FINAL_RUN_OPTS="$FINAL_RUN_OPTS --ipc=host"
   fi
 fi
 
@@ -517,6 +522,6 @@ $RUN_CMD $FINAL_RUN_OPTS "$IMAGE_NAME" /bin/bash
 # │   └── jetcrun.sh             <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Interactive script to launch Jetson containers. Stores runtime UUID for Git hooks.
+# Description: Interactive script to launch Jetson containers using standard 'docker run'. Stores runtime UUID for Git hooks.
 # Author: Mr K / GitHub Copilot
 # COMMIT-TRACKING: UUID-20250424-210000-RUNTIMEUUID
