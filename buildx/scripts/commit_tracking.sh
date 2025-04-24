@@ -127,19 +127,60 @@ generate_file_footer() {
 # Function: Update commit tracking UUID timestamp in a file's footer
 # Arguments: $1 = file path
 # Returns: 0 on success, 1 on failure
+# DEPRECATED in favor of set_commit_tracking_uuid for hook usage
 # =========================================================================
 update_commit_tracking_footer() {
+  echo "Warning: update_commit_tracking_footer is deprecated for hook usage. Use set_commit_tracking_uuid." >&2
   local file="$1"
   local now
   now=$(get_system_datetime)
-  # Only update the first COMMIT-TRACKING line found in the last 30 lines
-  sed -i -E "{
-    \$!b
-    :a
-    N
-    \$!ba
-    s/(COMMIT-TRACKING: UUID-)[0-9]{8}-[0-9]{6}(-[A-Z0-9]{4})/\1${now}\2/
-  }" "$file"
+  # Use sed to find the COMMIT-TRACKING line within the last ~10 lines and update only the date-time part
+  # This is complex and less reliable than replacing the whole UUID via hooks.
+  sed -i '$s/\(COMMIT-TRACKING: UUID-\)[0-9]\{8\}-[0-9]\{6\}\(-[A-Z0-9]\{4\}\)/\1'${now}'\2/' "$file"
+  # A more robust sed might look like:
+  # sed -i -E ':a; $!{N; ba}; s/(COMMIT-TRACKING: UUID-)[0-9]{8}-[0-9]{6}(-[A-Z0-9]{4})/\1'${now}'\2/g' "$file"
+}
+
+# =========================================================================
+# Function: Set the commit tracking UUID in a file's footer (for Git hooks)
+# Arguments: $1 = file path, $2 = new UUID string (e.g., UUID-YYYYMMDD-HHMMSS-XXXX)
+# Returns: 0 on success, 1 if file not found or footer line missing, 2 if sed fails
+# =========================================================================
+set_commit_tracking_uuid() {
+    local file_path="$1"
+    local new_uuid="$2"
+
+    if [[ ! -f "$file_path" ]]; then
+        echo "Error: File not found: $file_path" >&2
+        return 1
+    fi
+
+    if ! validate_commit_uuid "$new_uuid"; then
+        echo "Error: Invalid UUID format provided: $new_uuid" >&2
+        return 1
+    fi
+
+    # Use sed to replace the COMMIT-TRACKING line.
+    # This assumes the COMMIT-TRACKING line is one of the last few lines.
+    # We target the specific line format for replacement.
+    # Using a different delimiter (#) for sed to avoid issues with paths in UUIDs (though unlikely).
+    # The command tries to find and replace the line anywhere in the file.
+    if grep -q "COMMIT-TRACKING: UUID-" "$file_path"; then
+        sed -i "s#^\(.*COMMIT-TRACKING: \).*#\1${new_uuid}#" "$file_path"
+        if [[ $? -ne 0 ]]; then
+            echo "Error: sed command failed to update UUID in $file_path" >&2
+            return 2
+        fi
+        # Verify the change (optional but good)
+        if ! grep -q "COMMIT-TRACKING: ${new_uuid}" "$file_path"; then
+             echo "Warning: UUID replacement verification failed in $file_path" >&2
+             # Decide if this should be a fatal error (return 1) or just a warning
+        fi
+        return 0
+    else
+        echo "Warning: COMMIT-TRACKING line not found in $file_path. Cannot set UUID." >&2
+        return 1 # Indicate the line wasn't found
+    fi
 }
 
 # For backward compatibility, rename and alias the old function
@@ -155,6 +196,6 @@ generate_file_header() {
 # │       └── commit_tracking.sh <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Functions for generating and managing commit tracking UUIDs and file footers.
+# Description: Functions for managing commit tracking UUIDs/footers. Added set_commit_tracking_uuid for hooks.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250422-083100-CMTT
+# COMMIT-TRACKING: UUID-20250424-200000-SETHOOKUUID
