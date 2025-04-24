@@ -131,6 +131,7 @@ build_folder_image() {
         if [[ "$use_builder" != "y" ]]; then log_info "Using --squash"; build_cmd_opts+=("--squash");
         else log_warning "Squash ignored when using buildx."; fi
     fi
+    log_debug "Decision point: use_builder='$use_builder', skip_intermediate='$skip_intermediate'" # <-- Added Debug
     if [[ "$use_builder" == "y" ]]; then
         if [[ "$skip_intermediate" == "y" ]]; then log_info "Using --load (buildx)"; build_cmd_opts+=("--load");
         else log_info "Using --push (buildx)"; build_cmd_opts+=("--push"); fi
@@ -149,6 +150,7 @@ build_folder_image() {
         echo "CMD: docker build ${build_cmd_opts[*]}"
         if docker build "${build_cmd_opts[@]}"; then
              build_status=0
+             log_debug "Default build finished. Checking skip_intermediate ('$skip_intermediate') before potential push." # <-- Added Debug
              if [[ "$skip_intermediate" != "y" ]]; then
                  log_info "Pushing image (default docker build): $fixed_tag"
                  if ! docker push "$fixed_tag"; then
@@ -218,5 +220,5 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # --- Footer ---
-# Description: Docker helper functions. Added validation checks after assigning local vars.
-# COMMIT-TRACKING: UUID-20250424-221500-STAGESDEBUG2
+# Description: Docker helper functions. Added more specific debug logs for skip_intermediate.
+# COMMIT-TRACKING: UUID-20250425-072000-SKIPDEBUG

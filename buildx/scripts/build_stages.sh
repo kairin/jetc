@@ -52,130 +52,79 @@ declare -gA skip_apps_map=()
 # --- Functions ---
 
 # =========================================================================
-# Function: Execute the build process for selected stages
+# Function: Build all selected stages in order
+# Relies on global variables: ORDERED_FOLDERS, SELECTED_USE_CACHE, DOCKER_USERNAME,
+#                             SELECTED_USE_SQUASH, SELECTED_SKIP_INTERMEDIATE,
+#                             LAST_SUCCESSFUL_TAG, DOCKER_REPO_PREFIX, DOCKER_REGISTRY,
+#                             SELECTED_USE_BUILDER
+# Exports: LAST_SUCCESSFUL_TAG (updated on success)
+# Returns: 0 if all selected stages build successfully, 1 otherwise
 # =========================================================================
 build_selected_stages() {
-    log_info "=================================================="
-    log_info "Starting Build Stages..."
-    log_info "=================================================="
+    log_info "--- Starting Build Stages ---"
+    local overall_status=0
+    export LAST_SUCCESSFUL_TAG="${LAST_SUCCESSFUL_TAG:-}" # Ensure it's exported and initialized
 
-    # Ensure required global variables are available
-    if ! declare -p ORDERED_FOLDERS &>/dev/null || [[ ${#ORDERED_FOLDERS[@]} -eq 0 ]]; then
-        log_warning "ORDERED_FOLDERS array is empty or not set. No stages to build."
-        export LAST_SUCCESSFUL_TAG="${SELECTED_BASE_IMAGE}"
-        return 0
+    if [ ${#ORDERED_FOLDERS[@]} -eq 0 ]; then
+        log_warning "No build stages found or selected in ORDERED_FOLDERS. Nothing to build."
+        return 0 # Nothing to do, considered success
     fi
-     if [[ ! $(declare -p SELECTED_FOLDERS_MAP 2>/dev/null) =~ "declare -A" ]]; then
-        log_error "SELECTED_FOLDERS_MAP associative array is not declared globally. Check build_order.sh."
-        return 1
-     fi
-     if [[ ${#SELECTED_FOLDERS_MAP[@]} -eq 0 && -n "${SELECTED_FOLDERS_LIST:-}" ]]; then
-         log_warning "SELECTED_FOLDERS_MAP is empty, but SELECTED_FOLDERS_LIST was not. Check build_order.sh."
-     fi
 
+    log_info "Found ${#ORDERED_FOLDERS[@]} stages to process."
 
-    local current_base_image="${SELECTED_BASE_IMAGE}"
-    local stage_build_failed=0
-    export LAST_SUCCESSFUL_TAG=""
+    for folder_path in "${ORDERED_FOLDERS[@]}"; do
+        local folder_name
+        folder_name=$(basename "$folder_path")
+        log_info "--- Processing Stage: $folder_name ---"
+        echo "DEBUG ECHO: Processing $folder_name" # Added for visibility
 
-    log_info "Initial base image for build stages: $current_base_image"
+        # Determine the base image for the current stage
+        # Default to the last successful tag, or the initial base if it's the first stage
+        local current_base_image="${LAST_SUCCESSFUL_TAG:-$INITIAL_BASE_IMAGE}"
+        log_debug "Using base image for '$folder_name': $current_base_image"
 
-    # Use process substitution for safer loop iteration
-    while IFS= read -r build_folder_path; do
-        [[ -z "$build_folder_path" ]] && continue
+        # Call build_folder_image with all required arguments from global scope
+        # Ensure the order matches the function definition in docker_helpers.sh
+        # build_folder_image "$folder_path" "$use_cache" "$docker_username" "$use_squash" "$skip_intermediate" "$base_image_tag" "$docker_repo_prefix" "$docker_registry" "$use_builder"
+        if build_folder_image \
+            "$folder_path" \
+            "${SELECTED_USE_CACHE:-y}" \
+            "${DOCKER_USERNAME}" \
+            "${SELECTED_USE_SQUASH:-n}" \
+            "${SELECTED_SKIP_INTERMEDIATE:-n}" \
+            "$current_base_image" \
+            "${DOCKER_REPO_PREFIX}" \
+            "${DOCKER_REGISTRY:-}" \
+            "${SELECTED_USE_BUILDER:-y}"; then
 
-        local build_folder_basename
-        build_folder_basename=$(basename "$build_folder_path")
-
-        # <<< --- ADDED DEBUGGING: Check globals INSIDE loop --- >>>
-        log_debug "LOOP START for '$build_folder_basename': Checking global vars..."
-        log_debug "  -> use_cache='${use_cache:-<unset>}'"
-        log_debug "  -> DOCKER_USERNAME='${DOCKER_USERNAME:-<unset>}'"
-        log_debug "  -> use_squash='${use_squash:-<unset>}'"
-        log_debug "  -> skip_intermediate_push_pull='${skip_intermediate_push_pull:-<unset>}'"
-        log_debug "  -> current_base_image='${current_base_image:-<unset>}'"
-        log_debug "  -> DOCKER_REPO_PREFIX='${DOCKER_REPO_PREFIX:-<unset>}'"
-        log_debug "  -> DOCKER_REGISTRY='${DOCKER_REGISTRY:-<unset>}'"
-        log_debug "  -> use_builder='${use_builder:-<unset>}'"
-        log_debug "  -> PLATFORM='${PLATFORM:-<unset>}'"
-        # <<< --- END DEBUGGING --- >>>
-
-
-        # Check if this folder should be built using the map
-        if [[ ${SELECTED_FOLDERS_MAP[$build_folder_basename]+_} ]]; then
-             log_info "--- Processing Stage: $build_folder_basename ---" # This log appears
-             # Try a simple echo right after the log_info that works
-             echo "DEBUG ECHO: Processing $build_folder_basename" >&2
-
-             # Assign arguments to local variables BEFORE logging them
-             local arg1="$build_folder_path"
-             local arg2="${use_cache:-n}"
-             local arg3="${DOCKER_USERNAME}"
-             local arg4="${use_squash:-n}"
-             local arg5="${skip_intermediate_push_pull:-y}"
-             local arg6="$current_base_image"
-             local arg7="${DOCKER_REPO_PREFIX}"
-             local arg8="${DOCKER_REGISTRY:-}"
-             local arg9="${use_builder:-y}"
-
-             # Log the arguments *from the local variables*
-             log_debug "Arguments prepared (from local vars) for build_folder_image:"
-             log_debug "  \$1 (folder_path):        '$arg1'"
-             log_debug "  \$2 (use_cache):          '$arg2'"
-             log_debug "  \$3 (docker_username):    '$arg3'"
-             log_debug "  \$4 (use_squash):         '$arg4'"
-             log_debug "  \$5 (skip_intermediate):  '$arg5'"
-             log_debug "  \$6 (base_image_tag):     '$arg6'"
-             log_debug "  \$7 (docker_repo_prefix): '$arg7'"
-             log_debug "  \$8 (docker_registry):    '$arg8'"
-             log_debug "  \$9 (use_builder):        '$arg9'"
-
-             # Call the build function using the local variables
-             log_debug ">>> Calling build_folder_image NOW..."
-             build_folder_image "$arg1" "$arg2" "$arg3" "$arg4" "$arg5" "$arg6" "$arg7" "$arg8" "$arg9"
-             local build_status=$?
-             log_debug "<<< build_folder_image returned status: $build_status"
-
-
-            # shellcheck disable=SC2154 # fixed_tag is exported by build_folder_image
-            local current_fixed_tag="${fixed_tag:-}"
-
-            if [[ $build_status -eq 0 && -n "$current_fixed_tag" ]]; then
-                log_success "Stage '$build_folder_basename' completed successfully."
-                log_info "  Output Image: $current_fixed_tag"
-                current_base_image="$current_fixed_tag"
-                export LAST_SUCCESSFUL_TAG="$current_fixed_tag"
-                update_available_images_in_env "$current_fixed_tag"
+            # On success, update LAST_SUCCESSFUL_TAG with the tag just built (fixed_tag is exported by build_folder_image)
+            if [[ -n "${fixed_tag:-}" ]]; then
+                 export LAST_SUCCESSFUL_TAG="$fixed_tag"
+                 log_success "Stage '$folder_name' completed successfully."
+                 log_info "  Output Image: $LAST_SUCCESSFUL_TAG"
+                 # Update AVAILABLE_IMAGES in .env
+                 update_available_images_env "$LAST_SUCCESSFUL_TAG"
+                 log_info "--- Stage Complete: $folder_name ---"
             else
-                log_error "Stage '$build_folder_basename' failed with exit code $build_status."
-                log_debug "  Failed Tag (if generated): ${current_fixed_tag:-<none>}"
-                stage_build_failed=1
-                log_error "Aborting remaining build stages due to failure in '$build_folder_basename'."
-                break
+                 log_error "Build succeeded for '$folder_name' but fixed_tag was not exported correctly."
+                 overall_status=1
+                 break # Stop build on unexpected state
             fi
-             log_info "--- Stage Complete: $build_folder_basename ---"
         else
-            log_warning "Skipping folder '$build_folder_basename' as it wasn't found in SELECTED_FOLDERS_MAP (this might indicate an issue)."
+            log_error "Stage '$folder_name' failed with exit code $?."
+            overall_status=1
+            break # Stop build process on first failure
         fi
-    done < <(printf '%s\n' "${ORDERED_FOLDERS[@]}")
+    done
 
-    log_info "=================================================="
-    if [[ $stage_build_failed -eq 0 ]]; then
-        log_success "All selected build stages completed."
-        if [[ -z "${LAST_SUCCESSFUL_TAG:-}" ]]; then
-             export LAST_SUCCESSFUL_TAG="${SELECTED_BASE_IMAGE}"
-             log_debug "No stages built, setting LAST_SUCCESSFUL_TAG to initial base: $LAST_SUCCESSFUL_TAG"
-        fi
-        return 0
+    if [[ $overall_status -eq 0 ]]; then
+        log_success "--- All Selected Build Stages Completed Successfully ---"
     else
-        log_error "One or more build stages failed."
-        if [[ -z "${LAST_SUCCESSFUL_TAG:-}" ]]; then
-             log_warning "No stages completed successfully."
-        fi
-        return 1
+        log_error "--- Build Process Aborted Due to Failure in Stage '$folder_name' ---"
     fi
-}
 
+    return $overall_status
+}
 
 # --- Main Execution (for testing) ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -250,7 +199,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 
-# File location diagram: ... (omitted)
-# Description: Iterates through build stages. Added extensive debugging around the build_folder_image call.
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── buildx/                    <- Parent directory
+# │   └── scripts/               <- Current directory
+# │       └── build_stages.sh    <- THIS FILE
+# └── ...                        <- Other project files
+#
+# Description: Manages the execution of build stages. Fixed passing of SELECTED_USE_CACHE to build_folder_image.
 # Author: Mr K / GitHub Copilot / kairin
-# COMMIT-TRACKING: UUID-20250424-221500-STAGESDEBUG2
+# COMMIT-TRACKING: UUID-20250425-071500-CACHEFIX
