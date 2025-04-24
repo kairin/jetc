@@ -26,83 +26,94 @@ else
     get_system_datetime() { date +"%Y%m%d-%H%M%S"; }
 fi
 
-if [ -f "$SCRIPT_DIR_TAGGING/verification.sh" ]; then
+# Source docker_helpers for generate_timestamped_tag, pull_image, verify_image_exists
+if [ -f "$SCRIPT_DIR_TAGGING/docker_helpers.sh" ]; then
     # shellcheck disable=SC1091
-    source "$SCRIPT_DIR_TAGGING/verification.sh"
+    source "$SCRIPT_DIR_TAGGING/docker_helpers.sh"
 else
-    log_warning "verification.sh not found. Image verification/pulling will fail."
-    verify_image_locally() { log_warning "verify_image_locally: verification.sh not loaded"; return 1; }
-    pull_image() { log_warning "pull_image: verification.sh not loaded"; return 1; }
+    log_error "docker_helpers.sh not found. Tagging and verification will fail."
+    generate_timestamped_tag() { log_error "generate_timestamped_tag: docker_helpers.sh not loaded"; return 1; }
+    pull_image() { log_error "pull_image: docker_helpers.sh not loaded"; return 1; }
+    verify_image_exists() { log_error "verify_image_exists: docker_helpers.sh not loaded"; return 1; }
 fi
 
-# Docker image tagging functions for Jetson Container build system
+# Source utils.sh (already sourced by env_setup.sh, but good practice for direct execution)
+if [ -f "$SCRIPT_DIR_TAGGING/utils.sh" ]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR_TAGGING/utils.sh"
+else
+     log_error "utils.sh not found."
+     # Define fallback if needed, though docker_helpers likely already exited
+fi
 
-SCRIPT_DIR_TAG="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_TAG/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_TAG/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; }
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR_TAG/logging.sh" || { echo "Error: logging.sh not found."; exit 1; }
 
 # =========================================================================
 # Function: Perform pre-tagging verification to ensure the image can be pulled
 # Arguments: $1 = image tag to verify
+#            $2 = skip_intermediate_push_pull ('y'/'n') - from build prefs
 # Returns: 0 if successful, 1 if failed
 # =========================================================================
 perform_pre_tagging_pull() {
     local image_tag="$1"
-    
+    local skip_push_pull="${2:-y}" # Default to 'y' (load mode) if not provided
+
     if [[ -z "$image_tag" ]]; then
         log_error "perform_pre_tagging_pull called with empty tag" # Use log_error
         return 1
     }
-    
+
     log_info "Performing pre-tagging verification for $image_tag" # Use log_info
-    
+
     # First verify the image exists locally
     if ! verify_image_exists "$image_tag"; then
         log_error "Image $image_tag not found locally for pre-tagging verification" # Use log_error
         return 1
     fi
-    
+
     # Images built with --load are only available locally
     # No need to try pulling in this case
-    # Need skip_intermediate_push_pull variable from sourced prefs
-    if [[ "${skip_intermediate_push_pull:-y}" == "y" ]]; then
-        log_info "Image built with --load, skipping pull verification" # Use log_info
+    if [[ "$skip_push_pull" == "y" ]]; then
+        log_info "Image built with --load (skip_push_pull=y), skipping pull verification" # Use log_info
         return 0
-    fi
-    
-    # Try pulling the image as verification
-    log_debug "Attempting pull for pre-tagging verification: $image_tag"
+    # Removed extra '}' here
+    fi # End of skip_push_pull check
+
+    # Try pulling the image as verification if push mode was used
+    log_debug "Attempting pull for pre-tagging verification (push mode): $image_tag"
     if ! pull_image "$image_tag"; then
-        log_warning "Failed to pull $image_tag during pre-tagging verification" # Use log_warning
+        log_warning "Failed to pull $image_tag during pre-tagging verification (push mode)" # Use log_warning
+        # Consider if this should be a fatal error (return 1) or just a warning
+        # If the build pushed, but we can't pull it back, something is wrong.
         return 1
     fi
-    
-    log_success "Pre-tagging verification successful for $image_tag" # Use log_success
+
+    log_success "Pre-tagging verification successful for $image_tag (pull verified)" # Use log_success
     return 0
 }
 
 # =========================================================================
 # Function: Create a final timestamp tag for the image
-# Arguments: $1 = source image tag, $2 = username, $3 = repo_prefix, $4 = registry (optional)
+# Arguments: $1 = source image tag
+#            $2 = username
+#            $3 = repo_prefix
+#            $4 = skip_intermediate_push_pull ('y'/'n') - from build prefs
+#            $5 = registry (optional)
 # Returns: Echo timestamp tag on success, empty on failure. Exit code 0 on success, 1 on failure
 # =========================================================================
 create_final_timestamp_tag() {
     local source_tag="$1"
     local username="$2"
     local repo_prefix="$3"
-    local registry="${4:-}"
-    
+    local skip_push_pull="${4:-y}" # Default to 'y' (load mode)
+    local registry="${5:-}"
+
     log_debug "Creating final timestamp tag for source: $source_tag"
     if [[ -z "$source_tag" || -z "$username" || -z "$repo_prefix" ]]; then
         log_error "create_final_timestamp_tag missing required arguments" # Use log_error
         return 1
-    }
-    
-    # Generate a timestamp tag
+    fi
+
+    # Generate a timestamp tag using function from docker_helpers.sh
     local timestamp_tag
     # Capture stdout from generate_timestamped_tag
     timestamp_tag=$(generate_timestamped_tag "$username" "$repo_prefix" "$registry")
@@ -111,29 +122,28 @@ create_final_timestamp_tag() {
         return 1
     fi
     log_debug "Generated timestamp tag: $timestamp_tag"
-    
+
     log_info "Tagging $source_tag as $timestamp_tag" # Use log_info
-    
+
     # Tag the image
     if ! docker tag "$source_tag" "$timestamp_tag"; then
         log_error "Failed to tag $source_tag as $timestamp_tag" # Use log_error
         return 1
     fi
-    
+
     # If using push mode, push the new tag to registry
-    # Need skip_intermediate_push_pull variable from sourced prefs
-    if [[ "${skip_intermediate_push_pull:-y}" != "y" ]]; then
+    if [[ "$skip_push_pull" != "y" ]]; then
         log_info "Pushing timestamp tag $timestamp_tag to registry" # Use log_info
         if ! docker push "$timestamp_tag"; then
             log_error "Failed to push $timestamp_tag to registry" # Use log_error
             # Optionally try to remove the local tag? Or leave it? Leave it for now.
             return 1
-        }
+        fi
         log_success "Successfully pushed $timestamp_tag" # Use log_success
     else
         log_debug "Skipping push for timestamp tag (local build mode)."
     fi
-    
+
     # Echo the tag name for capture by the caller
     echo "$timestamp_tag"
     return 0
@@ -146,27 +156,27 @@ create_final_timestamp_tag() {
 # =========================================================================
 verify_all_images_exist_locally() {
     local missing=0
-    
+
     if [[ $# -eq 0 ]]; then
         log_debug "No images provided to verify_all_images_exist_locally"
         return 0
     }
-    
+
     log_info "Verifying local existence of $# images: $*" # Use log_info
-    
+
     for img in "$@"; do
         log_debug "Checking if $img exists locally"
-        if ! verify_image_exists "$img"; then
+        if ! verify_image_exists "$img"; then # Use function from docker_helpers.sh
             log_error "Image $img not found locally" # Use log_error
             missing=1
         fi
     done
-    
+
     if [[ $missing -eq 1 ]]; then
         log_error "One or more expected images are missing locally." # Use log_error
         return 1
     fi
-    
+
     log_success "All expected images verified locally." # Use log_success
     return 0
 }
@@ -189,39 +199,47 @@ EOF
     fi
 
     # Set dummy variables
-    test_target="load" # Use 'load' for local test, 'push' requires registry login
+    test_skip_push="y" # Use 'y' for local test, 'n' requires registry login
     test_user="testuser"
     test_prefix="testprefix"
     test_registry=""
 
-    # Ensure verification.sh functions are defined (even if dummy)
-    if ! declare -f pull_image > /dev/null; then
-        pull_image() { log_info "[Test] Dummy pull_image called for $1"; return 0; }
-    fi
-    if ! declare -f verify_image_locally > /dev/null; then
-        verify_image_locally() { log_info "[Test] Dummy verify_image_locally called for $1"; docker image inspect "$1" >/dev/null 2>&1; return $?; }
+    # --- Execute Test --- #
+    log_info "Test 1: Pre-tagging pull verification (local mode)"
+    perform_pre_tagging_pull "$test_source_tag" "$test_skip_push"
+    pre_pull_result=$?
+    if [ $pre_pull_result -ne 0 ]; then
+        log_error "Pre-tagging pull verification failed. Exiting test."
+        docker rmi "$test_source_tag" || log_warning "Failed to remove source test image $test_source_tag"
+        exit 1
     fi
 
-    # --- Execute Test --- #
-    log_info "Calling create_final_timestamp_tag..."
-    final_tag=$(create_final_timestamp_tag "$test_source_tag" "$test_target" "$test_user" "$test_prefix" "$test_registry")
-    result=$?
+    log_info "Test 2: Calling create_final_timestamp_tag..."
+    final_tag=$(create_final_timestamp_tag "$test_source_tag" "$test_user" "$test_prefix" "$test_skip_push" "$test_registry")
+    tag_result=$?
 
     # --- Report Result --- #
-    if [ $result -eq 0 ]; then
+    if [ $tag_result -eq 0 ] && [ -n "$final_tag" ]; then
         log_success "Test tagging successful. Final Tag: $final_tag"
+        log_info "Test 3: Verifying final tag exists locally..."
+        if verify_all_images_exist_locally "$final_tag"; then
+             log_success "Final tag verification successful."
+        else
+             log_error "Final tag verification failed."
+             tag_result=1 # Mark test as failed
+        fi
         # Clean up dummy final tag
         log_info "Cleaning up final test tag: $final_tag"
         docker rmi "$final_tag" || log_warning "Failed to remove final test tag $final_tag"
     else
-        log_error "Test tagging failed with exit code $result."
+        log_error "Test tagging failed with exit code $tag_result."
     fi
 
     # --- Cleanup --- #
     log_info "Cleaning up source test image: $test_source_tag"
     docker rmi "$test_source_tag" || log_warning "Failed to remove source test image $test_source_tag"
     log_info "Tagging script test finished."
-    exit $result
+    exit $tag_result
 fi
 
 # File location diagram:
@@ -231,6 +249,6 @@ fi
 # │       └── tagging.sh         <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Docker image tagging and verification functions.
-# Author: GitHub Copilot
+# Description: Docker image tagging and verification functions. Relies on docker_helpers.sh. Added logging. Corrected syntax error.
+# Author: Mr K / GitHub Copilot
 # COMMIT-TRACKING: UUID-20240806-103000-MODULAR
