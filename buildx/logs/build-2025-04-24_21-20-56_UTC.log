@@ -1,0 +1,143 @@
+2025-04-24 21:20:56 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-24_21-20-56_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-24_21-20-56_UTC.log
+2025-04-24 21:20:57 - [START]: Script started
+2025-04-24 21:20:57 - [INFO]: Checking dependencies: docker dialog
+2025-04-24 21:20:57 - [SUCCESS]: All dependencies verified.
+2025-04-24 21:20:57 - [INFO]: Starting Jetson Container Build Process...
+2025-04-24 21:20:57 - [INFO]: --- Starting User Interaction ---
+2025-04-24 21:21:43 - [INFO]: Attempting to pull image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 21:21:45 - [SUCCESS]:  -> Successfully pulled image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 21:21:49 - [SUCCESS]: User interaction completed successfully
+2025-04-24 21:21:49 - [INFO]: Selections:
+2025-04-24 21:21:49 - [INFO]:   Base Image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 21:21:49 - [INFO]:   Selected Stages: 01-00-build-essential 01-02-numba 01-03-numpy 01-04-cuda 03-ninja 18-comfyui
+2025-04-24 21:21:49 - [INFO]:   Docker User: kairin
+2025-04-24 21:21:49 - [INFO]:   Docker Repo Prefix: jetc
+2025-04-24 21:21:49 - [INFO]:   Use Cache: n
+2025-04-24 21:21:49 - [INFO]:   Use Squash: n
+2025-04-24 21:21:49 - [INFO]:   Skip Push/Pull (Build Locally): n
+2025-04-24 21:21:49 - [INFO]:   Use Buildx Builder: n
+2025-04-24 21:21:49 - [INFO]: --- Setting up Docker Buildx ---
+2025-04-24 21:21:49 - [INFO]: Target builder instance: 'jetson-builder'
+2025-04-24 21:21:49 - [INFO]: Buildx builder 'jetson-builder' already exists.
+2025-04-24 21:21:49 - [SUCCESS]: --- Docker Buildx setup complete. Using builder: 'jetson-builder' ---
+2025-04-24 21:21:49 - [SUCCESS]: Docker buildx builder setup complete.
+2025-04-24 21:21:49 - [INFO]: --- Determining Build Order ---
+2025-04-24 21:21:49 - [INFO]: User selected specific stages: 01-00-build-essential 01-02-numba 01-03-numpy 01-04-cuda 03-ninja 18-comfyui
+2025-04-24 21:21:49 - [INFO]: Final determined build order (6 stages):
+2025-04-24 21:21:49 - [INFO]:   - 01-00-build-essential
+2025-04-24 21:21:49 - [INFO]:   - 01-02-numba
+2025-04-24 21:21:49 - [INFO]:   - 01-03-numpy
+2025-04-24 21:21:49 - [INFO]:   - 01-04-cuda
+2025-04-24 21:21:49 - [INFO]:   - 03-ninja
+2025-04-24 21:21:49 - [INFO]:   - 18-comfyui
+2025-04-24 21:21:49 - [INFO]: --- Build Order Determined ---
+2025-04-24 21:21:49 - [SUCCESS]: Build order determined.
+2025-04-24 21:21:49 - [INFO]: ==================================================
+2025-04-24 21:21:50 - [INFO]: Starting Build Stages...
+2025-04-24 21:21:50 - [INFO]: ==================================================
+2025-04-24 21:21:50 - [INFO]: Initial base image for build stages: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+2025-04-24 21:21:50 - [INFO]: --- Processing Stage: 01-00-build-essential ---
+2025-04-24 21:21:50 - [INFO]: --------------------------------------------------
+2025-04-24 21:21:50 - [INFO]: Building image from folder: /media/kkk/Apps/jetc/buildx/build/01-00-build-essential
+2025-04-24 21:21:50 - [INFO]: Image Name: 01-00-build-essential
+2025-04-24 21:21:50 - [INFO]: Platform: linux/arm64
+2025-04-24 21:21:50 - [INFO]: Tag: kairin/jetc:01-00-build-essential
+2025-04-24 21:21:50 - [INFO]: Base Image (FROM via ARG): "kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3"
+2025-04-24 21:21:50 - [INFO]: Skip Intermediate Push/Pull: n
+2025-04-24 21:21:50 - [INFO]: Use Buildx Builder: n
+2025-04-24 21:21:50 - [INFO]: Use Cache: n
+2025-04-24 21:21:50 - [INFO]: Use Squash: n
+2025-04-24 21:21:50 - [INFO]: --------------------------------------------------
+2025-04-24 21:21:50 - [INFO]: Using --no-cache
+2025-04-24 21:21:50 - [INFO]: Building for push (default docker build - push happens later)
+2025-04-24 21:21:50 - [INFO]: Running Build Command:
+2025-04-24 21:23:50 - [INFO]: Pushing image (default docker build): kairin/jetc:01-00-build-essential
+2025-04-24 21:25:17 - [INFO]: Pulling back pushed image to verify: kairin/jetc:01-00-build-essential
+2025-04-24 21:25:17 - [INFO]: Attempting to pull image: kairin/jetc:01-00-build-essential
+2025-04-24 21:25:20 - [SUCCESS]:  -> Successfully pulled image: kairin/jetc:01-00-build-essential
+2025-04-24 21:25:20 - [SUCCESS]: Pull-back verification successful.
+2025-04-24 21:25:20 - [SUCCESS]: Build process completed successfully for: kairin/jetc:01-00-build-essential
+2025-04-24 21:25:20 - [SUCCESS]: Stage '01-00-build-essential' completed successfully.
+2025-04-24 21:25:20 - [INFO]:   Output Image: kairin/jetc:01-00-build-essential
+2025-04-24 21:25:20 - [INFO]: --- Stage Complete: 01-00-build-essential ---
+2025-04-24 21:25:20 - [INFO]: --- Processing Stage: 01-02-numba ---
+2025-04-24 21:25:20 - [INFO]: --------------------------------------------------
+2025-04-24 21:25:20 - [INFO]: Building image from folder: /media/kkk/Apps/jetc/buildx/build/01-02-numba
+2025-04-24 21:25:20 - [INFO]: Image Name: 01-02-numba
+2025-04-24 21:25:20 - [INFO]: Platform: linux/arm64
+2025-04-24 21:25:20 - [INFO]: Tag: kairin/jetc:01-02-numba
+2025-04-24 21:25:20 - [INFO]: Base Image (FROM via ARG): "kairin/jetc:01-00-build-essential"
+2025-04-24 21:25:20 - [INFO]: Skip Intermediate Push/Pull: n
+2025-04-24 21:25:20 - [INFO]: Use Buildx Builder: n
+2025-04-24 21:25:20 - [INFO]: Use Cache: n
+2025-04-24 21:25:20 - [INFO]: Use Squash: n
+2025-04-24 21:25:20 - [INFO]: --------------------------------------------------
+2025-04-24 21:25:20 - [INFO]: Using --no-cache
+2025-04-24 21:25:20 - [INFO]: Building for push (default docker build - push happens later)
+2025-04-24 21:25:20 - [INFO]: Running Build Command:
+2025-04-24 21:26:09 - [INFO]: Pushing image (default docker build): kairin/jetc:01-02-numba
+2025-04-24 21:27:27 - [INFO]: Pulling back pushed image to verify: kairin/jetc:01-02-numba
+2025-04-24 21:27:27 - [INFO]: Attempting to pull image: kairin/jetc:01-02-numba
+2025-04-24 21:27:30 - [SUCCESS]:  -> Successfully pulled image: kairin/jetc:01-02-numba
+2025-04-24 21:27:30 - [SUCCESS]: Pull-back verification successful.
+2025-04-24 21:27:30 - [SUCCESS]: Build process completed successfully for: kairin/jetc:01-02-numba
+2025-04-24 21:27:30 - [SUCCESS]: Stage '01-02-numba' completed successfully.
+2025-04-24 21:27:30 - [INFO]:   Output Image: kairin/jetc:01-02-numba
+2025-04-24 21:27:30 - [INFO]: --- Stage Complete: 01-02-numba ---
+2025-04-24 21:27:30 - [INFO]: --- Processing Stage: 01-03-numpy ---
+2025-04-24 21:27:30 - [INFO]: --------------------------------------------------
+2025-04-24 21:27:30 - [INFO]: Building image from folder: /media/kkk/Apps/jetc/buildx/build/01-03-numpy
+2025-04-24 21:27:30 - [INFO]: Image Name: 01-03-numpy
+2025-04-24 21:27:30 - [INFO]: Platform: linux/arm64
+2025-04-24 21:27:30 - [INFO]: Tag: kairin/jetc:01-03-numpy
+2025-04-24 21:27:30 - [INFO]: Base Image (FROM via ARG): "kairin/jetc:01-02-numba"
+2025-04-24 21:27:30 - [INFO]: Skip Intermediate Push/Pull: n
+2025-04-24 21:27:30 - [INFO]: Use Buildx Builder: n
+2025-04-24 21:27:30 - [INFO]: Use Cache: n
+2025-04-24 21:27:30 - [INFO]: Use Squash: n
+2025-04-24 21:27:30 - [INFO]: --------------------------------------------------
+2025-04-24 21:27:30 - [INFO]: Using --no-cache
+2025-04-24 21:27:30 - [INFO]: Building for push (default docker build - push happens later)
+2025-04-24 21:27:30 - [INFO]: Running Build Command:
+2025-04-24 21:27:43 - [INFO]: Pushing image (default docker build): kairin/jetc:01-03-numpy
+2025-04-24 21:28:07 - [INFO]: Pulling back pushed image to verify: kairin/jetc:01-03-numpy
+2025-04-24 21:28:07 - [INFO]: Attempting to pull image: kairin/jetc:01-03-numpy
+2025-04-24 21:28:10 - [SUCCESS]:  -> Successfully pulled image: kairin/jetc:01-03-numpy
+2025-04-24 21:28:10 - [SUCCESS]: Pull-back verification successful.
+2025-04-24 21:28:10 - [SUCCESS]: Build process completed successfully for: kairin/jetc:01-03-numpy
+2025-04-24 21:28:10 - [SUCCESS]: Stage '01-03-numpy' completed successfully.
+2025-04-24 21:28:10 - [INFO]:   Output Image: kairin/jetc:01-03-numpy
+2025-04-24 21:28:10 - [INFO]: --- Stage Complete: 01-03-numpy ---
+2025-04-24 21:28:10 - [INFO]: --- Processing Stage: 01-04-cuda ---
+2025-04-24 21:28:10 - [INFO]: --------------------------------------------------
+2025-04-24 21:28:10 - [INFO]: Building image from folder: /media/kkk/Apps/jetc/buildx/build/01-04-cuda
+2025-04-24 21:28:10 - [INFO]: Image Name: 01-04-cuda
+2025-04-24 21:28:10 - [INFO]: Platform: linux/arm64
+2025-04-24 21:28:10 - [INFO]: Tag: kairin/jetc:01-04-cuda
+2025-04-24 21:28:10 - [INFO]: Base Image (FROM via ARG): "kairin/jetc:01-03-numpy"
+2025-04-24 21:28:10 - [INFO]: Skip Intermediate Push/Pull: n
+2025-04-24 21:28:10 - [INFO]: Use Buildx Builder: n
+2025-04-24 21:28:10 - [INFO]: Use Cache: n
+2025-04-24 21:28:10 - [INFO]: Use Squash: n
+2025-04-24 21:28:10 - [INFO]: --------------------------------------------------
+2025-04-24 21:28:10 - [INFO]: Using --no-cache
+2025-04-24 21:28:10 - [INFO]: Building for push (default docker build - push happens later)
+2025-04-24 21:28:10 - [INFO]: Running Build Command:
+2025-04-24 21:28:11 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 21:28:11 - [ERROR]: Error: Failed to build image for 01-04-cuda (/media/kkk/Apps/jetc/buildx/build/01-04-cuda).
+2025-04-24 21:28:11 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 21:28:11 - [ERROR]: Stage '01-04-cuda' failed with exit code 1.
+2025-04-24 21:28:11 - [ERROR]: Aborting remaining build stages due to failure in '01-04-cuda'.
+2025-04-24 21:28:11 - [INFO]: ==================================================
+2025-04-24 21:28:11 - [ERROR]: One or more build stages failed.
+2025-04-24 21:28:11 - [ERROR]: Build process completed with errors during stages.
+2025-04-24 21:28:11 - [INFO]: Build process completed.
+2025-04-24 21:28:11 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 21:28:11 - [WARN]: Last Successful Image Tag: kairin/jetc:01-03-numpy
+2025-04-24 21:28:11 - [INFO]: Displaying post-build menu for image: kairin/jetc:01-03-numpy
+2025-04-24 21:28:11 - [INFO]: --------------------------------------------------
+2025-04-24 21:28:11 - [INFO]: Final Image Built: kairin/jetc:01-03-numpy
+2025-04-24 21:28:11 - [INFO]: --------------------------------------------------
+2025-04-24 21:28:28 - [INFO]: Running full verification for kairin/jetc:01-03-numpy...
+2025-04-24 21:28:28 - [INFO]: --- Running Verification (Mode: all) in container: kairin/jetc:01-03-numpy ---
+2025-04-24 21:29:04 - [SUCCESS]: --- Verification (Mode: all) completed successfully in container: kairin/jetc:01-03-numpy ---

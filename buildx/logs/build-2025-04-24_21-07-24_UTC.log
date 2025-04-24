@@ -1,0 +1,4 @@
+2025-04-24 21:07:24 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-24_21-07-24_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-24_21-07-24_UTC.log
+2025-04-24 21:07:24 - [START]: Script started
+2025-04-24 21:07:24 - [INFO]: Checking dependencies: docker dialog
+2025-04-24 21:07:24 - [SUCCESS]: All dependencies verified.

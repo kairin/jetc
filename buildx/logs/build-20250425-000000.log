@@ -1,0 +1,10 @@
+====================================================
+[START] 2025-04-25 04:18:56 - main: Script started
+====================================================
+[INFO] 2025-04-25 04:18:56 - log_info: Checking dependencies: docker dialog
+[SUCCESS] 2025-04-25 04:18:56 - check_dependencies: All dependencies verified.
+[INFO] 2025-04-25 04:18:56 - main: Starting Jetson Container Build Process...
+[INFO] 2025-04-25 04:19:28 - log_info: Attempting to pull image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+[SUCCESS] 2025-04-25 04:19:30 - pull_image:  -> Successfully pulled image: kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+[SUCCESS] 2025-04-25 04:19:32 - handle_user_interaction: User interaction completed successfully
+[INFO] 2025-04-25 04:19:32 - log_info: --- Setting up Docker Buildx ---

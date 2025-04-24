@@ -1,0 +1,11 @@
+2025-04-24 20:59:15 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-24_20-59-15_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-24_20-59-15_UTC.log
+2025-04-24 20:59:15 - [START]: Script started
+2025-04-24 20:59:15 - [INFO]: Checking dependencies: docker dialog
+2025-04-24 20:59:15 - [SUCCESS]: All dependencies verified.
+2025-04-24 20:59:15 - [INFO]: Starting Jetson Container Build Process...
+2025-04-24 20:59:15 - [INFO]: --- Starting User Interaction ---
+2025-04-24 20:59:47 - [INFO]: Attempting to pull image: kairin/jetc:nvcr.io-nvidia-pytorch-25.03-py3
+2025-04-24 20:59:50 - [ERROR]:  -> Failed to pull image: kairin/jetc:nvcr.io-nvidia-pytorch-25.03-py3
+2025-04-24 20:59:58 - [ERROR]: User cancelled or error in main menu.
+2025-04-24 20:59:58 - [ERROR]: Build cancelled by user or error during interaction.
+2025-04-24 20:59:58 - [END]: Script finished

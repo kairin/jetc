@@ -1,0 +1,19 @@
+2025-04-24 22:22:36 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-24_22-22-36_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-24_22-22-36_UTC.log
+2025-04-24 22:22:37 - [START]: Script started
+2025-04-24 22:22:37 - [INFO]: Checking dependencies: docker dialog
+2025-04-24 22:22:37 - [SUCCESS]: All dependencies verified.
+2025-04-24 22:22:37 - [INFO]: Starting Jetson Container Build Process...
+2025-04-24 22:22:37 - [INFO]: --- Starting User Interaction ---
+2025-04-24 22:23:06 - [INFO]: Attempting to pull image: #--------------------------------------------------------------------------
+2025-04-24 22:23:06 - [ERROR]:  -> Failed to pull image: #--------------------------------------------------------------------------
+2025-04-24 22:23:13 - [ERROR]: User cancelled or error in main menu.
+2025-04-24 22:23:13 - [ERROR]: Build cancelled or failed during user interaction (check previous logs).
+2025-04-24 22:23:13 - [WARN]: Skipping Step 2 (Buildx Setup) due to previous failure.
+2025-04-24 22:23:13 - [WARN]: Skipping Step 3 (Build Order) due to previous failure.
+2025-04-24 22:23:13 - [WARN]: Skipping Step 4 (Build Stages) due to previous failure.
+2025-04-24 22:23:13 - [INFO]: Build process completed.
+2025-04-24 22:23:13 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 22:23:13 - [ERROR]: No successful image was built.
+2025-04-24 22:23:13 - [INFO]: Skipping deprecated post-build menu.
+2025-04-24 22:23:13 - [END]: Script finished
+2025-04-24 22:23:13 - [INFO]: Returning overall build status: 1

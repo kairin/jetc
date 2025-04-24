@@ -1,0 +1,9 @@
+2025-04-24 21:28:11 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 21:28:11 - [ERROR]: Error: Failed to build image for 01-04-cuda (/media/kkk/Apps/jetc/buildx/build/01-04-cuda).
+2025-04-24 21:28:11 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 21:28:11 - [ERROR]: Stage '01-04-cuda' failed with exit code 1.
+2025-04-24 21:28:11 - [ERROR]: Aborting remaining build stages due to failure in '01-04-cuda'.
+2025-04-24 21:28:11 - [ERROR]: One or more build stages failed.
+2025-04-24 21:28:11 - [ERROR]: Build process completed with errors during stages.
+2025-04-24 21:28:11 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 21:28:11 - [WARN]: Last Successful Image Tag: kairin/jetc:01-03-numpy

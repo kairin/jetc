@@ -1,0 +1,11 @@
+2025-04-24 21:41:24 - [ERROR]:  -> Failed to pull image: kairin/jetc:nvcr.io-nvidia-pytorch-25.03-py3
+2025-04-24 21:41:34 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 21:41:34 - [ERROR]: Error: Failed to build image for 01-00-build-essential (/media/kkk/Apps/jetc/buildx/build/01-00-build-essential).
+2025-04-24 21:41:34 - [ERROR]: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2025-04-24 21:41:34 - [ERROR]: Stage '01-00-build-essential' failed with exit code 1.
+2025-04-24 21:41:34 - [ERROR]: Aborting remaining build stages due to failure in '01-00-build-essential'.
+2025-04-24 21:41:34 - [ERROR]: One or more build stages failed.
+2025-04-24 21:41:34 - [WARN]: No stages completed successfully.
+2025-04-24 21:41:34 - [ERROR]: Build process completed with errors during stages.
+2025-04-24 21:41:34 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 21:41:34 - [ERROR]: No successful image was built.

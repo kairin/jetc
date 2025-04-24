@@ -1,0 +1,8 @@
+2025-04-24 22:22:19 - [ERROR]:  -> Failed to pull image: #--------------------------------------------------------------------------
+2025-04-24 22:22:34 - [ERROR]: User cancelled or error in main menu.
+2025-04-24 22:22:34 - [ERROR]: Build cancelled or failed during user interaction (check previous logs).
+2025-04-24 22:22:34 - [WARN]: Skipping Step 2 (Buildx Setup) due to previous failure.
+2025-04-24 22:22:34 - [WARN]: Skipping Step 3 (Build Order) due to previous failure.
+2025-04-24 22:22:34 - [WARN]: Skipping Step 4 (Build Stages) due to previous failure.
+2025-04-24 22:22:34 - [ERROR]: Build process finished with ERRORS.
+2025-04-24 22:22:34 - [ERROR]: No successful image was built.
