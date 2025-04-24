@@ -81,6 +81,9 @@ EOF
         log_debug ".env file already exists at $env_file"
     fi
 
+    # Check/install screenshot tool early
+    check_install_screenshot_tool # <-- ADDED CALL HERE
+
     # Validate the .env file has required variables
     load_env_variables # Assumes this function is defined in env_helpers.sh
 
@@ -112,7 +115,7 @@ init_logging() {
                 return 1
             }
         fi # <--- ADDED MISSING fi HERE
-    
+
     # Initialize log files
     > "$main_log" || {
         echo -e "${C_ERROR}Error: Failed to create/clear main log file: $main_log${C_RESET}" >&2
@@ -248,7 +251,6 @@ set_stage() {
 # │       └── env_setup.sh       <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Environment setup and logging functions. Updated logging for consistency, debug, and origin.
-# Author: GitHub Copilot
-# COMMIT-TRACKING: UUID-20240806-103000-MODULAR
-
+# Description: Environment setup and logging functions. Updated logging for consistency, debug, and origin. Added early screenshot tool check.
+# Author: GitHub Copilot / kairin
+# COMMIT-TRACKING: UUID-20250424-193806-SCREENSHT1
