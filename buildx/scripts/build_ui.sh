@@ -47,6 +47,10 @@ fi
 if [ -f "$PREFS_FILE" ]; then
   # shellcheck disable=SC1090
   source "$PREFS_FILE"
+  # Export lowercase 'platform' for compatibility with build_stages.sh
+  if [ -n "$PLATFORM" ]; then
+    export platform="$PLATFORM"
+  fi
 else
   echo "Error: Preferences file $PREFS_FILE not found after get_user_preferences."
   exit 1

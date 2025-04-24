@@ -271,6 +271,7 @@ get_user_preferences() {
       echo "export use_builder=\"${use_builder:-y}\""
       echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\""
       echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\""
+      echo "export platform=\"${PLATFORM:-linux/arm64}\""
       echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\""
     } > "$PREFS_FILE"
     exit 0
@@ -422,6 +423,7 @@ get_user_preferences_basic() {
     echo "export use_builder=\"${use_builder:-y}\""
     echo "export SELECTED_BASE_IMAGE=\"${SELECTED_IMAGE_TAG:-}\""
     echo "export PLATFORM=\"${PLATFORM:-linux/arm64}\""
+    echo "export platform=\"${PLATFORM:-linux/arm64}\""
     echo "export SELECTED_FOLDERS_LIST=\"${selected_folders_list:-}\""
   } > "$PREFS_FILE"
   trap - EXIT TERM INT
