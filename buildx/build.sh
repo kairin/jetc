@@ -202,8 +202,8 @@ main() {
             log_error "No successful image was built."
             # Allow post-build menu? Maybe not useful if nothing built. Exit early?
             # For now, continue to menu if requested, but return failure code later.
-        fi
-
+        fi # <--- This closes the inner if [[ -n "${LAST_SUCCESSFUL_TAG:-}" ]] in the else block
+    fi # <--- ADD THIS MISSING 'fi' HERE
 
     # Run the post-build menu regardless of BUILD_FAILED status?
     # Only run if at least one image was successfully built.
@@ -212,13 +212,14 @@ main() {
         run_post_build_menu "${LAST_SUCCESSFUL_TAG}" "${FINAL_TIMESTAMP_TAG:-}"
     else
         log_warning "Skipping post-build menu as no image was successfully built."
-    fi
+    fi # <--- This closes the post-build menu if
 
     log_end # Log script end
     # Return the overall build status
     log_debug "Main function finished. Returning status: $BUILD_FAILED"
     return $BUILD_FAILED
 }
+
 
 # --- Script Execution ---
 # Ensure cleanup runs on exit
