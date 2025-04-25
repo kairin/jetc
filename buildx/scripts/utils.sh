@@ -73,7 +73,10 @@ source_script() {
     fi
 
     # Use the determined logging function (either main or fallback)
-    "${main_log_prefix}${log_func_prefix}log_debug" "Attempting to source $script_name: $script_path"
+    # --- FIX START ---
+    # Corrected the function call from log_log_debug to log_debug
+    "${main_log_prefix}${log_func_prefix}debug" "Attempting to source $script_name: $script_path"
+    # --- FIX END ---
 
     if [[ -f "$script_path" ]]; then
         # shellcheck disable=SC1090
@@ -81,16 +84,19 @@ source_script() {
         local source_status=$?
         if [[ $source_status -ne 0 ]]; then
             # Use the determined logging function for error
-            "${main_log_prefix}${log_func_prefix}log_error" "Error sourcing $script_name from $script_path (exit code $source_status)."
+            "${main_log_prefix}${log_func_prefix}error" "Error sourcing $script_name from $script_path (exit code $source_status)."
             return 1
         else
              # Use the determined logging function for debug
-             "${main_log_prefix}${log_func_prefix}log_debug" "$script_name sourced successfully."
+             # --- FIX START ---
+             # Corrected the function call from log_log_debug to log_debug
+             "${main_log_prefix}${log_func_prefix}debug" "$script_name sourced successfully."
+             # --- FIX END ---
              return 0
         fi
     else
         # Use the determined logging function for error
-        "${main_log_prefix}${log_func_prefix}log_error" "$script_name not found at path: '$script_path'"
+        "${main_log_prefix}${log_func_prefix}error" "$script_name not found at path: '$script_path'"
         return 1
     fi
 }
@@ -114,13 +120,13 @@ capture_screenshot() {
     fi
 
     if [ -z "$base_filename" ]; then
-        "${main_log_prefix}${log_func_prefix}log_warning" "capture_screenshot: No base filename provided."
+        "${main_log_prefix}${log_func_prefix}warning" "capture_screenshot: No base filename provided."
         return 1
     fi
 
     # Check if scrot is installed
     if ! command -v scrot &> /dev/null; then
-        "${main_log_prefix}${log_func_prefix}log_warning" "scrot command not found. Cannot capture screenshot. Please install scrot (sudo apt-get install scrot)."
+        "${main_log_prefix}${log_func_prefix}warning" "scrot command not found. Cannot capture screenshot. Please install scrot (sudo apt-get install scrot)."
         return 1
     fi
 
@@ -129,7 +135,7 @@ capture_screenshot() {
     if [ -n "${LOG_DIR:-}" ] && [ -d "$LOG_DIR" ]; then
         effective_log_dir="$LOG_DIR"
     else
-        "${main_log_prefix}${log_func_prefix}log_warning" "LOG_DIR ('${LOG_DIR:-}') not set or not a directory. Saving screenshot to /tmp."
+        "${main_log_prefix}${log_func_prefix}warning" "LOG_DIR ('${LOG_DIR:-}') not set or not a directory. Saving screenshot to /tmp."
     fi
 
     local timestamp
@@ -137,15 +143,21 @@ capture_screenshot() {
     local screenshot_filename="${base_filename}_${timestamp}.png"
     local screenshot_path="$effective_log_dir/$screenshot_filename"
 
-    "${main_log_prefix}${log_func_prefix}log_debug" "Attempting to capture screenshot to: $screenshot_path"
+    # --- FIX START ---
+    # Corrected the function call from log_log_debug to log_debug
+    "${main_log_prefix}${log_func_prefix}debug" "Attempting to capture screenshot to: $screenshot_path"
+    # --- FIX END ---
 
     # Capture the screenshot using scrot
     sleep 0.5 # Small delay before capture might help
     if scrot "$screenshot_path"; then
-        "${main_log_prefix}${log_func_prefix}log_debug" "Screenshot captured successfully: $screenshot_filename"
+        # --- FIX START ---
+        # Corrected the function call from log_log_debug to log_debug
+        "${main_log_prefix}${log_func_prefix}debug" "Screenshot captured successfully: $screenshot_filename"
+        # --- FIX END ---
         return 0
     else
-        "${main_log_prefix}${log_func_prefix}log_error" "Failed to capture screenshot using scrot."
+        "${main_log_prefix}${log_func_prefix}error" "Failed to capture screenshot using scrot."
         return 1
     fi
 }
@@ -163,4 +175,4 @@ _utils_log_debug "utils.sh finished execution."
 #
 # Description: General utility functions for the build system. Added get_system_datetime.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-120200-UTILS-LOGFIX
+# COMMIT-TRACKING: UUID-20250425-123000-UTILSTYPOFIX # New UUID for this fix
