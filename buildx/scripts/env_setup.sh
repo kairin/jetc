@@ -34,6 +34,12 @@ else
     exit 1
 fi
 
+# --- Set JETC_DEBUG Default EARLY ---
+# Define and export JETC_DEBUG *before* sourcing logging.sh, which uses it.
+# It might be overridden later by .env, but needs a default value now.
+export JETC_DEBUG="${JETC_DEBUG:-0}"
+_utils_log_debug "Initial JETC_DEBUG set to: $JETC_DEBUG"
+
 # --- Logging Initialization ---
 # Now attempt to source logging.sh and initialize the main logging system
 LOGGING_PATH="$SCRIPT_DIR/logging.sh"
@@ -87,17 +93,6 @@ else
 fi
 
 
-# --- Debug Mode ---
-# Check JETC_DEBUG environment variable (set externally or in .env)
-if [[ "${JETC_DEBUG:-0}" == "1" || "${JETC_DEBUG,,}" == "true" ]]; then
-    export JETC_DEBUG=1
-    log_info "Debug mode enabled."
-    set -x # Enable command tracing
-else
-    export JETC_DEBUG=0
-    log_debug "Debug mode disabled." # This won't show unless JETC_DEBUG was already 1
-fi
-
 # --- Load .env file ---
 # Use a more robust method to read variables without executing
 load_dotenv() {
@@ -128,6 +123,7 @@ load_dotenv() {
 
 # --- Default Values ---
 # Set defaults BEFORE loading .env, so .env can override them
+# JETC_DEBUG default was set earlier
 export DOCKER_USERNAME="${DOCKER_USERNAME:-jetson}"
 export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-jetc}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}" # Default to Docker Hub
@@ -139,6 +135,19 @@ export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}" # Initialize as empty string
 
 # Load the primary .env file using the robust method
 load_dotenv "$ENV_FILE"
+
+# --- Final Debug Mode Check ---
+# Re-check JETC_DEBUG after loading .env, as it might have changed
+if [[ "${JETC_DEBUG:-0}" == "1" || "${JETC_DEBUG,,}" == "true" ]]; then
+    export JETC_DEBUG=1
+    # Only enable 'set -x' if it wasn't already enabled
+    [[ $- != *x* ]] && log_info "Debug mode enabled (set in .env or previously)." && set -x
+else
+    export JETC_DEBUG=0
+    # Disable 'set -x' if it was enabled
+    [[ $- == *x* ]] && set +x && log_info "Debug mode disabled (set in .env or default)."
+fi
+
 
 # --- Re-validate LOG_DIR after loading .env ---
 # Ensure LOG_DIR has a value before proceeding (in case .env unset it)
@@ -192,4 +201,4 @@ log_info "--- Environment Setup Complete ---"
 #
 # Description: Loads .env, sets defaults, validates variables, initializes logging.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-122000-LOGDIRFIX # New UUID for this fix
+# COMMIT-TRACKING: UUID-20250425-122500-JETCDEBUGFIX # New UUID for this fix
