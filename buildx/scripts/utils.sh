@@ -15,7 +15,7 @@ _utils_log_warning() { echo "WARNING (utils): $1" >&2; }
 _utils_log_error() { echo "ERROR (utils): $1" >&2; }
 _utils_log_debug() { if [[ "${JETC_DEBUG:-0}" == "1" ]]; then echo "[DEBUG] (utils): $1" >&2; fi; }
 
-_utils_log_debug "utils.sh script started execution."
+_utils_log_debug "utils.sh script started execution." # This call is correct
 
 # --- Core Utility Functions ---
 
@@ -27,7 +27,7 @@ _utils_log_debug "utils.sh script started execution."
 get_system_datetime() {
     date +"%Y%m%d-%H%M%S"
 }
-_utils_log_debug "Defined: get_system_datetime"
+_utils_log_debug "Defined: get_system_datetime" # This call is correct
 
 # =========================================================================
 # Function: Validate if a variable is set and not empty
@@ -47,13 +47,16 @@ validate_variable() {
         return 1
     else
         # Use internal fallback debug log
+        # --- FIX START ---
+        # Corrected the function call from _utils_debug to _utils_log_debug
         _utils_log_debug "Variable '$var_name' validated successfully."
+        # --- FIX END ---
         # Also try the main logger if it exists
         if command -v log_debug &> /dev/null; then log_debug "Variable '$var_name' validated successfully."; fi
         return 0
     fi
 }
-_utils_log_debug "Defined: validate_variable"
+_utils_log_debug "Defined: validate_variable" # This call is correct
 
 # =========================================================================
 # Function: Source a script safely, checking for existence first
@@ -73,10 +76,7 @@ source_script() {
     fi
 
     # Use the determined logging function (either main or fallback)
-    # --- FIX START ---
-    # Corrected the function call from log_log_debug to log_debug
     "${main_log_prefix}${log_func_prefix}debug" "Attempting to source $script_name: $script_path"
-    # --- FIX END ---
 
     if [[ -f "$script_path" ]]; then
         # shellcheck disable=SC1090
@@ -89,7 +89,7 @@ source_script() {
         else
              # Use the determined logging function for debug
              # --- FIX START ---
-             # Corrected the function call from log_log_debug to log_debug
+             # Corrected the function call from _utils_debug to _utils_log_debug
              "${main_log_prefix}${log_func_prefix}debug" "$script_name sourced successfully."
              # --- FIX END ---
              return 0
@@ -100,7 +100,7 @@ source_script() {
         return 1
     fi
 }
-_utils_log_debug "Defined: source_script"
+_utils_log_debug "Defined: source_script" # This call is correct
 
 # =========================================================================
 # Function: Capture a screenshot (requires 'scrot')
@@ -143,27 +143,21 @@ capture_screenshot() {
     local screenshot_filename="${base_filename}_${timestamp}.png"
     local screenshot_path="$effective_log_dir/$screenshot_filename"
 
-    # --- FIX START ---
-    # Corrected the function call from log_log_debug to log_debug
     "${main_log_prefix}${log_func_prefix}debug" "Attempting to capture screenshot to: $screenshot_path"
-    # --- FIX END ---
 
     # Capture the screenshot using scrot
     sleep 0.5 # Small delay before capture might help
     if scrot "$screenshot_path"; then
-        # --- FIX START ---
-        # Corrected the function call from log_log_debug to log_debug
         "${main_log_prefix}${log_func_prefix}debug" "Screenshot captured successfully: $screenshot_filename"
-        # --- FIX END ---
         return 0
     else
         "${main_log_prefix}${log_func_prefix}error" "Failed to capture screenshot using scrot."
         return 1
     fi
 }
-_utils_log_debug "Defined: capture_screenshot"
+_utils_log_debug "Defined: capture_screenshot" # This call is correct
 
-_utils_log_debug "utils.sh finished execution."
+_utils_log_debug "utils.sh finished execution." # This call is correct
 
 # --- Footer ---
 # File location diagram:
@@ -175,4 +169,4 @@ _utils_log_debug "utils.sh finished execution."
 #
 # Description: General utility functions for the build system. Added get_system_datetime.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-123000-UTILSTYPOFIX # New UUID for this fix
+# COMMIT-TRACKING: UUID-20250425-123500-UTILSDEBUGFIX # New UUID for this fix
