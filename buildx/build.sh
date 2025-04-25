@@ -47,7 +47,10 @@ if ! command -v source_script &> /dev/null; then
     exit 1
 fi
 
-# Add debugging before sourcing buildx_setup.sh
+# Source env_update and interactive_ui before user_interaction to satisfy dependency checks
+source_script "$SCRIPTS_DIR/env_update.sh" "Env Update Helpers"
+source_script "$SCRIPTS_DIR/interactive_ui.sh" "Interactive UI"
+
 log_debug "Current SCRIPT_DIR before sourcing buildx_setup: $SCRIPT_DIR"
 log_debug "Path to be sourced for Buildx Setup: $SCRIPTS_DIR/buildx_setup.sh"
 # Source buildx setup script
@@ -74,11 +77,9 @@ log_info "Starting Jetson Container Build Process..."
 # Define the path for the preferences file
 PREFS_FILE="/tmp/build_prefs.sh"
 
-# 1. Get User Preferences (using dialog or fallback)
-# show_main_menu is defined in user_interaction.sh (which sources dialog_ui.sh)
-# It creates PREFS_FILE on success (exit code 0)
-if show_main_menu; then
-    log_success "User interaction completed successfully."
+# Use handle_user_interaction instead of show_main_menu
+if handle_user_interaction; then
+    log_success "User interaction completed successfully. Preferences exported."
 
     # Source the preferences file created by show_main_menu to load SELECTED_* vars
     if [ -f "$PREFS_FILE" ]; then
@@ -99,7 +100,7 @@ if show_main_menu; then
 
     # 2. Setup Buildx (ensure builder exists and is used if SELECTED_USE_BUILDER is 'y')
     # Check the SELECTED_USE_BUILDER variable loaded from prefs
-    if [[ "${SELECTED_USE_BUILDER:-y}" == "y" ]]; then
+    if [[ "${use_builder:-y}" == "y" ]]; then
         if ! setup_buildx; then
             log_error "Buildx setup failed. Aborting build."
             exit 1
@@ -128,7 +129,9 @@ if show_main_menu; then
     if build_selected_stages; then
         log_success "Build process completed successfully."
         # 5. Show Post-Build Menu (optional actions)
-        show_post_build_menu "${LAST_SUCCESSFUL_TAG:-}"
+        if command -v show_post_build_menu &> /dev/null; then
+            show_post_build_menu "${LAST_SUCCESSFUL_TAG:-}"
+        fi
     else
         log_error "Build process failed."
         exit 1
