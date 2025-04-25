@@ -15,10 +15,13 @@ SCRIPT_DIR_UI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # DO NOT source logging.sh, env_setup.sh, utils.sh, dialog_ui.sh, env_update.sh here.
 # Assume they are sourced by the main build.sh script.
 # Check if required functions/variables exist as a safety measure.
-if ! declare -f log_info > /dev/null || ! declare -f show_main_menu > /dev/null || ! declare -f update_env_var > /dev/null || [[ -z "${AVAILABLE_IMAGES:-}" ]]; then
-     echo "CRITICAL ERROR: Required functions/variables (log_info, show_main_menu, update_env_var, AVAILABLE_IMAGES) not found in user_interaction.sh. Ensure main script sources dependencies." >&2
+# --- MODIFICATION START ---
+# Check for get_build_preferences instead of show_main_menu
+if ! declare -f log_info > /dev/null || ! declare -f get_build_preferences > /dev/null || ! declare -f update_env_var > /dev/null || [[ -z "${AVAILABLE_IMAGES:-}" ]]; then
+     echo "CRITICAL ERROR: Required functions/variables (log_info, get_build_preferences, update_env_var, AVAILABLE_IMAGES) not found in user_interaction.sh. Ensure main script sources dependencies." >&2
      exit 1
 fi
+# --- MODIFICATION END ---
 
 # --- Main Function ---
 
@@ -30,12 +33,14 @@ fi
 handle_user_interaction() {
     log_info "--- Starting User Interaction ---"
 
-    # Use show_main_menu from dialog_ui.sh
+    # --- MODIFICATION START ---
+    # Use get_build_preferences from interactive_ui.sh
     # It should populate /tmp/build_prefs.sh
-    if ! show_main_menu; then
-        log_error "User cancelled or error in main menu."
+    if ! get_build_preferences; then
+        log_error "User cancelled or error in build preferences menu."
         return 1
     fi
+    # --- MODIFICATION END ---
 
     # Source the temporary file to get user selections
     local prefs_file="/tmp/build_prefs.sh"
@@ -103,18 +108,21 @@ handle_user_interaction() {
 }
 
 
-# --- Main Execution (for testing) ---\
+# --- Main Execution (for testing) ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # If testing directly, source dependencies first
     if [ -f "$SCRIPT_DIR_UI/logging.sh" ]; then source "$SCRIPT_DIR_UI/logging.sh"; init_logging; else echo "ERROR: Cannot find logging.sh for test."; exit 1; fi
     if [ -f "$SCRIPT_DIR_UI/env_setup.sh" ]; then source "$SCRIPT_DIR_UI/env_setup.sh"; else echo "ERROR: Cannot find env_setup.sh for test."; exit 1; fi
     if [ -f "$SCRIPT_DIR_UI/utils.sh" ]; then source "$SCRIPT_DIR_UI/utils.sh"; else echo "ERROR: Cannot find utils.sh for test."; exit 1; fi
-    # Need stubs or the real dialog_ui.sh and env_update.sh for testing
-    if [ -f "$SCRIPT_DIR_UI/dialog_ui.sh" ]; then source "$SCRIPT_DIR_UI/dialog_ui.sh"; else echo "ERROR: Cannot find dialog_ui.sh for test."; exit 1; fi
+    # Need stubs or the real interactive_ui.sh and env_update.sh for testing
+    # --- MODIFICATION START ---
+    # Source interactive_ui.sh instead of dialog_ui.sh
+    if [ -f "$SCRIPT_DIR_UI/interactive_ui.sh" ]; then source "$SCRIPT_DIR_UI/interactive_ui.sh"; else echo "ERROR: Cannot find interactive_ui.sh for test."; exit 1; fi
+    # --- MODIFICATION END ---
     if [ -f "$SCRIPT_DIR_UI/env_update.sh" ]; then source "$SCRIPT_DIR_UI/env_update.sh"; else echo "ERROR: Cannot find env_update.sh for test."; exit 1; fi
 
     log_info "Running user_interaction.sh directly for testing..."
-    # Mock AVAILABLE_IMAGES if needed for testing dialog_ui.sh
+    # Mock AVAILABLE_IMAGES if needed for testing interactive_ui.sh
     export AVAILABLE_IMAGES="image1:tag1;image2:tag2"
     # Mock .env file path for env_update.sh tests
     export ENV_FILE="/tmp/test_ui_env_$$.env"; touch "$ENV_FILE"
@@ -140,4 +148,4 @@ fi
 #
 # Description: Handles user interaction logic, sourcing UI implementations.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250425-111500-UIFIX # New UUID for this fix
