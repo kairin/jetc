@@ -39,8 +39,8 @@ update_env_var() {
     fi
     log_debug "Updating .env: Set '$key' to '$value'"
     # Escape key and value for sed
-    local escaped_key; escaped_key=$(printf '%s\n' "$key" | sed -e 's/[\/&]/\\&/g')
-    local escaped_value; escaped_value=$(printf '%s\n' "$value" | sed -e 's/[\/&]/\\&/g')
+    local escaped_key; escaped_key=$(printf '%s\n' "$key" | sed -e 's/[\/&]/\&/g')
+    local escaped_value; escaped_value=$(printf '%s\n' "$value" | sed -e 's/[\/&]/\&/g')
 
     # Check if key exists (commented or uncommented)
     if grep -q -E "^[#[:space:]]*${escaped_key}=" "$ENV_FILE"; then
