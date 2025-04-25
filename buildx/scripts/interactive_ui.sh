@@ -182,7 +182,7 @@ get_build_preferences() {
       if [[ -z "$temp_username" || -z "$temp_prefix" ]]; then
         _log_debug_sub "Validation failed: Username or Prefix empty."
         # Use inherited show_message
-        show_message "Validation Error" "Username and Repository Prefix are required.\\nPlease correct the entries." 10 $DIALOG_WIDTH
+        show_message "Validation Error" "Username and Repository Prefix are required.\nPlease correct the entries." 10 $DIALOG_WIDTH
         continue
       fi
 
@@ -314,18 +314,18 @@ get_build_preferences() {
         _log_debug_sub "Entered custom image: '$entered_image'"
         if [ -z "$entered_image" ]; then
           _log_debug_sub "No custom image entered, reverting to default."
-          show_message "Info" "No custom image entered. Reverting to default:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
+          show_message "Info" "No custom image entered. Reverting to default:\n$current_default_base_image_display" 8 $DIALOG_WIDTH
           SELECTED_IMAGE_TAG="$current_default_base_image_display"
           BASE_IMAGE_ACTION="use_default"
         else
           SELECTED_IMAGE_TAG="$entered_image"
           _log_debug_sub "Attempting to pull custom base image: $SELECTED_IMAGE_TAG"
-          show_message "Info" "Attempting to pull custom base image:\\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH # Use infobox style if possible, msgbox is fine
+          show_message "Info" "Attempting to pull custom base image:\n$SELECTED_IMAGE_TAG..." 5 $DIALOG_WIDTH # Use infobox style if possible, msgbox is fine
           # Use inherited pull_image
           if ! pull_image "$SELECTED_IMAGE_TAG"; then
             _log_debug_sub "Failed to pull custom image $SELECTED_IMAGE_TAG"
             # Use inherited confirm_action
-            if confirm_action "Failed to pull custom base image:\\n$SELECTED_IMAGE_TAG.\\nBuild might fail if not local.\\n\\nContinue anyway?" false 12 $DIALOG_WIDTH; then
+            if confirm_action "Failed to pull custom base image:\n$SELECTED_IMAGE_TAG.\nBuild might fail if not local.\n\nContinue anyway?" false 12 $DIALOG_WIDTH; then
               _log_debug_sub "User chose to continue despite failed pull."
               show_message "Warning" "Custom image not pulled. Using local if available." 8 $DIALOG_WIDTH
             else
@@ -334,16 +334,16 @@ get_build_preferences() {
             fi
           else
             _log_debug_sub "Successfully pulled custom image $SELECTED_IMAGE_TAG"
-            show_message "Success" "Successfully pulled custom base image:\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+            show_message "Success" "Successfully pulled custom base image:\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
           fi
         fi
         ;;
       "pull_default")
         _log_debug_sub "Attempting to pull default base image: $current_default_base_image_display"
-        show_message "Info" "Attempting to pull default base image:\\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
+        show_message "Info" "Attempting to pull default base image:\n$current_default_base_image_display..." 5 $DIALOG_WIDTH
         if ! pull_image "$current_default_base_image_display"; then # Use docker_helper function
            _log_debug_sub "Failed to pull default image $current_default_base_image_display"
-           if confirm_action "Failed to pull default base image:\\n$current_default_base_image_display.\\nBuild might fail if not local.\\n\\nContinue anyway?" false 12 $DIALOG_WIDTH; then
+           if confirm_action "Failed to pull default base image:\n$current_default_base_image_display.\nBuild might fail if not local.\n\nContinue anyway?" false 12 $DIALOG_WIDTH; then
               _log_debug_sub "User chose to continue despite failed pull."
               show_message "Warning" "Default image not pulled. Using local if available." 8 $DIALOG_WIDTH
            else
@@ -352,14 +352,14 @@ get_build_preferences() {
            fi
         else
           _log_debug_sub "Successfully pulled default image $current_default_base_image_display"
-          show_message "Success" "Successfully pulled default base image:\\n$current_default_base_image_display" 8 $DIALOG_WIDTH
+          show_message "Success" "Successfully pulled default base image:\n$current_default_base_image_display" 8 $DIALOG_WIDTH
         fi
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
         ;;
       "use_default")
         _log_debug_sub "Using default base image (local if available): $current_default_base_image_display"
         SELECTED_IMAGE_TAG="$current_default_base_image_display"
-        show_message "Info" "Using default base image (local version if available):\\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
+        show_message "Info" "Using default base image (local version if available):\n$SELECTED_IMAGE_TAG" 8 $DIALOG_WIDTH
         ;;
       *)
         _log_debug_sub "Invalid base image action selected: '$BASE_IMAGE_ACTION'. Exiting."
@@ -370,28 +370,28 @@ get_build_preferences() {
 
     # --- Step 3: Confirmation ---
     local confirmation_message
-    confirmation_message="Build Configuration Summary:\\n\\n"
-    confirmation_message+="Docker Info:\\n"
-    confirmation_message+="  - Registry:         ${DOCKER_REGISTRY:-Docker Hub}\\n"
-    confirmation_message+="  - Username:         $DOCKER_USERNAME\\n"
-    confirmation_message+="  - Repo Prefix:      $DOCKER_REPO_PREFIX\\n\\n"
-    confirmation_message+="Selected Build Stages:\\n"
+    confirmation_message="Build Configuration Summary:\n\n"
+    confirmation_message+="Docker Info:\n"
+    confirmation_message+="  - Registry:         ${DOCKER_REGISTRY:-Docker Hub}\n"
+    confirmation_message+="  - Username:         $DOCKER_USERNAME\n"
+    confirmation_message+="  - Repo Prefix:      $DOCKER_REPO_PREFIX\n\n"
+    confirmation_message+="Selected Build Stages:\n"
     if [[ -n "$selected_folders_list" ]]; then
-        confirmation_message+="  - $(echo "$selected_folders_list" | wc -w) stages selected: $selected_folders_list\\n\\n"
+        confirmation_message+="  - $(echo "$selected_folders_list" | wc -w) stages selected: $selected_folders_list\n\n"
     else
-        confirmation_message+="  - No numbered stages selected (or none found).\\n\\n"
+        confirmation_message+="  - No numbered stages selected (or none found).\n\n"
     fi
-    confirmation_message+="Build Options:\\n"
-    confirmation_message+="  - Use Cache:          $( [[ "$use_cache" == "y" ]] && echo "Yes" || echo "No (--no-cache)" )\\n"
-    confirmation_message+="  - Squash Layers:      $( [[ "$use_squash" == "y" ]] && echo "Yes (--squash)" || echo "No" )\\n"
-    confirmation_message+="  - Build Locally Only: $( [[ "$skip_intermediate_push_pull" == "y" ]] && echo "Yes (--load)" || echo "No (--push)" )\\n"
-    confirmation_message+="  - Use Builder:        $( [[ "$use_builder" == "y" ]] && echo "Yes (jetson-builder)" || echo "No (Default Docker)" )\\n\\n"
-    confirmation_message+="Base Image for First Stage:\\n"
-    confirmation_message+="  - Action Chosen:      $BASE_IMAGE_ACTION\\n"
+    confirmation_message+="Build Options:\n"
+    confirmation_message+="  - Use Cache:          $( [[ "$use_cache" == "y" ]] && echo "Yes" || echo "No (--no-cache)" )\n"
+    confirmation_message+="  - Squash Layers:      $( [[ "$use_squash" == "y" ]] && echo "Yes (--squash)" || echo "No" )\n"
+    confirmation_message+="  - Build Locally Only: $( [[ "$skip_intermediate_push_pull" == "y" ]] && echo "Yes (--load)" || echo "No (--push)" )\n"
+    confirmation_message+="  - Use Builder:        $( [[ "$use_builder" == "y" ]] && echo "Yes (jetson-builder)" || echo "No (Default Docker)" )\n\n"
+    confirmation_message+="Base Image for First Stage:\n"
+    confirmation_message+="  - Action Chosen:      $BASE_IMAGE_ACTION\n"
     confirmation_message+="  - Image Tag To Use:   $SELECTED_IMAGE_TAG"
     _log_debug_sub "Displaying confirmation dialog."
 
-    if ! confirm_action "$confirmation_message\\n\\nProceed with build?" true 25 $DIALOG_WIDTH; then
+    if ! confirm_action "$confirmation_message\n\nProceed with build?" true 25 $DIALOG_WIDTH; then
         _log_debug_sub "Build canceled by user at confirmation screen. Exiting subshell."
         exit 1 # Exit subshell with error
     fi
