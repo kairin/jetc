@@ -1,0 +1,5 @@
+--- Log Start: Fri Apr 25 20:44:58 +08 2025 ---
+INFO: 2025-04-25 20:44:58 - Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/scripts/../logs/build-2025-04-25_20-44-58_+08.log, Error log: /media/kkk/Apps/jetc/buildx/scripts/../logs/errors-2025-04-25_20-44-58_+08.log
+INFO: 2025-04-25 20:44:58 - --- Initializing Environment Setup (using main logger) ---
+INFO: 2025-04-25 20:44:58 - Detected platform: linux/arm64
+INFO: 2025-04-25 20:44:58 - --- Environment Setup Complete ---

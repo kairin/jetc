@@ -1,0 +1,5 @@
+--- Log Start: Fri Apr 25 20:44:59 +08 2025 ---
+INFO: 2025-04-25 20:44:59 - Logging initialized. Main log:  # Defaults to ./logs if empty or missing/build-2025-04-25_20-44-59_+08.log, Error log:  # Defaults to ./logs if empty or missing/errors-2025-04-25_20-44-59_+08.log
+INFO: 2025-04-25 20:44:59 - --- Initializing Environment Setup (using main logger) ---
+INFO: 2025-04-25 20:45:00 - Detected platform: linux/arm64
+INFO: 2025-04-25 20:45:00 - --- Environment Setup Complete ---

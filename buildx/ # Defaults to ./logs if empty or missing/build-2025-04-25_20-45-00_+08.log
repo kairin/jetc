@@ -1,0 +1,13 @@
+--- Log Start: Fri Apr 25 20:45:00 +08 2025 ---
+INFO: 2025-04-25 20:45:00 - Logging initialized. Main log:  # Defaults to ./logs if empty or missing/build-2025-04-25_20-45-00_+08.log, Error log:  # Defaults to ./logs if empty or missing/errors-2025-04-25_20-45-00_+08.log
+INFO: 2025-04-25 20:45:00 - --- Initializing Environment Setup (using main logger) ---
+INFO: 2025-04-25 20:45:00 - Detected platform: linux/arm64
+INFO: 2025-04-25 20:45:00 - --- Environment Setup Complete ---
+INFO: 2025-04-25 20:45:00 - Starting Jetson Container Build Process...
+INFO: 2025-04-25 20:45:00 - --- Starting User Interaction ---
+WARNING: 2025-04-25 20:45:00 - Dialog not available. Falling back to basic text prompts.
+INFO: 2025-04-25 20:45:15 - Using Registry: # Leave empty for Docker Hub, or e.g., nvcr.io, User: kairin, Prefix: jetc
+INFO: 2025-04-25 20:45:54 - Selected stages: 01-00-build-essential 01-01-arrow 01-02-numba 01-03-numpy 01-04-cuda 01-05-h5py 02-bazel 03-ninja 12-huggingface_hub 15-flash-attention 18-comfyui
+INFO: 2025-04-25 20:46:22 - Pulling base image: kairin/jetc:pytorch-2-6-24-11-py3-12-igpu
+INFO: 2025-04-25 20:46:22 - Attempting to pull image: kairin/jetc:pytorch-2-6-24-11-py3-12-igpu
+SUCCESS: 2025-04-25 20:46:24 -  -> Successfully pulled image: kairin/jetc:pytorch-2-6-24-11-py3-12-igpu
