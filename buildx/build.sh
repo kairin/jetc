@@ -6,6 +6,7 @@ set -euo pipefail # Re-enable -e
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$SCRIPT_DIR/scripts"
 echo "[DEBUG build.sh] Initial SCRIPT_DIR: $SCRIPT_DIR" >&2
 
 # Define source_script locally ONLY for bootstrapping env_setup.sh
@@ -34,7 +35,7 @@ _bootstrap_source_script() {
 # --- Bootstrap Environment ---
 # Source env_setup.sh using the bootstrap function.
 # env_setup.sh will source utils.sh and logging.sh, making their functions globally available.
-_bootstrap_source_script "$SCRIPT_DIR/scripts/env_setup.sh" "Environment Setup"
+_bootstrap_source_script "$SCRIPTS_DIR/env_setup.sh" "Environment Setup"
 # Now log_* functions and the potentially redefined source_script from utils.sh should be available.
 log_debug "Environment setup bootstrapped. Main logging and utils should be available."
 
@@ -48,24 +49,24 @@ fi
 
 # Add debugging before sourcing buildx_setup.sh
 log_debug "Current SCRIPT_DIR before sourcing buildx_setup: $SCRIPT_DIR"
-log_debug "Path to be sourced for Buildx Setup: $SCRIPT_DIR/scripts/buildx_setup.sh"
+log_debug "Path to be sourced for Buildx Setup: $SCRIPTS_DIR/buildx_setup.sh"
 # Source buildx setup script
-source_script "$SCRIPT_DIR/scripts/buildx_setup.sh" "Buildx Setup"
+source_script "$SCRIPTS_DIR/buildx_setup.sh" "Buildx Setup"
 # Source docker helpers script
-log_debug "Path to be sourced for Docker Helpers: $SCRIPT_DIR/scripts/docker_helpers.sh"
-source_script "$SCRIPT_DIR/scripts/docker_helpers.sh" "Docker Helpers"
+log_debug "Path to be sourced for Docker Helpers: $SCRIPTS_DIR/docker_helpers.sh"
+source_script "$SCRIPTS_DIR/docker_helpers.sh" "Docker Helpers"
 # Source user interaction script (handles dialog or basic prompts)
-log_debug "Path to be sourced for User Interaction: $SCRIPT_DIR/scripts/user_interaction.sh"
-source_script "$SCRIPT_DIR/scripts/user_interaction.sh" "User Interaction"
+log_debug "Path to be sourced for User Interaction: $SCRIPTS_DIR/user_interaction.sh"
+source_script "$SCRIPTS_DIR/user_interaction.sh" "User Interaction"
 # Source build order determination script
-log_debug "Path to be sourced for Build Order: $SCRIPT_DIR/scripts/build_order.sh"
-source_script "$SCRIPT_DIR/scripts/build_order.sh" "Build Order"
+log_debug "Path to be sourced for Build Order: $SCRIPTS_DIR/build_order.sh"
+source_script "$SCRIPTS_DIR/build_order.sh" "Build Order"
 # Source build stages execution script
-log_debug "Path to be sourced for Build Stages: $SCRIPT_DIR/scripts/build_stages.sh"
-source_script "$SCRIPT_DIR/scripts/build_stages.sh" "Build Stages"
+log_debug "Path to be sourced for Build Stages: $SCRIPTS_DIR/build_stages.sh"
+source_script "$SCRIPTS_DIR/build_stages.sh" "Build Stages"
 # Source post-build menu script
-log_debug "Path to be sourced for Post-Build Menu: $SCRIPT_DIR/scripts/post_build_menu.sh"
-source_script "$SCRIPT_DIR/scripts/post_build_menu.sh" "Post-Build Menu"
+log_debug "Path to be sourced for Post-Build Menu: $SCRIPTS_DIR/post_build_menu.sh"
+source_script "$SCRIPTS_DIR/post_build_menu.sh" "Post-Build Menu"
 
 # --- Main Build Logic ---
 log_info "Starting Jetson Container Build Process..."
@@ -146,10 +147,11 @@ exit 0
 # --- Footer ---
 # File location diagram:
 # jetc/                          <- Main project folder
-# ├── buildx/                    <- Current directory
-# │   └── build.sh               <- THIS FILE
+# ├── buildx/                    <- Parent directory
+# │   ├── build.sh               <- THIS FILE
+# │   └── scripts/               <- SCRIPTS_DIR
 # └── ...                        <- Other project files
 #
 # Description: Main build orchestrator script for the Jetson Container project.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-104500-TYPOFIX3 # Use same UUID
+# COMMIT-TRACKING: UUID-20250425-120100-BUILDSH-PATHFIX

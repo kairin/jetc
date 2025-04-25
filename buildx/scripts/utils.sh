@@ -69,7 +69,7 @@ source_script() {
     # Check if main logging functions exist
     if command -v log_debug &> /dev/null && command -v log_error &> /dev/null; then
         log_func_prefix="" # Use main logging functions
-        main_log_prefix="log_"
+        main_log_prefix=""
     fi
 
     "${log_func_prefix}log_debug" "Attempting to source $script_name: $script_path"
@@ -80,20 +80,18 @@ source_script() {
         source "$script_path"
         local source_status=$?
         if [[ $source_status -ne 0 ]]; then
-            "${log_func_prefix}log_error" "Error sourcing $script_name from $script_path (exit code $source_status)."
-            # Try main logger too
-            if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_error" "Error sourcing $script_name from $script_path (exit code $source_status)."; fi
+            # Fix: Always call log_error, not log_log_error
+            log_error "Error sourcing $script_name from $script_path (exit code $source_status)."
             return 1
         else
              "${log_func_prefix}log_debug" "$script_name sourced successfully."
-             if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_debug" "$script_name sourced successfully."; fi
+             if [[ -n "$main_log_prefix" ]]; then log_debug "$script_name sourced successfully."; fi
              return 0
         fi
     else
         "${log_func_prefix}log_debug" "File check FAILED for path: '$script_path'" # DEBUG ADD
-        # Ensure this line uses log_error, not log_log_error
-        "${log_func_prefix}log_error" "$script_name not found at path: '$script_path'" # Added quotes for clarity
-        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_error" "$script_name not found at path: '$script_path'"; fi # Corrected typo here too
+        # Fix: Always call log_error, not log_log_error
+        log_error "$script_name not found at path: '$script_path'"
         return 1
     fi
 }
@@ -172,4 +170,4 @@ _utils_log_debug "utils.sh finished execution."
 #
 # Description: General utility functions for the build system. Added get_system_datetime.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-105000-PATHDEBUG # New UUID for path debugging
+# COMMIT-TRACKING: UUID-20250425-120200-UTILS-LOGFIX
