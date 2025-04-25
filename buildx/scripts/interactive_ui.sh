@@ -11,9 +11,13 @@ source "$SCRIPT_DIR_IUI/env_helpers.sh" || { echo "Error: env_helpers.sh not fou
 source "$SCRIPT_DIR_IUI/docker_helpers.sh" || { echo "Error: docker_helpers.sh not found."; exit 1; } # Needed for pull_image, verify_image_exists
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_IUI/verification.sh" || { echo "Error: verification.sh not found."; exit 1; } # Needed for post-build verify
-# Source logging functions if available
+
+# --- REMOVED REDUNDANT SOURCE ---
+# The main build/run script should source env_setup.sh first.
+# Sourcing it again here caused repeated messages and potential issues.
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR_IUI/env_setup.sh" 2>/dev/null || true
+# source "$SCRIPT_DIR_IUI/env_setup.sh" 2>/dev/null || true
+# --- END REMOVAL ---
 
 # =========================================================================
 # Generic UI Functions (Dialog with Text Fallback)
@@ -22,7 +26,7 @@ source "$SCRIPT_DIR_IUI/env_setup.sh" 2>/dev/null || true
 # Check dialog availability (uses function from utils.sh)
 _is_dialog_available() {
   log_debug "Checking dialog availability via check_install_dialog"
-  check_install_dialog >/dev/null 2>&1
+  check_install_dialog >/dev/null 2>&1 # Function now exists in utils.sh
 }
 
 # Show a message box or print to console
@@ -1108,6 +1112,6 @@ show_post_build_menu() {
 # │       └── interactive_ui.sh  <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: Provides interactive command-line UI elements.
+# Description: Provides interactive command-line UI elements. Removed redundant env_setup source.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250426-100000-IUIFIX # Example new UUID

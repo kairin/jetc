@@ -97,6 +97,22 @@ source_script() {
 _utils_log_debug "Defined: source_script" # This call is correct
 
 # =========================================================================
+# Function: Check if dialog command is available
+# Arguments: None
+# Returns: 0 if available, 1 otherwise
+# =========================================================================
+check_install_dialog() {
+    if command -v dialog &> /dev/null; then
+        _utils_log_debug "dialog command found."
+        return 0
+    else
+        _utils_log_warning "dialog command not found. Install 'dialog' package for interactive UI."
+        return 1
+    fi
+}
+_utils_log_debug "Defined: check_install_dialog" # Added this log line too
+
+# =========================================================================
 # Function: Capture a screenshot (requires 'scrot')
 # Arguments: $1 = base_filename (e.g., "step1_options")
 # Returns: 0 on success, 1 on failure or if scrot is not installed
@@ -161,6 +177,6 @@ _utils_log_debug "utils.sh finished execution." # This call is correct
 # │       └── utils.sh           <- THIS FILE
 # └── ...                        <- Other project files
 #
-# Description: General utility functions for the build system. Added get_system_datetime.
+# Description: General utility functions for the build system. Added get_system_datetime and check_install_dialog.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-123500-UTILSDEBUGFIX # New UUID for this fix
+# COMMIT-TRACKING: UUID-20250426-100000-UTILSFIX # Example new UUID
