@@ -1,5 +1,5 @@
 #!/bin/bash
-# filepath: /workspaces/jetc/buildx/scripts/env_setup.sh
+# filepath: /media/kkk/Apps/jetc/buildx/scripts/env_setup.sh
 
 # =========================================================================
 # Environment Setup Script
@@ -42,10 +42,26 @@ if [ -f "$LOGGING_PATH" ]; then
     if source_script "$LOGGING_PATH" "Logging System"; then
         # Attempt to initialize logging if sourcing succeeded
         if command -v init_logging &> /dev/null; then
-            init_logging # Call the initialization function from logging.sh
-            log_info "--- Initializing Environment Setup (using main logger) ---"
+            # Set LOG_DIR default *before* calling init_logging
+            export LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/../logs}"
+            # Validate LOG_DIR before calling init_logging
+            if validate_variable "LOG_DIR (pre-init)" "$LOG_DIR" "LOG_DIR is required for logging initialization."; then
+                init_logging # Call the initialization function from logging.sh
+                log_info "--- Initializing Environment Setup (using main logger) ---"
+            else
+                # If LOG_DIR validation fails here, logging cannot be initialized.
+                echo "CRITICAL ERROR: LOG_DIR validation failed before logging could be initialized." >&2
+                exit 1
+            fi
         else
-            log_warning "init_logging function not found after sourcing logging.sh. Logging might be incomplete." # Use main logger
+            _utils_log_warning "init_logging function not found after sourcing logging.sh. Logging might be incomplete." # Use fallback logger
+            # Define main log functions as fallbacks if they weren't defined by failed source
+            if ! command -v log_info &> /dev/null; then log_info() { _utils_log_info "$@"; }; fi
+            if ! command -v log_warning &> /dev/null; then log_warning() { _utils_log_warning "$@"; }; fi
+            if ! command -v log_error &> /dev/null; then log_error() { _utils_log_error "$@"; }; fi
+            if ! command -v log_success &> /dev/null; then log_success() { echo "SUCCESS (env_setup fallback): $1"; }; fi
+            if ! command -v log_debug &> /dev/null; then log_debug() { _utils_log_debug "$@"; }; fi
+            log_info "--- Initializing Environment Setup (using fallback logger) ---" # Use the (potentially fallback) log_info
         fi
     else
         # Sourcing logging.sh failed, rely on utils fallbacks
@@ -117,12 +133,17 @@ export DOCKER_REPO_PREFIX="${DOCKER_REPO_PREFIX:-jetc}"
 export DOCKER_REGISTRY="${DOCKER_REGISTRY:-}" # Default to Docker Hub
 export DEFAULT_BASE_IMAGE="${DEFAULT_BASE_IMAGE:-kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3}"
 export BUILDER_NAME="${BUILDER_NAME:-jetson-builder}"
-export LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/../logs}"
+# LOG_DIR default was already set before init_logging
 export LOG_LEVEL="${LOG_LEVEL:-INFO}" # Default log level
 export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}" # Initialize as empty string
 
 # Load the primary .env file using the robust method
 load_dotenv "$ENV_FILE"
+
+# --- Re-validate LOG_DIR after loading .env ---
+# Ensure LOG_DIR has a value before proceeding (in case .env unset it)
+export LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/../logs}" # Re-apply default if .env unset it or was empty
+validate_variable "LOG_DIR (post-load)" "$LOG_DIR" "LOG_DIR is required but is empty after loading .env." || exit 1
 
 # --- Platform Detection ---
 # Determine the host architecture and set the PLATFORM variable
@@ -150,11 +171,13 @@ export AVAILABLE_IMAGES="${AVAILABLE_IMAGES:-}"
 log_debug "Final AVAILABLE_IMAGES after load: '${AVAILABLE_IMAGES}'"
 
 # --- Final Checks ---
-# Ensure log directory exists
+# Ensure log directory exists (already done in init_logging, but double-check doesn't hurt)
 if [ -n "$LOG_DIR" ]; then
     mkdir -p "$LOG_DIR" || log_warning "Could not create log directory: $LOG_DIR"
 else
-    log_warning "LOG_DIR variable is not set. Logs might not be saved correctly."
+    # This case should not be reachable due to the validation above
+    log_error "LOG_DIR variable is unexpectedly empty after validation."
+    exit 1
 fi
 
 log_info "--- Environment Setup Complete ---"
@@ -169,4 +192,4 @@ log_info "--- Environment Setup Complete ---"
 #
 # Description: Loads .env, sets defaults, validates variables, initializes logging.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-094500-UTILSDECOUPLE # Use same UUID
+# COMMIT-TRACKING: UUID-20250425-122000-LOGDIRFIX # New UUID for this fix
