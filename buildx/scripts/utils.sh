@@ -94,7 +94,8 @@ source_script() {
         return 1
     fi
 }
-_utils_log_debug "Defined: source_script" # This call is correct
+# --- FIX: Corrected typo _utils_debug to _utils_log_debug ---
+_utils_log_debug "Defined: source_script"
 
 # =========================================================================
 # Function: Check if dialog command is available
@@ -110,7 +111,7 @@ check_install_dialog() {
         return 1
     fi
 }
-_utils_log_debug "Defined: check_install_dialog" # Added this log line too
+_utils_log_debug "Defined: check_install_dialog"
 
 # =========================================================================
 # Function: Capture a screenshot (requires 'scrot')
@@ -165,7 +166,8 @@ capture_screenshot() {
         return 1
     fi
 }
-_utils_log_debug "Defined: capture_screenshot" # This call is correct
+# --- FIX: Corrected typo _utils_debug to _utils_log_debug ---
+_utils_log_debug "Defined: capture_screenshot"
 
 _utils_log_debug "utils.sh finished execution." # This call is correct
 

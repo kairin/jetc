@@ -9,10 +9,17 @@ SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source utils.sh for logging fallbacks if needed, but ENV_FILE comes from env_setup
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_ENV/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
-# Source logging functions if available (might be sourced later by main script)
-# shellcheck disable=SC1091
-# source "$SCRIPT_DIR_ENV/env_setup.sh" 2>/dev/null || true # Ensure this line remains commented
 
+# --- Check if required functions/variables exist (assuming they are sourced by caller) ---
+if ! declare -f log_info > /dev/null || [[ -z "${ENV_FILE:-}" ]]; then
+    echo "CRITICAL ERROR (env_helpers.sh): log_info function or ENV_FILE variable not found. Ensure env_setup.sh/logging.sh are sourced by the caller." >&2
+    # Define minimal fallbacks
+    log_info() { echo "INFO (fallback): $1"; }
+    log_warning() { echo "WARNING (fallback): $1" >&2; }
+    log_error() { echo "ERROR (fallback): $1" >&2; }
+    log_success() { echo "SUCCESS (fallback): $1"; }
+    log_debug() { :; }
+fi
 
 # =========================================================================
 # Function: Load environment variables from .env file safely
@@ -128,44 +135,39 @@ update_env_variable() {
     log_debug "Backing up $ENV_FILE"
     cp "$ENV_FILE" "$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
 
-    local temp_file
-    temp_file=$(mktemp) || { log_error "Failed to create temp file for update."; return 1; }
-    trap 'rm -f "$temp_file"' RETURN
+    # --- FIX: Use '#' as sed delimiter ---
+    # Escape key and value for sed, preparing for '#' delimiter
+    local escaped_key; escaped_key=$(printf '%s\n' "$var_name" | sed -e 's/[\#&]/\&/g') # Escape # and &
+    local escaped_value; escaped_value=$(printf '%s\n' "$new_value" | sed -e 's/[\#&]/\&/g') # Escape # and &
 
-    local found=0
-    # Process the file line by line using ENV_FILE
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        # Check if the line starts with the variable name followed by '='
-        if [[ "$line" =~ ^\s*${var_name}\s*= ]]; then
-            log_debug "Replacing line for $var_name"
-            echo "${var_name}=${new_value}" >> "$temp_file" # Write updated line
-            found=1
-        else
-            echo "$line" >> "$temp_file" # Copy other lines as-is
+    # Check if key exists (commented or uncommented)
+    if grep -q -E "^[#[:space:]]*${escaped_key}=" "$ENV_FILE"; then
+        # Update existing key using '#' as delimiter
+        sed -i -E "s#^[#[:space:]]*(${escaped_key}=).*#\1${escaped_value}#" "$ENV_FILE"
+        local sed_status=$?
+        if [[ $sed_status -ne 0 ]]; then
+            log_error "Failed to update key '$var_name' in $ENV_FILE using sed (exit code $sed_status)."
+            return 1
         fi
-    done < "$ENV_FILE"
-
-    # If the variable was not found, append it to the end
-    if [[ $found -eq 0 ]]; then
-        # Use ENV_FILE
-        log_debug "Variable $var_name not found, appending to $ENV_FILE"
-        echo "" >> "$temp_file" # Ensure newline before appending
-        echo "# Added by script on $(date)" >> "$temp_file"
-        echo "${var_name}=${new_value}" >> "$temp_file"
+        log_debug " -> Updated existing key '$var_name'"
+    else
+        # Append new key if it doesn't exist
+        # Ensure newline before appending if file not empty
+        [[ -s "$ENV_FILE" ]] && echo "" >> "$ENV_FILE"
+        echo "${var_name}=${new_value}" >> "$ENV_FILE"
+        local append_status=$?
+         if [[ $append_status -ne 0 ]]; then
+            log_error "Failed to append key '$var_name' to $ENV_FILE (exit code $append_status)."
+            return 1
+        fi
+        log_debug " -> Added new key '$var_name'"
     fi
-
-    # Replace the original file with the updated temporary file using ENV_FILE
-    log_debug "Moving temp file to $ENV_FILE"
-    mv "$temp_file" "$ENV_FILE"
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to move temp file to $ENV_FILE"
-        # Attempt to restore backup? Consider adding logic here if needed.
-        return 1
-    fi
+    # --- END FIX ---
 
     log_debug "Successfully updated $var_name in $ENV_FILE"
     return 0
 }
+
 
 # =========================================================================
 # Function: Get AVAILABLE_IMAGES from .env as a bash array
@@ -262,4 +264,4 @@ update_default_run_options() {
 #
 # Description: Helper functions related to environment variable management.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-120000-ENVHELPERFIX # New UUID for this fix
+# COMMIT-TRACKING: UUID-20250426-110000-ENVHELPERFIX # New UUID for this fix

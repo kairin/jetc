@@ -11,21 +11,35 @@ set -euo pipefail
 # --- Dependencies ---
 SCRIPT_DIR_DOCKER="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 
+# --- FIX: REMOVED REDUNDANT SOURCE ---
 # Source ONLY env_setup.sh
-if [ -f "$SCRIPT_DIR_DOCKER/env_setup.sh" ]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR_DOCKER/env_setup.sh"
-else
-    echo "CRITICAL ERROR: env_setup.sh not found in docker_helpers.sh" >&2
-    # Define minimal functions
-    log_info() { echo "INFO: $1"; }
-    log_warning() { echo "WARNING: $1" >&2; }
-    log_error() { echo "ERROR: $1" >&2; }
-    log_success() { echo "SUCCESS: $1"; }
-    log_debug() { if [[ "${JETC_DEBUG}" == "true" ]]; then echo "[DEBUG] $1" >&2; fi; }
-    get_system_datetime() { date +%s; }
-    PLATFORM="linux/arm64"
+# if [ -f "$SCRIPT_DIR_DOCKER/env_setup.sh" ]; then
+#     # shellcheck disable=SC1091
+#     source "$SCRIPT_DIR_DOCKER/env_setup.sh"
+# else
+#     echo "CRITICAL ERROR: env_setup.sh not found in docker_helpers.sh" >&2
+#     # Define minimal functions
+#     log_info() { echo "INFO: $1"; }
+#     log_warning() { echo "WARNING: $1" >&2; }
+#     log_error() { echo "ERROR: $1" >&2; }
+#     log_success() { echo "SUCCESS: $1"; }
+#     log_debug() { if [[ "${JETC_DEBUG}" == "true" ]]; then echo "[DEBUG] $1" >&2; fi; }
+#     get_system_datetime() { date +%s; }
+#     PLATFORM="linux/arm64"
+# fi
+# --- END FIX ---
+
+# --- Check if required functions exist (assuming they are sourced by caller) ---
+if ! declare -f log_info > /dev/null; then
+    echo "CRITICAL ERROR (docker_helpers.sh): log_info function not found. Ensure env_setup.sh/logging.sh are sourced by the caller." >&2
+    # Define minimal fallbacks to allow script parsing but indicate error
+    log_info() { echo "INFO (fallback): $1"; }
+    log_warning() { echo "WARNING (fallback): $1" >&2; }
+    log_error() { echo "ERROR (fallback): $1" >&2; }
+    log_success() { echo "SUCCESS (fallback): $1"; }
+    log_debug() { :; } # No-op debug fallback
 fi
+
 
 # =========================================================================
 # Function: Pull a Docker image
@@ -55,6 +69,76 @@ verify_image_exists() {
         return 0
     else
         log_debug " -> Image '$image_tag' not found locally."
+        return 1
+    fi
+}
+
+# =========================================================================
+# Function: Generate an image tag based on components
+# Arguments: $1=username, $2=repo_prefix, $3=folder_name, $4=registry(optional)
+# Returns: Generated tag string to stdout
+# =========================================================================
+generate_image_tag() {
+    local username="$1"
+    local repo_prefix="$2"
+    local folder_name="$3"
+    local registry="${4:-}"
+    local registry_prefix=""
+    [[ -n "$registry" ]] && registry_prefix="${registry}/"
+    # Sanitize folder name for tag (e.g., replace slashes if it's a sub-stage)
+    local sanitized_folder_name="${folder_name//\//-}"
+    local tag="${registry_prefix}${username}/${repo_prefix}:${sanitized_folder_name}"
+    # Docker tags should be lowercase
+    echo "$tag" | tr '[:upper:]' '[:lower:]'
+}
+
+# =========================================================================
+# Function: Attempt interactive Docker login
+# Arguments: $1=registry (optional), $2=username (optional)
+# Returns: 0 on success or if login not needed/skipped, 1 on failure
+# =========================================================================
+docker_login_interactive() {
+    local registry="${1:-}" # Default to Docker Hub if empty
+    local username="${2:-}"
+    local login_target="${registry:-Docker Hub}" # For logging
+
+    log_info "Checking Docker login status for ${login_target}..."
+
+    # Check if already logged in (basic check, might not be foolproof for specific registries)
+    # This relies on docker info potentially showing logged-in registries, or config.json
+    # A more robust check might involve trying a credential helper or checking config.json directly
+    if docker info | grep -q "Username: ${username:-}" && [[ -z "$registry" || "$(docker info | grep "Registry: ${registry}")" ]]; then
+         log_info " -> Already logged in as ${username:-<default user>} to ${login_target}."
+         return 0
+    fi
+
+    log_warning "Not logged in or status unknown for ${login_target}."
+    # Ask user if they want to log in (use confirm_action if available)
+    if command -v confirm_action &> /dev/null; then
+        if ! confirm_action "Attempt Docker login to ${login_target} now?" true; then
+            log_warning "Skipping Docker login as requested by user."
+            return 1 # Indicate login was skipped/failed
+        fi
+    else
+        # Fallback text prompt
+        read -p "Attempt Docker login to ${login_target} now? [Y/n]: " confirm_login
+        if [[ "${confirm_login:-y}" != [Yy] ]]; then
+             log_warning "Skipping Docker login as requested by user."
+             return 1 # Indicate login was skipped/failed
+        fi
+    fi
+
+    # Attempt login
+    local login_cmd=("docker" "login")
+    [[ -n "$registry" ]] && login_cmd+=("$registry")
+    [[ -n "$username" ]] && login_cmd+=("--username" "$username")
+
+    log_info "Running: ${login_cmd[*]}"
+    if "${login_cmd[@]}"; then
+        log_success " -> Docker login successful for ${login_target}."
+        return 0
+    else
+        log_error " -> Docker login failed for ${login_target}."
         return 1
     fi
 }
@@ -234,7 +318,9 @@ generate_timestamped_tag() {
 
 # --- Main Execution (for testing) ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [ -f "$SCRIPT_DIR_DOCKER/logging.sh" ]; then source "$SCRIPT_DIR_DOCKER/logging.sh"; init_logging; fi
+    # Need to source dependencies if run directly
+    if [ -f "$SCRIPT_DIR_DOCKER/env_setup.sh" ]; then source "$SCRIPT_DIR_DOCKER/env_setup.sh"; else echo "ERROR: Cannot find env_setup.sh for test."; exit 1; fi
+    if [ -f "$SCRIPT_DIR_DOCKER/logging.sh" ]; then source "$SCRIPT_DIR_DOCKER/logging.sh"; init_logging; else echo "ERROR: Cannot find logging.sh for test."; exit 1; fi
     log_info "Running docker_helpers.sh directly for testing..."
     log_info "Docker helpers test finished."
     exit 0
@@ -250,4 +336,4 @@ fi
 #
 # Description: Helper functions for Docker operations (build, pull, etc.).
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-090000-DOCKERHELPERFIX # New UUID for this fix
+# COMMIT-TRACKING: UUID-20250426-110000-DOCKERHELPERFIX # New UUID for this fix
