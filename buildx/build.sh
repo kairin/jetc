@@ -1,8 +1,9 @@
 #!/bin/bash
 # Main build script for Jetson Container project
+# filepath: /media/kkk/Apps/jetc/buildx/build.sh
 
 # Strict mode
-set -euo pipefail # Re-enable -e
+set -euo pipefail
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -47,29 +48,15 @@ if ! command -v source_script &> /dev/null; then
     exit 1
 fi
 
-# Source env_update and interactive_ui before user_interaction to satisfy dependency checks
+# Source dependencies before the scripts that need them
 source_script "$SCRIPTS_DIR/env_update.sh" "Env Update Helpers"
 source_script "$SCRIPTS_DIR/interactive_ui.sh" "Interactive UI"
-
-log_debug "Current SCRIPT_DIR before sourcing buildx_setup: $SCRIPT_DIR"
-log_debug "Path to be sourced for Buildx Setup: $SCRIPTS_DIR/buildx_setup.sh"
-# Source buildx setup script
-source_script "$SCRIPTS_DIR/buildx_setup.sh" "Buildx Setup"
-# Source docker helpers script
-log_debug "Path to be sourced for Docker Helpers: $SCRIPTS_DIR/docker_helpers.sh"
 source_script "$SCRIPTS_DIR/docker_helpers.sh" "Docker Helpers"
-# Source user interaction script (handles dialog or basic prompts)
-log_debug "Path to be sourced for User Interaction: $SCRIPTS_DIR/user_interaction.sh"
+source_script "$SCRIPTS_DIR/buildx_setup.sh" "Buildx Setup"
 source_script "$SCRIPTS_DIR/user_interaction.sh" "User Interaction"
-# Source build order determination script
-log_debug "Path to be sourced for Build Order: $SCRIPTS_DIR/build_order.sh"
 source_script "$SCRIPTS_DIR/build_order.sh" "Build Order"
-# Source build stages execution script
-log_debug "Path to be sourced for Build Stages: $SCRIPTS_DIR/build_stages.sh"
 source_script "$SCRIPTS_DIR/build_stages.sh" "Build Stages"
-# Source post-build menu script
-log_debug "Path to be sourced for Post-Build Menu: $SCRIPTS_DIR/post_build_menu.sh"
-source_script "$SCRIPTS_DIR/post_build_menu.sh" "Post-Build Menu"
+# source_script "$SCRIPTS_DIR/post_build_menu.sh" "Post-Build Menu" # Deprecated, functionality in interactive_ui.sh
 
 # --- Main Build Logic ---
 log_info "Starting Jetson Container Build Process..."
@@ -77,41 +64,50 @@ log_info "Starting Jetson Container Build Process..."
 # Define the path for the preferences file
 PREFS_FILE="/tmp/build_prefs.sh"
 
-# Use handle_user_interaction instead of show_main_menu
+# 1. Get User Preferences via handle_user_interaction
 if handle_user_interaction; then
     log_success "User interaction completed successfully. Preferences exported."
 
-    # Source the preferences file created by show_main_menu to load SELECTED_* vars
+    # Preferences are now exported directly by handle_user_interaction.
+    # We can directly use $use_builder, $SELECTED_FOLDERS_LIST, etc.
+    # Sourcing PREFS_FILE again is redundant if handle_user_interaction exports them.
+    # However, keeping it for now in case other variables are set in PREFS_FILE.
     if [ -f "$PREFS_FILE" ]; then
-        log_info "Loading user preferences from $PREFS_FILE..."
+        log_debug "Sourcing preferences file $PREFS_FILE for any additional variables..."
         # shellcheck disable=SC1090
         source "$PREFS_FILE"
-        log_debug "User preferences loaded."
-        # Optional: Log loaded preferences for debugging
-        log_debug "SELECTED_BASE_IMAGE=${SELECTED_BASE_IMAGE:-<unset>}"
-        log_debug "SELECTED_USE_CACHE=${SELECTED_USE_CACHE:-<unset>}"
-        log_debug "SELECTED_SKIP_INTERMEDIATE=${SELECTED_SKIP_INTERMEDIATE:-<unset>}"
-        log_debug "SELECTED_USE_BUILDER=${SELECTED_USE_BUILDER:-<unset>}"
-        log_debug "SELECTED_FOLDERS_LIST=${SELECTED_FOLDERS_LIST:-<unset>}"
     else
-        log_error "Preferences file $PREFS_FILE not found after successful user interaction."
-        exit 1
+        # This shouldn't happen if handle_user_interaction succeeded
+        log_warning "Preferences file $PREFS_FILE not found after successful user interaction."
     fi
 
-    # 2. Setup Buildx (ensure builder exists and is used if SELECTED_USE_BUILDER is 'y')
-    # Check the SELECTED_USE_BUILDER variable loaded from prefs
+    # Log the final effective settings (using exported variables)
+    log_debug "Effective Build Settings:"
+    log_debug "  Base Image: ${SELECTED_BASE_IMAGE:-<unset>}"
+    log_debug "  Use Cache: ${use_cache:-<unset>}"
+    log_debug "  Use Squash: ${use_squash:-<unset>}"
+    log_debug "  Skip Push/Pull: ${skip_intermediate_push_pull:-<unset>}"
+    log_debug "  Use Builder: ${use_builder:-<unset>}"
+    log_debug "  Selected Folders List: ${SELECTED_FOLDERS_LIST:-<unset>}"
+    log_debug "  Docker User: ${DOCKER_USERNAME:-<unset>}"
+    log_debug "  Docker Repo Prefix: ${DOCKER_REPO_PREFIX:-<unset>}"
+    log_debug "  Docker Registry: ${DOCKER_REGISTRY:-<unset>}"
+
+
+    # 2. Setup Buildx (if selected)
     if [[ "${use_builder:-y}" == "y" ]]; then
+        log_info "Setting up Docker Buildx builder..."
         if ! setup_buildx; then
             log_error "Buildx setup failed. Aborting build."
             exit 1
         fi
+        log_info "Buildx setup complete."
     else
         log_info "Skipping Buildx setup as user selected not to use the builder."
     fi
 
-
-    # 3. Determine Build Order based on user selections
-    # Pass the build directory and the selected folders list
+    # 3. Determine Build Order
+    log_info "Determining build order..."
     BUILD_DIR="$SCRIPT_DIR/build" # Define build directory path
     if ! determine_build_order "$BUILD_DIR" "${SELECTED_FOLDERS_LIST:-}"; then
         log_error "Failed to determine build order. Aborting."
@@ -123,14 +119,19 @@ if handle_user_interaction; then
         log_warning "No build stages selected or found to build. Exiting."
         exit 0
     fi
+    log_info "Build order determined: ${ORDERED_FOLDERS[*]}"
 
     # 4. Execute Build Stages
-    # build_selected_stages uses global ORDERED_FOLDERS and SELECTED_* variables
+    log_info "Starting build stages execution..."
+    # build_selected_stages uses global ORDERED_FOLDERS and exported preference variables
     if build_selected_stages; then
         log_success "Build process completed successfully."
         # 5. Show Post-Build Menu (optional actions)
         if command -v show_post_build_menu &> /dev/null; then
+            log_info "Displaying post-build menu..."
             show_post_build_menu "${LAST_SUCCESSFUL_TAG:-}"
+        else
+             log_warning "Post-build menu function (show_post_build_menu) not found."
         fi
     else
         log_error "Build process failed."

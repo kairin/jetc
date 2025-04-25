@@ -1,5 +1,5 @@
 #!/bin/bash
-# filepath: /workspaces/jetc/buildx/scripts/utils.sh
+# filepath: /media/kkk/Apps/jetc/buildx/scripts/utils.sh
 
 # =========================================================================
 # Utility Functions Script
@@ -66,32 +66,31 @@ source_script() {
     local log_func_prefix="_utils_" # Default to internal fallback
     local main_log_prefix=""
 
-    # Check if main logging functions exist
+    # Check if main logging functions exist and use them if available
     if command -v log_debug &> /dev/null && command -v log_error &> /dev/null; then
-        log_func_prefix="" # Use main logging functions
-        main_log_prefix=""
+        log_func_prefix="" # Use main logging functions (e.g., log_debug)
+        main_log_prefix="log_" # Prefix for calling main loggers
     fi
 
-    "${log_func_prefix}log_debug" "Attempting to source $script_name: $script_path"
+    # Use the determined logging function (either main or fallback)
+    "${main_log_prefix}${log_func_prefix}log_debug" "Attempting to source $script_name: $script_path"
 
     if [[ -f "$script_path" ]]; then
-        "${log_func_prefix}log_debug" "File check PASSED for path: '$script_path'" # DEBUG ADD
         # shellcheck disable=SC1090
         source "$script_path"
         local source_status=$?
         if [[ $source_status -ne 0 ]]; then
-            # Fix: Always call log_error, not log_log_error
-            log_error "Error sourcing $script_name from $script_path (exit code $source_status)."
+            # Use the determined logging function for error
+            "${main_log_prefix}${log_func_prefix}log_error" "Error sourcing $script_name from $script_path (exit code $source_status)."
             return 1
         else
-             "${log_func_prefix}log_debug" "$script_name sourced successfully."
-             if [[ -n "$main_log_prefix" ]]; then log_debug "$script_name sourced successfully."; fi
+             # Use the determined logging function for debug
+             "${main_log_prefix}${log_func_prefix}log_debug" "$script_name sourced successfully."
              return 0
         fi
     else
-        "${log_func_prefix}log_debug" "File check FAILED for path: '$script_path'" # DEBUG ADD
-        # Fix: Always call log_error, not log_log_error
-        log_error "$script_name not found at path: '$script_path'"
+        # Use the determined logging function for error
+        "${main_log_prefix}${log_func_prefix}log_error" "$script_name not found at path: '$script_path'"
         return 1
     fi
 }
@@ -115,15 +114,13 @@ capture_screenshot() {
     fi
 
     if [ -z "$base_filename" ]; then
-        "${log_func_prefix}log_warning" "capture_screenshot: No base filename provided."
-        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_warning" "capture_screenshot: No base filename provided."; fi
+        "${main_log_prefix}${log_func_prefix}log_warning" "capture_screenshot: No base filename provided."
         return 1
     fi
 
     # Check if scrot is installed
     if ! command -v scrot &> /dev/null; then
-        "${log_func_prefix}log_warning" "scrot command not found. Cannot capture screenshot. Please install scrot (sudo apt-get install scrot)."
-        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_warning" "scrot command not found. Cannot capture screenshot. Please install scrot (sudo apt-get install scrot)."; fi
+        "${main_log_prefix}${log_func_prefix}log_warning" "scrot command not found. Cannot capture screenshot. Please install scrot (sudo apt-get install scrot)."
         return 1
     fi
 
@@ -132,8 +129,7 @@ capture_screenshot() {
     if [ -n "${LOG_DIR:-}" ] && [ -d "$LOG_DIR" ]; then
         effective_log_dir="$LOG_DIR"
     else
-        "${log_func_prefix}log_warning" "LOG_DIR ('${LOG_DIR:-}') not set or not a directory. Saving screenshot to /tmp."
-         if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_warning" "LOG_DIR ('${LOG_DIR:-}') not set or not a directory. Saving screenshot to /tmp."; fi
+        "${main_log_prefix}${log_func_prefix}log_warning" "LOG_DIR ('${LOG_DIR:-}') not set or not a directory. Saving screenshot to /tmp."
     fi
 
     local timestamp
@@ -141,18 +137,15 @@ capture_screenshot() {
     local screenshot_filename="${base_filename}_${timestamp}.png"
     local screenshot_path="$effective_log_dir/$screenshot_filename"
 
-    "${log_func_prefix}log_debug" "Attempting to capture screenshot to: $screenshot_path"
-    if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_debug" "Attempting to capture screenshot to: $screenshot_path"; fi
+    "${main_log_prefix}${log_func_prefix}log_debug" "Attempting to capture screenshot to: $screenshot_path"
 
     # Capture the screenshot using scrot
-    sleep 0.5 # Small delay
+    sleep 0.5 # Small delay before capture might help
     if scrot "$screenshot_path"; then
-        "${log_func_prefix}log_debug" "Screenshot captured successfully: $screenshot_filename"
-        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_debug" "Screenshot captured successfully: $screenshot_filename"; fi
+        "${main_log_prefix}${log_func_prefix}log_debug" "Screenshot captured successfully: $screenshot_filename"
         return 0
     else
-        "${log_func_prefix}log_error" "Failed to capture screenshot using scrot."
-        if [[ -n "$main_log_prefix" ]]; then "${main_log_prefix}log_error" "Failed to capture screenshot using scrot."; fi
+        "${main_log_prefix}${log_func_prefix}log_error" "Failed to capture screenshot using scrot."
         return 1
     fi
 }

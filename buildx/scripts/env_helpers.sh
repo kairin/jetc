@@ -1,5 +1,5 @@
 #!/bin/bash
-# filepath: /workspaces/jetc/buildx/scripts/env_helpers.sh
+# filepath: /media/kkk/Apps/jetc/buildx/scripts/env_helpers.sh
 
 # Canonical .env helpers for Jetson Container build system
 
@@ -26,11 +26,9 @@ load_env_variables() {
     unset DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE AVAILABLE_IMAGES
     unset DEFAULT_IMAGE_NAME DEFAULT_ENABLE_X11 DEFAULT_ENABLE_GPU DEFAULT_MOUNT_WORKSPACE DEFAULT_USER_ROOT
 
-    # --- MODIFICATION START ---
-    # Use ENV_FILE instead of ENV_CANONICAL
+    # Use ENV_FILE defined and exported by env_setup.sh
     if [ -f "$ENV_FILE" ]; then
         log_debug "Loading environment variables from $ENV_FILE"
-    # --- MODIFICATION END ---
         # Read the file line by line, exporting valid assignments
         while IFS='=' read -r key value; do
             # Trim leading/trailing whitespace from key and value
@@ -48,13 +46,11 @@ load_env_variables() {
             else
                  log_debug "Skipped invalid key: $key"
             fi
-        # --- MODIFICATION START ---
-        # Use ENV_FILE instead of ENV_CANONICAL
+        # Use ENV_FILE
         done < <(grep -vE '^\s*#' "$ENV_FILE" | grep '=') # Filter comments/blanks, ensure '=' exists
     else
         log_warning "Environment file $ENV_FILE not found." # Use log_warning
     fi
-    # --- MODIFICATION END ---
 
     # Ensure required/expected variables are exported, setting defaults if they weren't loaded
     log_debug "Setting defaults for potentially missing env vars."
@@ -86,17 +82,15 @@ get_env_variable() {
         echo ""
         return
     fi
-    # --- MODIFICATION START ---
-    # Use ENV_FILE instead of ENV_CANONICAL
+    # Use ENV_FILE
     if [ -f "$ENV_FILE" ]; then
         # Grep for the exact variable name at the beginning of a line, followed by '='
         # Use head -n 1 in case of duplicates (shouldn't happen in clean .env)
         value=$(grep -E "^\s*${var_name}\s*=" "$ENV_FILE" | head -n 1 | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         log_debug "Found value: '$value'"
     else
-        log_debug ".env file not found."
+        log_debug ".env file ($ENV_FILE) not found."
     fi
-    # --- MODIFICATION END ---
     echo "$value"
 }
 
@@ -110,22 +104,21 @@ update_env_variable() {
     local new_value="$2"
 
     if [[ -z "$var_name" ]]; then
-        log_error "update_env_variable called with empty variable name." # Use log_error
+        log_error "update_env_variable called with empty variable name."
         return 1
     fi
     if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        log_error "update_env_variable called with invalid variable name: $var_name" # Use log_error
+        log_error "update_env_variable called with invalid variable name: $var_name"
         return 1
     fi
 
-    # --- MODIFICATION START ---
-    # Use ENV_FILE instead of ENV_CANONICAL
+    # Use ENV_FILE
     log_debug "Updating $var_name to '$new_value' in $ENV_FILE"
 
     # Ensure the .env file exists, create if not
     if [ ! -f "$ENV_FILE" ]; then
         log_debug "Creating $ENV_FILE as it does not exist."
-        touch "$ENV_FILE" || { log_error "Failed to create $ENV_FILE"; return 1; } # Use log_error
+        touch "$ENV_FILE" || { log_error "Failed to create $ENV_FILE"; return 1; }
         # Add header for new file
         echo "# Environment variables for Jetson Container build/run system" > "$ENV_FILE"
         echo "" >> "$ENV_FILE"
@@ -134,16 +127,13 @@ update_env_variable() {
     # Backup .env before making changes
     log_debug "Backing up $ENV_FILE"
     cp "$ENV_FILE" "$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
-    # --- MODIFICATION END ---
 
     local temp_file
-    temp_file=$(mktemp) || { log_error "Failed to create temp file for update."; return 1; } # Use log_error
+    temp_file=$(mktemp) || { log_error "Failed to create temp file for update."; return 1; }
     trap 'rm -f "$temp_file"' RETURN
 
     local found=0
-    # Process the file line by line
-    # --- MODIFICATION START ---
-    # Use ENV_FILE instead of ENV_CANONICAL
+    # Process the file line by line using ENV_FILE
     while IFS= read -r line || [[ -n "$line" ]]; do
         # Check if the line starts with the variable name followed by '='
         if [[ "$line" =~ ^\s*${var_name}\s*= ]]; then
@@ -154,32 +144,26 @@ update_env_variable() {
             echo "$line" >> "$temp_file" # Copy other lines as-is
         fi
     done < "$ENV_FILE"
-    # --- MODIFICATION END ---
 
     # If the variable was not found, append it to the end
     if [[ $found -eq 0 ]]; then
-        # --- MODIFICATION START ---
-        # Use ENV_FILE instead of ENV_CANONICAL
+        # Use ENV_FILE
         log_debug "Variable $var_name not found, appending to $ENV_FILE"
-        # --- MODIFICATION END ---
         echo "" >> "$temp_file" # Ensure newline before appending
         echo "# Added by script on $(date)" >> "$temp_file"
         echo "${var_name}=${new_value}" >> "$temp_file"
     fi
 
-    # Replace the original file with the updated temporary file
-    # --- MODIFICATION START ---
-    # Use ENV_FILE instead of ENV_CANONICAL
+    # Replace the original file with the updated temporary file using ENV_FILE
     log_debug "Moving temp file to $ENV_FILE"
     mv "$temp_file" "$ENV_FILE"
     if [[ $? -ne 0 ]]; then
-        log_error "Failed to move temp file to $ENV_FILE" # Use log_error
-        # Attempt to restore backup?
+        log_error "Failed to move temp file to $ENV_FILE"
+        # Attempt to restore backup? Consider adding logic here if needed.
         return 1
     fi
 
     log_debug "Successfully updated $var_name in $ENV_FILE"
-    # --- MODIFICATION END ---
     return 0
 }
 
@@ -263,7 +247,7 @@ update_default_run_options() {
         log_debug "Successfully updated default run options in .env"
         return 0
     else
-        log_error "Error updating one or more default run options in .env" # Use log_error
+        log_error "Error updating one or more default run options in .env"
         return 1
     fi
 }
