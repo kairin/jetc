@@ -17,8 +17,8 @@ SCRIPT_DIR_UI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Check if required functions/variables exist as a safety measure.
 # --- MODIFICATION START ---
 # Check for get_build_preferences instead of show_main_menu
-if ! declare -f log_info > /dev/null || ! declare -f get_build_preferences > /dev/null || ! declare -f update_env_var > /dev/null || [[ -z "${AVAILABLE_IMAGES:-}" ]]; then
-     echo "CRITICAL ERROR: Required functions/variables (log_info, get_build_preferences, update_env_var, AVAILABLE_IMAGES) not found in user_interaction.sh. Ensure main script sources dependencies." >&2
+if ! declare -f log_info > /dev/null || ! declare -f get_build_preferences > /dev/null || ! declare -f update_env_var > /dev/null; then
+     echo "CRITICAL ERROR: Required functions/variables (log_info, get_build_preferences, update_env_var) not found in user_interaction.sh. Ensure main script sources dependencies." >&2
      exit 1
 fi
 # --- MODIFICATION END ---
