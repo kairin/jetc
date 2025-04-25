@@ -47,10 +47,7 @@ validate_variable() {
         return 1
     else
         # Use internal fallback debug log
-        # --- FIX START ---
-        # Corrected the function call from _utils_debug to _utils_log_debug
         _utils_log_debug "Variable '$var_name' validated successfully."
-        # --- FIX END ---
         # Also try the main logger if it exists
         if command -v log_debug &> /dev/null; then log_debug "Variable '$var_name' validated successfully."; fi
         return 0
@@ -88,10 +85,7 @@ source_script() {
             return 1
         else
              # Use the determined logging function for debug
-             # --- FIX START ---
-             # Corrected the function call from _utils_debug to _utils_log_debug
              "${main_log_prefix}${log_func_prefix}debug" "$script_name sourced successfully."
-             # --- FIX END ---
              return 0
         fi
     else

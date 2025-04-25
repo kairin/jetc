@@ -46,28 +46,17 @@ LOGGING_PATH="$SCRIPT_DIR/logging.sh"
 if [ -f "$LOGGING_PATH" ]; then
     # Use source_script (defined in utils.sh) to safely source logging.sh
     if source_script "$LOGGING_PATH" "Logging System"; then
-        # Attempt to initialize logging if sourcing succeeded
-        if command -v init_logging &> /dev/null; then
-            # Set LOG_DIR default *before* calling init_logging
+        # Only initialize logging if not already done
+        if command -v init_logging &> /dev/null && [ -z "${LOGGING_INITIALIZED:-}" ]; then
             export LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/../logs}"
-            # Validate LOG_DIR before calling init_logging
             if validate_variable "LOG_DIR (pre-init)" "$LOG_DIR" "LOG_DIR is required for logging initialization."; then
                 init_logging # Call the initialization function from logging.sh
+                export LOGGING_INITIALIZED=1
                 log_info "--- Initializing Environment Setup (using main logger) ---"
             else
-                # If LOG_DIR validation fails here, logging cannot be initialized.
                 echo "CRITICAL ERROR: LOG_DIR validation failed before logging could be initialized." >&2
                 exit 1
             fi
-        else
-            _utils_log_warning "init_logging function not found after sourcing logging.sh. Logging might be incomplete." # Use fallback logger
-            # Define main log functions as fallbacks if they weren't defined by failed source
-            if ! command -v log_info &> /dev/null; then log_info() { _utils_log_info "$@"; }; fi
-            if ! command -v log_warning &> /dev/null; then log_warning() { _utils_log_warning "$@"; }; fi
-            if ! command -v log_error &> /dev/null; then log_error() { _utils_log_error "$@"; }; fi
-            if ! command -v log_success &> /dev/null; then log_success() { echo "SUCCESS (env_setup fallback): $1"; }; fi
-            if ! command -v log_debug &> /dev/null; then log_debug() { _utils_log_debug "$@"; }; fi
-            log_info "--- Initializing Environment Setup (using fallback logger) ---" # Use the (potentially fallback) log_info
         fi
     else
         # Sourcing logging.sh failed, rely on utils fallbacks

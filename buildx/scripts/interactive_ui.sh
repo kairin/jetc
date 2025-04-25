@@ -658,6 +658,7 @@ get_run_preferences() {
   fi
   log_debug "Dialog available. Proceeding with dialog UI for run preferences."
 
+  # Add this initialization before any use of $temp_file
   local temp_file temp_menu_file temp_custom_file
   temp_file=$(mktemp) || { log_error "Failed to create temp file for run options"; return 1; }
   temp_menu_file=$(mktemp) || { log_error "Failed to create temp file for run menu"; rm -f "$temp_file"; return 1; }
