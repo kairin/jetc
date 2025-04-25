@@ -1,11 +1,12 @@
 #!/bin/bash
+# filepath: /workspaces/jetc/buildx/scripts/env_helpers.sh
 
 # Canonical .env helpers for Jetson Container build system
 
 SCRIPT_DIR_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# ENV_CANONICAL is defined in utils.sh
+# ENV_FILE is defined and exported by env_setup.sh
 
-# Source utils.sh to get ENV_CANONICAL and other utilities
+# Source utils.sh for logging fallbacks if needed, but ENV_FILE comes from env_setup
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR_ENV/utils.sh" || { echo "Error: utils.sh not found."; exit 1; }
 # Source logging functions if available (might be sourced later by main script)
@@ -25,8 +26,11 @@ load_env_variables() {
     unset DOCKER_USERNAME DOCKER_REGISTRY DOCKER_REPO_PREFIX DEFAULT_BASE_IMAGE AVAILABLE_IMAGES
     unset DEFAULT_IMAGE_NAME DEFAULT_ENABLE_X11 DEFAULT_ENABLE_GPU DEFAULT_MOUNT_WORKSPACE DEFAULT_USER_ROOT
 
-    if [ -f "$ENV_CANONICAL" ]; then
-        log_debug "Loading environment variables from $ENV_CANONICAL"
+    # --- MODIFICATION START ---
+    # Use ENV_FILE instead of ENV_CANONICAL
+    if [ -f "$ENV_FILE" ]; then
+        log_debug "Loading environment variables from $ENV_FILE"
+    # --- MODIFICATION END ---
         # Read the file line by line, exporting valid assignments
         while IFS='=' read -r key value; do
             # Trim leading/trailing whitespace from key and value
@@ -44,10 +48,13 @@ load_env_variables() {
             else
                  log_debug "Skipped invalid key: $key"
             fi
-        done < <(grep -vE '^\s*#' "$ENV_CANONICAL" | grep '=') # Filter comments/blanks, ensure '=' exists
+        # --- MODIFICATION START ---
+        # Use ENV_FILE instead of ENV_CANONICAL
+        done < <(grep -vE '^\s*#' "$ENV_FILE" | grep '=') # Filter comments/blanks, ensure '=' exists
     else
-        log_warning "Environment file $ENV_CANONICAL not found." # Use log_warning
+        log_warning "Environment file $ENV_FILE not found." # Use log_warning
     fi
+    # --- MODIFICATION END ---
 
     # Ensure required/expected variables are exported, setting defaults if they weren't loaded
     log_debug "Setting defaults for potentially missing env vars."
@@ -79,14 +86,17 @@ get_env_variable() {
         echo ""
         return
     fi
-    if [ -f "$ENV_CANONICAL" ]; then
+    # --- MODIFICATION START ---
+    # Use ENV_FILE instead of ENV_CANONICAL
+    if [ -f "$ENV_FILE" ]; then
         # Grep for the exact variable name at the beginning of a line, followed by '='
         # Use head -n 1 in case of duplicates (shouldn't happen in clean .env)
-        value=$(grep -E "^\s*${var_name}\s*=" "$ENV_CANONICAL" | head -n 1 | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        value=$(grep -E "^\s*${var_name}\s*=" "$ENV_FILE" | head -n 1 | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         log_debug "Found value: '$value'"
     else
         log_debug ".env file not found."
     fi
+    # --- MODIFICATION END ---
     echo "$value"
 }
 
@@ -108,20 +118,23 @@ update_env_variable() {
         return 1
     fi
 
-    log_debug "Updating $var_name to '$new_value' in $ENV_CANONICAL"
+    # --- MODIFICATION START ---
+    # Use ENV_FILE instead of ENV_CANONICAL
+    log_debug "Updating $var_name to '$new_value' in $ENV_FILE"
 
     # Ensure the .env file exists, create if not
-    if [ ! -f "$ENV_CANONICAL" ]; then
-        log_debug "Creating $ENV_CANONICAL as it does not exist."
-        touch "$ENV_CANONICAL" || { log_error "Failed to create $ENV_CANONICAL"; return 1; } # Use log_error
+    if [ ! -f "$ENV_FILE" ]; then
+        log_debug "Creating $ENV_FILE as it does not exist."
+        touch "$ENV_FILE" || { log_error "Failed to create $ENV_FILE"; return 1; } # Use log_error
         # Add header for new file
-        echo "# Environment variables for Jetson Container build/run system" > "$ENV_CANONICAL"
-        echo "" >> "$ENV_CANONICAL"
+        echo "# Environment variables for Jetson Container build/run system" > "$ENV_FILE"
+        echo "" >> "$ENV_FILE"
     fi
 
     # Backup .env before making changes
-    log_debug "Backing up $ENV_CANONICAL"
-    cp "$ENV_CANONICAL" "$ENV_CANONICAL.bak.$(date +%Y%m%d-%H%M%S)"
+    log_debug "Backing up $ENV_FILE"
+    cp "$ENV_FILE" "$ENV_FILE.bak.$(date +%Y%m%d-%H%M%S)"
+    # --- MODIFICATION END ---
 
     local temp_file
     temp_file=$(mktemp) || { log_error "Failed to create temp file for update."; return 1; } # Use log_error
@@ -129,6 +142,8 @@ update_env_variable() {
 
     local found=0
     # Process the file line by line
+    # --- MODIFICATION START ---
+    # Use ENV_FILE instead of ENV_CANONICAL
     while IFS= read -r line || [[ -n "$line" ]]; do
         # Check if the line starts with the variable name followed by '='
         if [[ "$line" =~ ^\s*${var_name}\s*= ]]; then
@@ -138,26 +153,33 @@ update_env_variable() {
         else
             echo "$line" >> "$temp_file" # Copy other lines as-is
         fi
-    done < "$ENV_CANONICAL"
+    done < "$ENV_FILE"
+    # --- MODIFICATION END ---
 
     # If the variable was not found, append it to the end
     if [[ $found -eq 0 ]]; then
-        log_debug "Variable $var_name not found, appending to $ENV_CANONICAL"
+        # --- MODIFICATION START ---
+        # Use ENV_FILE instead of ENV_CANONICAL
+        log_debug "Variable $var_name not found, appending to $ENV_FILE"
+        # --- MODIFICATION END ---
         echo "" >> "$temp_file" # Ensure newline before appending
         echo "# Added by script on $(date)" >> "$temp_file"
         echo "${var_name}=${new_value}" >> "$temp_file"
     fi
 
     # Replace the original file with the updated temporary file
-    log_debug "Moving temp file to $ENV_CANONICAL"
-    mv "$temp_file" "$ENV_CANONICAL"
+    # --- MODIFICATION START ---
+    # Use ENV_FILE instead of ENV_CANONICAL
+    log_debug "Moving temp file to $ENV_FILE"
+    mv "$temp_file" "$ENV_FILE"
     if [[ $? -ne 0 ]]; then
-        log_error "Failed to move temp file to $ENV_CANONICAL" # Use log_error
+        log_error "Failed to move temp file to $ENV_FILE" # Use log_error
         # Attempt to restore backup?
         return 1
     fi
 
-    log_debug "Successfully updated $var_name in $ENV_CANONICAL"
+    log_debug "Successfully updated $var_name in $ENV_FILE"
+    # --- MODIFICATION END ---
     return 0
 }
 
@@ -256,4 +278,4 @@ update_default_run_options() {
 #
 # Description: Helper functions related to environment variable management.
 # Author: Mr K / GitHub Copilot
-# COMMIT-TRACKING: UUID-20250425-080000-42595D
+# COMMIT-TRACKING: UUID-20250425-120000-ENVHELPERFIX # New UUID for this fix

@@ -1,0 +1,46 @@
+2025-04-25 12:00:08 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:08 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:08 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:08 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:08 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:08 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:08 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:08 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:08 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:08 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:08 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:08 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:09 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:09 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:09 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:09 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:09 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:09 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:09 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:09 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:09 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:09 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:09 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:09 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:09 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:09 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:10 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:10 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:10 - [INFO]: Logging initialized. Main log: /media/kkk/Apps/jetc/buildx/logs/build-2025-04-25_12-00-08_UTC.log, Error log: /media/kkk/Apps/jetc/buildx/logs/errors-2025-04-25_12-00-08_UTC.log
+2025-04-25 12:00:10 - [INFO]: --- Initializing Environment Setup (using main logger) ---
+2025-04-25 12:00:10 - [INFO]: Detected platform: linux/arm64
+2025-04-25 12:00:10 - [INFO]: --- Environment Setup Complete ---
+2025-04-25 12:00:10 - [INFO]: Starting Jetson Container Build Process...
+2025-04-25 12:00:10 - [INFO]: --- Starting User Interaction ---
