@@ -1,3 +1,18 @@
+# COMMIT-TRACKING: UUID-20240731-100500-bazel-fix
+# Description: Install build-essential instead of g++ to potentially resolve dependency issues.
+# Author: GitHub Copilot
+# Base image: jetc-base:latest
+# Build args: BASE_IMAGE=jetc-base:latest
+# Test: Embedded test script.
+
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 02-bazel/            <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 # =========================================================================
 # IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
 # All builds MUST use Docker buildx to ensure consistent
@@ -10,25 +25,36 @@
 # depends: [build-essential]
 # test: test.sh
 #---
-ARG BASE_IMAGE=kairin/001:01-build-essential
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE=jetc-base:latest
+ARG TARGETPLATFORM=linux/arm64
 
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
-# https://github.com/bazelbuild/bazelisk
-RUN BAZELISK_RELEASE=$(wget -qO- https://api.github.com/repos/bazelbuild/bazelisk/releases/latest | grep -Po '"tag_name": "\K.*?(?=")') && \
-    BAZELISK_URL="https://github.com/bazelbuild/bazelisk/releases/download/$BAZELISK_RELEASE/bazelisk-linux-arm64" && \
-    echo "BAZELISK_RELEASE=$BAZELISK_RELEASE" && echo "BAZELISK_URL=$BAZELISK_URL" && \
-    wget --quiet --show-progress --progress=bar:force:noscroll --no-check-certificate $BAZELISK_URL -O /usr/local/bin/bazel && \
-    chmod +x /usr/local/bin/bazel
+ARG BAZEL_VERSION="7.2.1"
+ARG BAZEL_SHA256="511a7f6a4a8a3f3d7792a426c0b7581a141a5137444e11311851d7841141d055"
 
-# have bazelisk download latest bazel
-RUN bazel --version
+# Install Bazel
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        unzip \
+        zip \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fSL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-$(dpkg --print-architecture).sh -o bazel-installer.sh \
+    && echo "${BAZEL_SHA256}  bazel-installer.sh" | sha256sum -c - \
+    && bash bazel-installer.sh \
+    && rm bazel-installer.sh \
+    && echo "check_cmd bazel --version" >> /opt/list_app_checks.sh
 
-# from source method
-#ARG BAZEL_VERSION
+# Test Bazel installation by embedding test.sh logic
+RUN <<'EOF' > /tmp/test_bazel.sh
+#!/usr/bin/env bash
+set -e
+echo "testing bazel..."
+bazel --version
+echo "bazel OK"
+EOF
+RUN bash /tmp/test_bazel.sh && rm /tmp/test_bazel.sh
 
-#RUN mkdir bazel && \
-#    cd bazel && \
-#    curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-dist.zip && \
-#    unzip bazel-$BAZEL_VERSION-dist.zip && \
-#    bash ./compile.sh
+WORKDIR /

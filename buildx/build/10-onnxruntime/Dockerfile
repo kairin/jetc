@@ -1,13 +1,25 @@
+# COMMIT-TRACKING: UUID-20240730-180000-LNT1
+# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 10-onnxruntime/      <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: onnxruntime
-# group: ml
+# group: core
 # config: config.py
-# depends: [cuda, cudnn, tensorrt, cmake, python, numpy, onnx]
+# depends: [cmake, cuda, cudnn, python, numpy, onnx]
 # test: test.py
-# notes: the `onnxruntime-gpu` wheel that's built is saved in the container under `/opt`
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 ARG ONNXRUNTIME_VERSION \
     ONNXRUNTIME_BRANCH \

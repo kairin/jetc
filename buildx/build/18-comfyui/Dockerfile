@@ -1,3 +1,15 @@
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 18-comfyui/          <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 # =========================================================================
 # IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
 # All builds MUST use Docker buildx to ensure consistent
@@ -7,12 +19,16 @@
 #---
 # name: comfyui
 # group: diffusion
-# depends: [pytorch, torchvision, torchaudio, opencv, bitsandbytes, transformers, xformers, torchao, diffusers, huggingface_hub]
-# requires: '>=35.0.0'
+# depends: [pytorch, torchvision, cuda, cudnn, tensorrt, onnxruntime, opencv, cmake, python]
+# requires: '>=35.2.1'
+# test: test.sh
 # docs: docs.md
 #---
-ARG BASE_IMAGE=kairin/001:17-stable-diffusion-webui
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=linux/arm64 ${BASE_IMAGE}
+
+ARG COMFYUI_REPO=comfyanonymous/ComfyUI
 
 # Set environment variables for better reproducibility
 ENV COMFYUI_ROOT=/opt/ComfyUI

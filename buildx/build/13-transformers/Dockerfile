@@ -13,8 +13,9 @@
 # docs: docs.md
 # notes: for quantization support in Transformers, use the bitsandbytes, AutoGPTQ, or AutoAWQ containers.
 #---
-ARG BASE_IMAGE=kairin/001:12-huggingface_hub
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 # Set default values for build arguments
 ARG TRANSFORMERS_PACKAGE=transformers

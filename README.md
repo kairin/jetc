@@ -1,8 +1,34 @@
+<!--
+# COMMIT-TRACKING: UUID-20250422-083100-RDME
+# Description: Updated README to reflect .env usage for AVAILABLE_IMAGES.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- THIS FILE
+# ├── buildx/                    <- Build system and scripts
+# │   ├── build/                 <- Build stages and Dockerfiles
+# │   ├── build.sh               <- Main build orchestrator
+# │   ├── jetcrun.sh             <- Container run utility
+# │   └── scripts/               <- Modular build scripts
+# ├── .github/                   <- Copilot and git integration
+# │   └── copilot-instructions.md<- Coding standards and commit tracking
+# └── ...                        <- Other project files
+-->
 # JETC: Jetson Containers for Targeted Use Cases
+
+> **IMPORTANT ACKNOWLEDGMENT**: This project is based on the work from [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The primary contribution here is an implementation focused on utilizing [Docker](https://www.docker.com/)'s [docker buildx build](https://docs.docker.com/build/builders/#difference-between-docker-build-and-docker-buildx-build) functionality for streamlined container building on Jetson devices.
+>
+> All credit for the original container implementations goes to the [dusty-nv and his team](https://github.com/dusty-nv/jetson-containers/graphs/contributors).
 
 This repository provides ready-to-use Docker containers for NVIDIA Jetson devices, making it easy to run advanced AI applications like Stable Diffusion on your Jetson hardware.
 
+![Screenshot from 2025-04-20 14-54-05](https://github.com/user-attachments/assets/bf61e6ab-12f0-45f3-860f-e65ec646871a)
+
+
 ![Jetson Containers](https://img.shields.io/badge/NVIDIA-Jetson-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
+
+---
 
 ## **What Can You Do With This Repo?**
 
@@ -12,6 +38,14 @@ With JETC, you can:
 - **Use web interfaces** like Stable Diffusion WebUI and ComfyUI for creating AI art
 - **Build optimized containers** with all dependencies pre-configured
 - **Save hours of setup time** by avoiding manual installation of complex AI frameworks
+- **Interactively build and run containers** using user-friendly scripts
+- **Track and verify built images** with robust .env management and verification tools
+- **Easily select and launch containers** with runtime options and persistent defaults
+- **Access detailed logs and troubleshooting guides** for every build step
+
+Planned [interface for build.sh](https://github.com/kairin/jetc/blob/main/proposed-app-build-sh.md), [interface for jetcrun.sh](https://github.com/kairin/jetc/blob/main/proposed-app-jetcrun-sh.md)
+
+---
 
 ## **Quick Start Guide**
 
@@ -23,21 +57,58 @@ If you're new to this project, here's how to get started:
    cd jetc/buildx
    ```
 
-2. **Set up your Docker username**
+2. **Run the pre-run check script** (optional but recommended)
    ```bash
-   echo "DOCKER_USERNAME=your-dockerhub-username" > .env
+   ./scripts/pre-run.sh
+   ```
+   This script checks for prerequisites like Docker, buildx, and the `dialog` package (used for interactive menus). It *does not* create an `.env` file anymore.
+
+3. **(Optional) Create `.env` for Defaults**
+   You can optionally create a `buildx/.env` file to provide default values for Docker details and runtime options. The scripts will always prompt you to confirm or edit these. The `.env` file is also used to store information about successfully built images.
+   ```bash
+   # Example buildx/.env content:
+   # DOCKER_REGISTRY=myregistry.example.com # Optional, leave empty for Docker Hub
+   DOCKER_USERNAME=your-dockerhub-username
+   DOCKER_REPO_PREFIX=001
+   DEFAULT_BASE_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3 # Example, updated by build.sh
+   
+   # --- Automatically managed by scripts ---
+   # List of successfully built images (semicolon-separated)
+   AVAILABLE_IMAGES=your-user/001:01-stage:tag;your-user/001:latest-timestamp-tag
+   # Last used settings by jetcrun.sh
+   DEFAULT_IMAGE_NAME=your-user/001:latest-timestamp-tag
+   DEFAULT_ENABLE_X11=on
+   DEFAULT_ENABLE_GPU=on
+   DEFAULT_MOUNT_WORKSPACE=on
+   DEFAULT_USER_ROOT=on
    ```
 
-3. **Run the build script**
+4. **Run the build script**
    ```bash
    ./build.sh
    ```
+   - This script builds the container stages sequentially.
+   - **New:** Upon successful build of each stage (and the final timestamped image), the script automatically adds the image tag to the `AVAILABLE_IMAGES` list in your `buildx/.env` file.
+   - It also updates `DEFAULT_BASE_IMAGE` in `.env` with the tag of the latest successfully built image.
 
-4. **Choose an option when prompted**
-   When asked "Do you want to build with cache? (y/n):", type `n` for a clean build or `y` to use cached layers (faster but may use outdated components).
+5. **Follow the Interactive Setup**:
+   *   **Step 0: Docker Information**: You'll be prompted (using a dialog menu if `dialog` is installed, otherwise text prompts) to confirm or enter your Docker Registry (optional), Username (required), and Repository Prefix (required). Defaults from `.env` will be shown if available.
+   *   **Step 1: Build Options**: Select options like using cache, squashing layers, building locally only (`--load` vs `--push`), and using the optimized builder.
+   *   **Step 2: Base Image**: Choose the base image for the *first* build stage (use default, pull default, or specify a custom one).
+   *   **Step 3: Confirmation**: Review all settings and confirm to start the build.
 
-5. **Wait for the build to complete**
-   This process will take 1-3 hours depending on your Jetson model.
+6. **Wait for the build to complete**
+   This process will build the container stages sequentially. It may take 1-3 hours.
+
+7. **Post-Build Options**: If the build completes successfully, you'll get another menu asking if you want to run the final image, verify it, or skip.
+
+8. **Run a Container**:
+   ```bash
+   ./jetcrun.sh
+   ```
+   - **New:** This script now reads the `AVAILABLE_IMAGES` list from `buildx/.env`.
+   - It presents an interactive menu (dialog or text) allowing you to select from previously built images or enter a custom image name.
+   - Your selections for image name and runtime options (X11, GPU, etc.) are saved back to `.env` as defaults for the next run.
 
 ## **What to Expect During the Build Process**
 
@@ -52,40 +123,270 @@ As a beginner, here's what you'll see during the build:
 
 ## **After the Build: Using Your AI Applications**
 
-When the build completes successfully, you can:
+When the build completes successfully, you can run your containers easily:
 
-1. **Run Stable Diffusion WebUI**
+1. **Use the `jetcrun.sh` script (Recommended)**:
    ```bash
-   # Replace 'latest-timestamp' with the actual timestamp from your build
-   docker run -it --rm -p 7860:7860 your-dockerhub-username/001:latest-timestamp bash
-   cd /opt/stable-diffusion-webui
-   python launch.py --listen --port 7860
+   ./jetcrun.sh
    ```
-   Then open `http://your-jetson-ip:7860` in your browser
+   - Select the desired image from the menu (which includes images automatically added during the build).
+   - Choose runtime options (X11, GPU, Workspace Mount, Root User).
+   - The script handles constructing the `docker run` or `jetson-containers run` command.
 
-2. **Use ComfyUI**
+2. **Manual `docker run` (Example)**:
+   If you prefer manual control, you can still use `docker run`. Find the exact tag in your `buildx/.env` file under `AVAILABLE_IMAGES` or `DEFAULT_IMAGE_NAME`.
    ```bash
-   docker run -it --rm -p 8188:8188 your-dockerhub-username/001:latest-timestamp bash
-   cd /opt/ComfyUI
-   python main.py --listen 0.0.0.0 --port 8188
+   # Example for Stable Diffusion WebUI
+   # Get the tag from .env (e.g., kairin/jetc:latest-YYYYMMDD-HHMMSS-1)
+   IMAGE_TAG="kairin/jetc:latest-..." 
+   docker run -it --rm --gpus all -p 7860:7860 -v /media/kkk:/workspace "$IMAGE_TAG" bash
+   # Inside container:
+   # cd /opt/stable-diffusion-webui
+   # python launch.py --listen --port 7860
    ```
-   Then open `http://your-jetson-ip:8188` in your browser
 
 ## **Repository Structure**
 
 ### **Root Structure**
 
 ```
-.
-├── README.md                        # This file - repository documentation
-├── buildx/                          # Main directory containing build system
-    ├── build/                       # Folder containing build directories for each component
-    ├── build.sh                     # Main build script for orchestrating all builds
-    ├── generate_app_checks.sh       # Helper script for generating application verification
-    ├── jetcrun.sh                   # Utility script for running Jetson containers
-    ├── list_installed_apps.sh       # Script for listing installed applications within a container
-    └── logs/                        # Directory containing build logs
+jetc/
+├── README.md
+├── proposed-app-build-sh.md
+├── proposed-app-jetcrun-sh.md
+├── .env
+├── .gitattributes
+├── .gitignore
+├── .github/
+│   ├── copilot-instructions.md
+│   ├── git-template-setup.md
+│   ├── install-hooks.sh
+│   ├── pre-commit-hook.sh
+│   ├── prepare-commit-msg-hook.sh
+│   ├── setup-git-template.sh
+│   └── vs-code-snippets-guide.md
+├── buildx/
+│   ├── build/
+│   ├── build.sh
+│   ├── jetcrun.sh
+│   ├── scripts/
+│   │   ├── build_env_setup.sh
+│   │   ├── build_builder.sh
+│   │   ├── build_prefs.sh
+│   │   ├── build_order.sh
+│   │   ├── build_stages.sh
+│   │   ├── build_tagging.sh
+│   │   ├── build_post.sh
+│   │   ├── build_verify.sh
+│   │   ├── build_ui.sh
+│   │   ├── commit_tracking.sh
+│   │   ├── copilot-must-follow.md
+│   │   ├── docker_helpers.sh
+│   │   ├── logging.sh
+│   │   ├── utils.sh
+│   │   └── verification.sh
+│   └── logs/
 ```
+
+---
+
+### **Modular Script Structure and Roles**
+
+#### **Top-level**
+- `README.md` — Project documentation and usage.
+- `.env` — Canonical environment/config file for buildx.
+- `proposed-app-build-sh.md`, `proposed-app-jetcrun-sh.md` — UI/workflow proposals.
+
+#### **.github/**
+- `copilot-instructions.md` — Coding standards, minimal diff rules, commit tracking.
+- `INSTRUCTIONS.md` — Enforcement and summary of standards.
+- `pre-commit-hook.sh`, `prepare-commit-msg-hook.sh`, `install-hooks.sh`, `setup-git-template.sh`, `git-template-setup.md`, `vs-code-snippets-guide.md` — Git hooks and VS Code integration for commit tracking.
+
+#### **buildx/**
+- `build.sh` — Main orchestrator, now a thin script that sources modular scripts for each build step.
+- `jetcrun.sh` — Interactive script to launch containers, reads and updates `.env`.
+
+#### **buildx/scripts/**
+- `build_env_setup.sh` — Sets up build environment variables and loads `.env`.
+- `build_builder.sh` — Ensures buildx builder is ready.
+- `build_prefs.sh` — Handles user preferences dialog and exports selections.
+- `build_order.sh` — Determines build order and selected folders.
+- `build_stages.sh` — Builds selected numbered and other directories.
+- `build_tagging.sh` — Tags and pushes the final image.
+- `build_post.sh` — Handles post-build menu/options.
+- `build_verify.sh` — Final verification of built images and updates `.env`.
+- `build_ui.sh` — UI functions for interactive build process, dialog and prompt handling, .env management, and post-build menu.
+- `docker_helpers.sh` — Docker build, tag, push, pull, and verification helpers.
+- `utils.sh` — General utility functions (dialog check, datetime, etc.).
+- `logging.sh` — Logging functions for build output and error summary.
+- `verification.sh` — Container verification functions.
+- `commit_tracking.sh` — Commit tracking UUID and footer helpers.
+- `copilot-must-follow.md` — Reference copy of coding standards.
+
+---
+
+### **Why This Modularization?**
+
+- **Maintainability:** Each script has a single responsibility, making it easier to update or debug specific steps.
+- **Readability:** `build.sh` is now a clear, high-level orchestrator, not a monolithic script.
+- **Extensibility:** New build steps or features can be added as new scripts without cluttering the main orchestrator.
+- **Testing:** Individual scripts can be tested or run independently.
+- **Compliance:** This structure enforces the coding standards and minimal diff rules defined in `.github/copilot-instructions.md`.
+
+---
+
+### **How to Use the Modular Build System**
+
+- Run `./build.sh` as before. It will sequentially source and execute each modular script for:
+  1. **Environment setup and .env loading**  
+     (`buildx/scripts/build_env_setup.sh`)
+  2. **Builder setup**  
+     (`buildx/scripts/build_builder.sh`)
+  3. **User preferences dialog**  
+     (`buildx/scripts/build_prefs.sh`)
+  4. **Build order determination**  
+     (`buildx/scripts/build_order.sh`)
+  5. **Building stages**  
+     (`buildx/scripts/build_stages.sh`)
+  6. **Tagging and pushing the final image**  
+     (`buildx/scripts/build_tagging.sh`)
+  7. **Post-build options**  
+     (`buildx/scripts/build_post.sh`)
+  8. **Final verification and .env update**  
+     (`buildx/scripts/build_verify.sh`)
+
+- Each modular script is responsible for a single logical step, and all persistent state is passed via environment variables or `.env`.
+
+---
+
+### **Modular Build Steps (Reflected in build.sh and scripts/)**
+
+| Step | Script | Description |
+|------|--------|-------------|
+| 1 | `build_env_setup.sh` | Setup environment variables and load `.env` |
+| 2 | `build_builder.sh` | Ensure buildx builder is ready |
+| 3 | `build_prefs.sh` | Interactive user preferences dialog |
+| 4 | `build_order.sh` | Determine build order and selected folders |
+| 5 | `build_stages.sh` | Build selected numbered and other directories |
+| 6 | `build_tagging.sh` | Tag and push the final image |
+| 7 | `build_post.sh` | Post-build menu/options |
+| 8 | `build_verify.sh` | Final verification and update `.env` |
+
+**Note:**  
+This table reflects the modular build steps as implemented in `build.sh` and described in this README.
+
+---
+
+## **What to Expect During the Build Process**
+
+As a beginner, here's what you'll see during the build:
+
+- The script will build multiple containers in sequence (01-build-essential, 02-bazel, etc.)
+- You'll see progress messages for each component showing success or failure
+- **Some components might fail** - this is normal and the script will continue with the next one
+- At the end, you'll have a collection of usable containers even if some steps failed
+
+![Build Process Example](https://raw.githubusercontent.com/kairin/jetc/main/docs/images/build_process_example.png)
+
+## **After the Build: Using Your AI Applications**
+
+When the build completes successfully, you can run your containers easily:
+
+1. **Use the `jetcrun.sh` script (Recommended)**:
+   ```bash
+   ./jetcrun.sh
+   ```
+   - Select the desired image from the menu (which includes images automatically added during the build).
+   - Choose runtime options (X11, GPU, Workspace Mount, Root User).
+   - The script handles constructing the `docker run` or `jetson-containers run` command.
+
+2. **Manual `docker run` (Example)**:
+   If you prefer manual control, you can still use `docker run`. Find the exact tag in your `buildx/.env` file under `AVAILABLE_IMAGES` or `DEFAULT_IMAGE_NAME`.
+   ```bash
+   # Example for Stable Diffusion WebUI
+   # Get the tag from .env (e.g., kairin/jetc:latest-YYYYMMDD-HHMMSS-1)
+   IMAGE_TAG="kairin/jetc:latest-..." 
+   docker run -it --rm --gpus all -p 7860:7860 -v /media/kkk:/workspace "$IMAGE_TAG" bash
+   # Inside container:
+   # cd /opt/stable-diffusion-webui
+   # python launch.py --listen --port 7860
+   ```
+
+## **Repository Structure**
+
+### **Root Structure**
+
+```
+jetc/
+├── README.md
+├── proposed-app-build-sh.md
+├── proposed-app-jetcrun-sh.md
+├── .env
+├── .gitattributes
+├── .gitignore
+├── .github/
+│   ├── copilot-instructions.md
+│   ├── git-template-setup.md
+│   ├── install-hooks.sh
+│   ├── pre-commit-hook.sh
+│   ├── prepare-commit-msg-hook.sh
+│   ├── setup-git-template.sh
+│   └── vs-code-snippets-guide.md
+├── buildx/
+│   ├── build/
+│   ├── build.sh
+│   ├── jetcrun.sh
+│   ├── scripts/
+│   │   ├── build_env_setup.sh
+│   │   ├── build_builder.sh
+│   │   ├── build_prefs.sh
+│   │   ├── build_order.sh
+│   │   ├── build_stages.sh
+│   │   ├── build_tagging.sh
+│   │   ├── build_post.sh
+│   │   ├── build_verify.sh
+│   │   ├── build_ui.sh
+│   │   ├── commit_tracking.sh
+│   │   ├── copilot-must-follow.md
+│   │   ├── docker_helpers.sh
+│   │   ├── logging.sh
+│   │   ├── utils.sh
+│   │   └── verification.sh
+│   └── logs/
+```
+
+### **Modular Script Structure**
+
+The build system has been modularized for better maintainability:
+
+1. **`buildx/build.sh`** - Main orchestration script that:
+   - Sources all required modular scripts
+   - Determines build order and dependencies
+   - Manages the overall build process
+   - Handles errors and final tagging
+
+2. **`buildx/scripts/docker_helpers.sh`** - Contains Docker utility functions:
+   - `verify_image_exists()` - Check if a Docker image exists locally
+   - `verify_container_apps()` - Run verification inside a container
+   - `list_installed_apps()` - List installed applications in a container
+   - `build_folder_image()` - Build, push and pull a Docker image
+
+3. **`buildx/scripts/build_ui.sh`** - Handles environment setup and interactive UI:
+   - `load_env_variables()` - Load environment variables from .env file
+   - `setup_build_environment()` - Initialize build environment variables
+   - `get_user_preferences()` - Get user input for build preferences
+
+4. **`buildx/scripts/utils.sh`** - General utility functions:
+   - Dialog checking, datetime retrieval, etc.
+
+5. **`buildx/scripts/verification.sh`** - Container verification:
+   - Functions for checking installed applications in containers
+
+6. **`buildx/scripts/commit_tracking.sh`** - Commit tracking helpers
+
+7. **`buildx/scripts/logging.sh`** - Logging helpers
+
+---
 
 ### **`build/` Directory Structure**
 
@@ -109,11 +410,13 @@ buildx/build/
 
 ### **Build Process Details**
 
-The build script (`build.sh`) processes directories in numerical order:
+The modularized build script (`build.sh`) processes directories in numerical order:
 
 1. Numbered directories (`01-*`, `02-*`, etc.) are built sequentially
 2. Each numbered directory must contain a `Dockerfile` at its root
 3. For directories with sub-components (like `01-cuda`), a main `Dockerfile` is required for the build script to work correctly
+
+---
 
 ### **Special Notes for CUDA and Other Complex Components**
 
@@ -123,61 +426,65 @@ For complex components with multiple sub-components (like CUDA):
 2. This main Dockerfile should install core functionality and set up the environment
 3. Sub-components can be built separately in later steps (e.g., through separate build entries)
 
-## **How the Build System Works**
+---
 
-The improved build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process is orchestrated via `build.sh`, which now features enhanced error handling and logging:
+## **How the Modular Build System Works**
 
-1. **Initialization and Logging**:
-   - Creates timestamped log files for the main build process
-   - Generates separate log files for each component build
-   - Loads environment variables from `.env`
-   - Detects the platform (ensures aarch64)
-   - Sets up a `buildx` builder with NVIDIA container runtime
+The modularized build system in this repository uses Docker's `buildx` to manage multi-platform builds targeting ARM64 (aarch64) devices. The main build process follows these steps:
 
-2. **User Input**:
-   - Prompts the user to decide whether to build with or without cache
+1. **Initialization and Environment Setup**:
+   - The main `build.sh` script sources modular components from `scripts/`.
+   - `setup_env.sh` initializes build variables (timestamp, platform, etc.) and optionally loads defaults from `buildx/.env` (Registry, Username, Prefix, Default Base Image).
+   - `setup_buildx.sh` ensures the `jetson-builder` buildx instance is ready.
 
-3. **Resilient Build Process**:
-   - Processes **numbered directories** in ascending order (01-build-essential, 02-bazel, etc.)
-     - Each numbered directory builds upon the previous one
-     - Continues the build process even if individual components fail
-     - Reports success or failure for each component clearly in the console
-   - Processes **non-numbered directories** after all numbered builds
-   - Creates detailed logs for troubleshooting each component
+2. **Interactive User Configuration**:
+   - `setup_env.sh` (via `get_user_preferences`) prompts the user through a series of steps (using `dialog` or text prompts):
+     - **Confirm/Enter Docker Details**: Registry, Username (required), Prefix (required).
+     - **Select Build Options**: Cache, Squash, Local Build (`--load` vs `--push`), Use Builder.
+     - **Choose Initial Base Image**: Use default, pull default, or specify custom.
+     - **Final Confirmation**: Review settings before starting.
+   - All confirmed settings are exported as environment variables.
+
+3. **Build Process**:
+   - `build.sh` determines the build order (numbered directories first, then others).
+   - It iterates through the build directories (`build/01-*`, `build/02-*`, etc.).
+   - For each stage, it calls `build_folder_image` (`docker_utils.sh`), passing the tag of the *previous successful stage* as the `BASE_IMAGE` build argument.
+   - `build_folder_image` constructs the appropriate `docker buildx build` command based on user preferences (cache, squash, push/load) and executes it.
+   - It verifies the image exists locally after each successful build (either via `docker pull` if pushed, or directly if loaded).
+   - **New:** If a build stage is successful, `build.sh` calls `update_available_images_in_env` to add the new tag to the `AVAILABLE_IMAGES` list in `buildx/.env`.
+   - The script continues to the next stage even if one fails, marking the overall build as failed.
 
 4. **Verification and Tagging**:
-   - Creates a timestamped `latest` tag for the final built image
-   - Verifies all images are accessible locally
-   - Supports verification of installed apps in containers
+   - After attempting all stages, if the build was successful so far, it verifies all intermediate images are available locally.
+   - It creates a final timestamped tag (e.g., `your-registry/your-user/your-prefix:latest-YYYYMMDD-HHMMSS-1`) based on the last successfully built image.
+   - This final tag is pushed to the registry, pulled back, and verified locally.
+   - **New:** The final timestamped tag is also added to `AVAILABLE_IMAGES` in `.env`.
+   - **New:** The `DEFAULT_BASE_IMAGE` in `.env` is updated to this final successful tag.
 
 5. **Post-Build Options**:
-   - Interactive shell for exploring the container
-   - Quick verification for common tools and packages
-   - Full verification for comprehensive system inspection
-   - Listing of all installed applications
+   - If the final tag was created successfully, `post_build_menu.sh` presents an interactive menu (dialog or text).
+   - Options include starting a shell in the final container, running verification scripts (`quick` or `full`), listing installed apps, or skipping.
+
+6. **Final Checks & Exit**:
+   - The script performs a final check to ensure all images recorded as successfully built/tagged are present locally.
+   - Exits with status 0 for success or 1 for any failure during the process.
 
 ## **Recent Improvements**
 
 Recent updates to the build system include:
 
-1. **Enhanced Error Handling**: 
-   - The build process now continues even when individual components fail
-   - Each failure is clearly reported without stopping the entire build chain
-   - Exit code 1 indicates a component build failure, but the script continues to the next component
-   - This allows the system to build as many components as possible in a single run
-
-2. **Improved Logging**:
-   - Each component now generates its own dedicated log file
-   - Timestamped logs make it easy to track build history
-   - Separate logs simplify troubleshooting specific component issues
-
-3. **Better Tag Handling**:
-   - More reliable image tag tracking throughout the build process
-   - Proper verification of built images between steps
-
-4. **Progress Reporting**:
-   - Clearer console output showing which components succeeded and failed
-   - References to log files for detailed error information
+1.  **Interactive Setup**:
+    *   The script now always prompts the user to confirm or enter essential Docker information (Registry, Username, Prefix) and build options at the start.
+    *   Uses the `dialog` utility for a graphical menu experience if available, falling back to text prompts otherwise.
+2.  **Optional `.env` File**:
+    *   The `buildx/.env` file is now optional and only used to provide *default* values for the initial interactive prompts. The script no longer fails if it's missing.
+3.  **Modular Script Structure**:
+    *   The build logic is split into well-defined scripts in `buildx/scripts/` for better maintainability.
+4.  **Automatic Image Tracking**:
+    *   `build.sh` now automatically records successfully built image tags in the `AVAILABLE_IMAGES` variable within `buildx/.env`.
+5.  **Enhanced Run Script**:
+    *   `jetcrun.sh` reads the `AVAILABLE_IMAGES` from `.env` to provide a convenient selection menu for running containers.
+    *   Runtime options chosen in `jetcrun.sh` are saved back to `.env` as defaults.
 
 ## **Container Verification System**
 
@@ -204,7 +511,7 @@ A key feature of this repository is the comprehensive verification system for bu
 This modular script provides detailed information about installed components:
 
 ```bash
-./list_installed_apps.sh [mode]
+./scripts/list_installed_apps.sh [mode]
 ```
 
 Available modes:
@@ -259,7 +566,11 @@ To run the Stable Diffusion WebUI or ComfyUI after building:
 
 ## **Inspiration and Original Work**
 
-This repository is based on the excellent work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The decision not to fork the original repository is not due to a lack of interest in contributing, but because this project serves a different target audience with distinct requirements and goals.
+This repository is fundamentally based on the excellent work provided by [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers). The containers, configurations, and AI implementations originate from that project. **This project should be considered a specialized fork** that focuses specifically on streamlining the build process using Docker's buildx functionality.
+
+The decision not to fork the original repository is not due to a lack of interest in contributing, but because this project serves a different target audience with distinct requirements and goals, particularly around the build process implementation.
+
+For the most comprehensive and up-to-date Jetson container implementations, please refer to the original [dusty-nv/jetson-containers](https://github.com/dusty-nv/jetson-containers) repository and the work of its [contributors](https://github.com/dusty-nv/jetson-containers/graphs/contributors).
 
 ## **How to Use**
 
@@ -269,33 +580,27 @@ This repository is based on the excellent work provided by [dusty-nv/jetson-cont
    cd jetc/buildx
    ```
 
-2. **Set Up Environment Variables**:
-   - Create a `.env` file and set the `DOCKER_USERNAME` variable:
+2. **(Optional) Create `.env` for Defaults**:
+   - You can create `buildx/.env` to pre-fill prompts:
      ```bash
-     echo "DOCKER_USERNAME=your-dockerhub-username" > .env
+     # Example buildx/.env
+     # DOCKER_USERNAME=your-user
+     # DOCKER_REPO_PREFIX=001
      ```
 
 3. **Run the Build Script**:
-   - To build all components:
-     ```bash
-     ./build.sh
-     ```
-   - The script will now continue building all components even if some fail
-   - Each build generates its own detailed log file for troubleshooting
+   ```bash
+   ./build.sh
+   ```
+   - Follow the interactive prompts to configure Docker details, build options, and the base image.
+   - Confirm the settings to start the build. You will see native `docker buildx` output.
 
-4. **View Build Logs**:
-   - Check the logs directory for detailed build information:
-     ```bash
-     ls -l logs/
-     ```
-   - Each component has its own log file with timestamp
-
-5. **Post-Build Verification**:
-   - After building, you can:
-     - Start an interactive shell
-     - Run quick verification
-     - Run full verification
-     - List installed applications
+4. **View Build Output / Optional Logging**:
+    *   Build progress is shown directly in the console.
+    *   To save a log file:
+        ```bash
+        ./build.sh | tee build_$(date +"%Y%m%d-%H%M%S").log
+        ```
 
 ## **Removing Old Files**
 
@@ -369,6 +674,20 @@ When you see messages like "Build, push or pull failed for build/10-bitsandbytes
 5. **Build dependency issues**:
    - If component X depends on failed component Y, try modifying X's Dockerfile
    - Add the necessary packages directly in component X instead of relying on Y
+
+## **Development Guidelines**
+
+When contributing to this project, please follow our [Copilot coding standards](.github/copilot-instructions.md) which include:
+
+- File header format with commit tracking (footer only, never at the top)
+- Code organization principles
+- Minimal diff guidelines
+
+**All coding standards, minimal diff rules, and commit tracking/footer requirements are defined in [`./.github/copilot-instructions.md`](./.github/copilot-instructions.md).  
+This file is the canonical source for all contributors and automation.  
+See also [./.github/INSTRUCTIONS.md](./.github/INSTRUCTIONS.md) for summary and enforcement rules.**
+
+These standards ensure consistent documentation and tracking across the codebase.
 
 ## **License**
 

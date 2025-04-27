@@ -1,3 +1,15 @@
+# COMMIT-TRACKING: UUID-20240801-155000-NINJA
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM. Embed test.sh and add verification check.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 03-ninja/            <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 # =========================================================================
 # IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
 # All builds MUST use Docker buildx to ensure consistent
@@ -10,8 +22,10 @@
 # depends: [python]
 # test: [test.sh]
 #---
-ARG BASE_IMAGE=kairin/001:02-bazel
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG TARGETPLATFORM=linux/arm64
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -25,4 +39,34 @@ RUN LATEST_VERSION=$(curl -s https://api.github.com/repos/ninja-build/ninja/rele
     apt-get -y remove jq && \
     apt-get -y autoremove && \
     apt-get -y clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    echo "check_cmd ninja --version" >> /opt/list_app_checks.sh
+
+# Test Ninja installation by embedding test.sh logic
+RUN <<EOF > /tmp/test_ninja.sh
+#!/bin/bash
+# Check if ninja command is available
+if ! command -v ninja &> /dev/null
+then
+    echo "Ninja is not installed or not in the PATH."
+    exit 1
+fi
+
+# Create a simple build.ninja file to test Ninja
+echo -e "rule echo\n  command = echo Hello, Ninja!\nbuild test: echo" > build.ninja
+
+# Run Ninja to test the build
+if ninja
+then
+    echo "Ninja is installed and working correctly."
+    # Clean up
+    rm -f build.ninja
+    exit 0
+else
+    echo "Ninja failed to run correctly."
+    # Clean up
+    rm -f build.ninja
+    exit 1
+fi
+EOF
+RUN bash /tmp/test_ninja.sh && rm /tmp/test_ninja.sh

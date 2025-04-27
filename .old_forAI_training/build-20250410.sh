@@ -1,3 +1,14 @@
+# COMMIT-TRACKING: UUID-20240608-201500-NOPQ
+# Description: Analysis complete - No revert needed. Updating headers only.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── .old_forAI_training/       <- THIS FILE's directory
+# │   └── build-20250410.sh      <- THIS FILE
+# └── ...                        <- Other project files
+
 #!/bin/bash
 
 # Load environment variables from the .env file

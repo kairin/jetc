@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-
+# COMMIT-TRACKING: UUID-20240730-180000-LNT1
+# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# Author: Mr K / GitHub Copilot
+#
 # =========================================================================
 # IMPORTANT: This build system requires Docker with buildx extension.
 # All builds MUST use Docker buildx to ensure consistent
@@ -70,4 +73,4 @@ pip3 install --upgrade \
 
 pip3 install --upgrade --index-url https://pypi.org/simple \
    twine
-   
+

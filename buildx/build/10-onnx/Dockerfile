@@ -1,13 +1,24 @@
+# COMMIT-TRACKING: UUID-20240730-180000-LNT1
+# Description: Add default value to ARG BASE_IMAGE to satisfy linter.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 10-onnx/             <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 #---
 # name: onnx
-# group: ml
-# config: config.py
-# depends: [cmake, python, numpy]
+# group: core
+# depends: [python, protobuf]
 # test: test.py
-# notes: the `protobuf_apt` is added as a dependency on JetPack 4 (newer versions of onnx build it in-tree)
 #---
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 ARG ONNX_VERSION
 

@@ -1,3 +1,15 @@
+# COMMIT-TRACKING: UUID-20240730-170000-DYN1
+# Description: Revert to dynamic BASE_IMAGE ARG.
+# Author: Mr K / GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 14-xformers/         <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
 # =========================================================================
 # IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
 # All builds MUST use Docker buildx to ensure consistent
@@ -7,13 +19,15 @@
 #---
 # name: xformers
 # group: llm
-# depends: [pytorch]
-# requires: '>=34.1.0'
+# config: config.py
+# depends: [pytorch, cmake]
+# requires: '>=35'
 # test: test.py
 # notes: https://github.com/facebookresearch/xformers
 #---
-ARG BASE_IMAGE=kairin/001:13-transformers
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=linux/arm64 ${BASE_IMAGE}
 
 # Get CUDA version for dynamic version selection
 ARG CUDA_VERSION

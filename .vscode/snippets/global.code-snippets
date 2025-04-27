@@ -1,0 +1,20 @@
+{
+  "File Header with COMMIT-TRACKING": {
+    "scope": "shellscript,javascript,typescript,python,java,markdown,html,xml,yaml",
+    "prefix": ["header", "trackingheader"],
+    "body": [
+      "${LINE_COMMENT} COMMIT-TRACKING: UUID-$CURRENT_YEAR$CURRENT_MONTH$CURRENT_DATE-$CURRENT_HOUR$CURRENT_MINUTE$CURRENT_SECOND-${1:XXXX}",
+      "${LINE_COMMENT} Description: ${2:Specific description of changes made to THIS file}",
+      "${LINE_COMMENT} Author: ${3:Mr K}",
+      "${LINE_COMMENT} ",
+      "${LINE_COMMENT} File location diagram:",
+      "${LINE_COMMENT} jetc/                          <- Main project folder",
+      "${LINE_COMMENT} ├── README.md                  <- Project documentation",
+      "${LINE_COMMENT} ├── ${4:directory}/            <- Current directory",
+      "${LINE_COMMENT} │   └── ${5:${TM_FILENAME}}          <- THIS FILE",
+      "${LINE_COMMENT} └── ...                        <- Other project files",
+      "$0"
+    ],
+    "description": "Add standard COMMIT-TRACKING header to file (adapts comment style)"
+  }
+}

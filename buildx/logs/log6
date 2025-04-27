@@ -1,0 +1,1346 @@
+❯ ./build.sh
+./scripts/setup_env.sh: line 16: ./check_install_dialog.sh: No such file or directory
+Found .env file in current directory, loading defaults...
+Initial Docker values (will be confirmed/edited):
+  Registry: <Not Set - Docker Hub>
+  Username: <Not Set>
+  Repo Prefix: <Not Set>
+Using existing buildx builder: jetson-builder
+
+ Docker Build Configuration
+ ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+                         ┌───────────────────────────Step 0: Docker Information──────────────────────────────┐
+                         │ Confirm or edit Docker details (loaded from .env):                                │  
+                         │ ┌───────────────────────────────────────────────────────────────────────────────┐ │  
+                         │ │Registry (optional, empty=Docker Hub):                                         │ │  
+                         │ │Username (required):                   kairin                                  │ │  
+                         │ │Repository Prefix (required):          jetc                                    │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ └───────────────────────────────────────────────────────────────────────────────┘ │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         ├───────────────────────────────────────────────────────────────────────────────────┤  
+                         │               <Next: Build Options>        <    Exit Build     >                  │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+ Docker Build Configuration
+ ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+                         ┌──────────────────────────────Step 1: Build Options────────────────────────────────┐
+                         │ Use Spacebar to toggle options, Enter to confirm:                                 │  
+                         │ ┌───────────────────────────────────────────────────────────────────────────────┐ │  
+                         │ │      [ ] cache        Use Build Cache (Faster, uses previous layers)          │ │  
+                         │ │      [ ] squash       Squash Layers (Smaller final image, experimental)       │ │  
+                         │ │      [ ] local_build  Build Locally Only (Faster, no registry push/pull)      │ │  
+                         │ │      [*] use_builder  Use Optimized Jetson Builder (Recommended)              │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ └───────────────────────────────────────────────────────────────────────────────┘ │  
+                         ├───────────────────────────────────────────────────────────────────────────────────┤  
+                         │                 <Next: Base Image>         <   Exit Build   >                     │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                ┌────────────────────────────────────────────────────────────────────┐
+                                │ Warning: Not using the dedicated 'jetson-builder' might lead to    │  
+                                │ issues with NVIDIA runtime during build.                           │  
+                                │                                                                    │  
+                                │                                                                    │  
+                                ├────────────────────────────────────────────────────────────────────┤  
+                                │                             <  OK  >                               │  
+                                └────────────────────────────────────────────────────────────────────┘  
+                                  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Docker Build Configuration
+ ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+                         ┌──────────────────────────Step 2: Base Image Selection─────────────────────────────┐
+                         │ Choose the base image for the *first* build stage:                                │  
+                         │ ┌───────────────────────────────────────────────────────────────────────────────┐ │  
+                         │ │( ) use_default     Use Default (if locally available): kairin/001:jetc-nvidia-│ │  
+                         │ │( ) pull_default    Pull Default Image Now: kairin/001:jetc-nvidia-pytorch-25.0│ │  
+                         │ │(*) specify_custom  Specify Custom Image (will attempt pull)                   │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ │                                                                               │ │  
+                         │ └───────────────────────────────────────────────────────────────────────────────┘ │  
+                         ├───────────────────────────────────────────────────────────────────────────────────┤  
+                         │                   <Confirm Choice>          <  Exit Build  >                      │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+ Docker Build Configuration
+ ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                         ┌───────────────────────────Step 2a: Custom Base Image──────────────────────────────┐
+                         │ Enter the full Docker image tag (e.g., user/repo:tag):                            │  
+                         │ ┌───────────────────────────────────────────────────────────────────────────────┐ │  
+                         │ │kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3                                   │ │  
+                         │ └───────────────────────────────────────────────────────────────────────────────┘ │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         ├───────────────────────────────────────────────────────────────────────────────────┤  
+                         │                     <Confirm Image>           < Exit Build  >                     │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                         ┌───────────────────────────────────────────────────────────────────────────────────┐
+                         │ Attempting to pull custom base image:                                             │  
+                         │ kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3...                                   │  
+                         │                                                                                   │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nvcr-io-nvidia-pytorch-25.03-py3: Pulling from kairin/jetc
+Digest: sha256:4a6ebd2810cd445b3377f87019ac769920ec8d122578492e0fa8042f603208a8
+Status: Image is up to date for kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+docker.io/kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                         ┌───────────────────────────────────────────────────────────────────────────────────┐
+                         │ Successfully pulled custom base image:                                            │  
+                         │ kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3                                      │  
+                         │                                                                                   │  
+                         │                                                                                   │  
+                         ├───────────────────────────────────────────────────────────────────────────────────┤  
+                         │                                     <  OK  >                                      │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                         ┌───────────────────────────────────────────────────────────────────────────────────┐
+                         │ Build Configuration Summary:                                                      │  
+                         │                                                                                   │  
+                         │ Docker Info:                                                                      │  
+                         │   - Registry:         Docker Hub                                                  │  
+                         │   - Username:         kairin                                                      │  
+                         │   - Repo Prefix:      jetc                                                        │  
+                         │                                                                                   │  
+                         │ Build Options:                                                                    │  
+                         │   - Use Cache:          No (--no-cache)                                           │  
+                         │   - Squash Layers:      No                                                        │  
+                         │   - Build Locally Only: No (--push)                                               │  
+                         │   - Use Builder:        No (Default Docker)                                       │  
+                         │                                                                                   │  
+                         │ Base Image for First Stage:                                                       │  
+                         │   - Action Chosen:      specify_custom                                            │  
+                         │   - Image Tag To Use:   kairin/jetc:nvcr-io-nvidia-pytorch-25.03-py3              │  
+                         │                                                                                   │  
+                         │ Proceed with build?                                                               │  
+                         ├───────────────────────────────────────────────────────────────────────────────────┤  
+                         │                     <Start Build >           <Cancel Build>                       │  
+                         └───────────────────────────────────────────────────────────────────────────────────┘  
+                           
+
+
+
+
+
+
+
+
+
+
+Initial base image set to: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Determining build order...
+Starting build process...
+--- Building Numbered Directories ---
+Processing numbered directory: build/01-00-build-essential
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/01-00-build-essential
+Image Name: 01-00-build-essential
+Platform: linux/arm64
+Tag: kairin/jetc:01-00-build-essential
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:01-00-build-essential --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/01-00-build-essential
+[+] Building 13.0s (4/4) FINISHED                                                                        docker-container:jetson-builder
+ => [internal] booting buildkit                                                                                                    10.9s
+ => => pulling image moby/buildkit:buildx-stable-1                                                                                  7.0s
+ => => creating container buildx_buildkit_jetson-builder0                                                                           3.9s
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 7.82kB                                                                                              0.0s
+ => WARN: RedundantTargetPlatform: Setting platform to predefined $TARGETPLATFORM in FROM is redundant as this is the default beha  0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      1.8s
+ => [auth] kairin/001:pull token for registry-1.docker.io                                                                           0.0s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:27
+--------------------
+  25 |     ARG TARGETPLATFORM=linux/arm64
+  26 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  27 | >>> FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
+  28 |     
+  29 |     ENV DEBIAN_FRONTEND=noninteractive \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-00-build-essential (build/01-00-build-essential).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-00-build-essential. Subsequent dependent builds might fail.
+Build process for build/01-00-build-essential exited with code 1
+Continuing with next build...
+Processing numbered directory: build/01-01-arrow
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/01-01-arrow
+Image Name: 01-01-arrow
+Platform: linux/arm64
+Tag: kairin/jetc:01-01-arrow
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Found .buildargs file: build/01-01-arrow/.buildargs
+  Adding build arg: --build-arg ARROW_BRANCH="apache-arrow-16.1.0"
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:01-01-arrow --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --build-arg ARROW_BRANCH="apache-arrow-16.1.0" --no-cache --push build/01-01-arrow
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 3.35kB                                                                                              0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:17
+--------------------
+  15 |     ARG TARGETPLATFORM=linux/arm64
+  16 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  17 | >>> FROM ${BASE_IMAGE}
+  18 |     
+  19 |     ARG ARROW_BRANCH
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-01-arrow (build/01-01-arrow).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-01-arrow. Subsequent dependent builds might fail.
+Build process for build/01-01-arrow exited with code 1
+Continuing with next build...
+Processing numbered directory: build/01-01-numba
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/01-01-numba
+Image Name: 01-01-numba
+Platform: linux/arm64
+Tag: kairin/jetc:01-01-numba
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:01-01-numba --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/01-01-numba
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 3.74kB                                                                                              0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:17
+--------------------
+  15 |     ARG TARGETPLATFORM=linux/arm64
+  16 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  17 | >>> FROM ${BASE_IMAGE}
+  18 |     
+  19 |     # Install llvm-dev and check version in one layer
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-01-numba (build/01-01-numba).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-01-numba. Subsequent dependent builds might fail.
+Build process for build/01-01-numba exited with code 1
+Continuing with next build...
+Processing numbered directory: build/01-01-numpy
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/01-01-numpy
+Image Name: 01-01-numpy
+Platform: linux/arm64
+Tag: kairin/jetc:01-01-numpy
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:01-01-numpy --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/01-01-numpy
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 2.96kB                                                                                              0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:21
+--------------------
+  19 |     # Use ARG for dynamic base image injection, with a default value
+  20 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  21 | >>> FROM ${BASE_IMAGE}
+  22 |     
+  23 |     # https://github.com/numpy/numpy/issues/18131#issuecomment-755438271
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-01-numpy (build/01-01-numpy).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-01-numpy. Subsequent dependent builds might fail.
+Build process for build/01-01-numpy exited with code 1
+Continuing with next build...
+Processing numbered directory: build/01-cuda
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/01-cuda
+Image Name: 01-cuda
+Platform: linux/arm64
+Tag: kairin/jetc:01-cuda
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:01-cuda --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/01-cuda
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 2.75kB                                                                                              0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:22
+--------------------
+  20 |     ARG TARGETPLATFORM=linux/arm64
+  21 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  22 | >>> FROM ${BASE_IMAGE}
+  23 |     
+  24 |     ARG CUDA_URL \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 01-cuda (build/01-cuda).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/01-cuda. Subsequent dependent builds might fail.
+Build process for build/01-cuda exited with code 1
+Continuing with next build...
+Processing numbered directory: build/02-bazel
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/02-bazel
+Image Name: 02-bazel
+Platform: linux/arm64
+Tag: kairin/jetc:02-bazel
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:02-bazel --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/02-bazel
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 2.10kB                                                                                              0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:27
+--------------------
+  25 |     # Use ARG for dynamic base image injection, with a default value
+  26 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  27 | >>> FROM ${BASE_IMAGE}
+  28 |     
+  29 |     
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 02-bazel (build/02-bazel).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/02-bazel. Subsequent dependent builds might fail.
+Build process for build/02-bazel exited with code 1
+Continuing with next build...
+Processing numbered directory: build/03-ninja
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/03-ninja
+Image Name: 03-ninja
+Platform: linux/arm64
+Tag: kairin/jetc:03-ninja
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:03-ninja --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/03-ninja
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.75kB                                                                                              0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:27
+--------------------
+  25 |     # Use ARG for dynamic base image injection, with a default value
+  26 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  27 | >>> FROM ${BASE_IMAGE}
+  28 |     
+  29 |     RUN apt-get update && \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 03-ninja (build/03-ninja).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/03-ninja. Subsequent dependent builds might fail.
+Build process for build/03-ninja exited with code 1
+Continuing with next build...
+Processing numbered directory: build/04-python
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/04-python
+Image Name: 04-python
+Platform: linux/arm64
+Tag: kairin/jetc:04-python
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:04-python --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/04-python
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.92kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Dockerfile:28
+--------------------
+  26 |     # Use ARG for dynamic base image injection, with a default value
+  27 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  28 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  29 |     
+  30 |     ARG PYTHON_VERSION_ARG
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 04-python (build/04-python).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/04-python. Subsequent dependent builds might fail.
+Build process for build/04-python exited with code 1
+Continuing with next build...
+Processing numbered directory: build/05-h5py
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/05-h5py
+Image Name: 05-h5py
+Platform: linux/arm64
+Tag: kairin/jetc:05-h5py
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:05-h5py --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/05-h5py
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.77kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)
+Dockerfile:27
+--------------------
+  25 |     # Use ARG for dynamic base image injection, with a default value
+  26 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  27 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  28 |     
+  29 |     RUN set -ex && \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 05-h5py (build/05-h5py).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/05-h5py. Subsequent dependent builds might fail.
+Build process for build/05-h5py exited with code 1
+Continuing with next build...
+Processing numbered directory: build/06-rust
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/06-rust
+Image Name: 06-rust
+Platform: linux/arm64
+Tag: kairin/jetc:06-rust
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:06-rust --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/06-rust
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.38kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 27)
+Dockerfile:27
+--------------------
+  25 |     # Use ARG for dynamic base image injection, with a default value
+  26 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  27 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  28 |     
+  29 |     RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 06-rust (build/06-rust).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/06-rust. Subsequent dependent builds might fail.
+Build process for build/06-rust exited with code 1
+Continuing with next build...
+Processing numbered directory: build/07-protobuf_apt
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/07-protobuf_apt
+Image Name: 07-protobuf_apt
+Platform: linux/arm64
+Tag: kairin/jetc:07-protobuf_apt
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:07-protobuf_apt --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/07-protobuf_apt
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.64kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Dockerfile:28
+--------------------
+  26 |     # Use ARG for dynamic base image injection, with a default value
+  27 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  28 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  29 |     
+  30 |     # confirm first that the protobuf:cpp package isn't already installed
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 07-protobuf_apt (build/07-protobuf_apt).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/07-protobuf_apt. Subsequent dependent builds might fail.
+Build process for build/07-protobuf_apt exited with code 1
+Continuing with next build...
+Processing numbered directory: build/08-protobuf_cpp
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/08-protobuf_cpp
+Image Name: 08-protobuf_cpp
+Platform: linux/arm64
+Tag: kairin/jetc:08-protobuf_cpp
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:08-protobuf_cpp --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/08-protobuf_cpp
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.42kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Dockerfile:28
+--------------------
+  26 |     # Use ARG for dynamic base image injection, with a default value
+  27 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  28 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  29 |     
+  30 |     ARG PROTOBUF_VERSION
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 08-protobuf_cpp (build/08-protobuf_cpp).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/08-protobuf_cpp. Subsequent dependent builds might fail.
+Build process for build/08-protobuf_cpp exited with code 1
+Continuing with next build...
+Processing numbered directory: build/09-opencv
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/09-opencv
+Image Name: 09-opencv
+Platform: linux/arm64
+Tag: kairin/jetc:09-opencv
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:09-opencv --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/09-opencv
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 2.11kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)
+Dockerfile:29
+--------------------
+  27 |     # Use ARG for dynamic base image injection, with a default value
+  28 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  29 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  30 |     
+  31 |     ARG OPENCV_VERSION \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 09-opencv (build/09-opencv).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/09-opencv. Subsequent dependent builds might fail.
+Build process for build/09-opencv exited with code 1
+Continuing with next build...
+Processing numbered directory: build/10-onnx
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/10-onnx
+Image Name: 10-onnx
+Platform: linux/arm64
+Tag: kairin/jetc:10-onnx
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:10-onnx --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/10-onnx
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.59kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 21)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 21)
+Dockerfile:21
+--------------------
+  19 |     # Use ARG for dynamic base image injection, with a default value
+  20 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  21 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  22 |     
+  23 |     ARG ONNX_VERSION
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 10-onnx (build/10-onnx).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/10-onnx. Subsequent dependent builds might fail.
+Build process for build/10-onnx exited with code 1
+Continuing with next build...
+Processing numbered directory: build/10-onnxruntime
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/10-onnxruntime
+Image Name: 10-onnxruntime
+Platform: linux/arm64
+Tag: kairin/jetc:10-onnxruntime
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:10-onnxruntime --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/10-onnxruntime
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.15kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 22)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 22)
+Dockerfile:22
+--------------------
+  20 |     # Use ARG for dynamic base image injection, with a default value
+  21 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  22 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  23 |     
+  24 |     ARG ONNXRUNTIME_VERSION \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 10-onnxruntime (build/10-onnxruntime).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/10-onnxruntime. Subsequent dependent builds might fail.
+Build process for build/10-onnxruntime exited with code 1
+Continuing with next build...
+Processing numbered directory: build/10-triton
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/10-triton
+Image Name: 10-triton
+Platform: linux/arm64
+Tag: kairin/jetc:10-triton
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:10-triton --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/10-triton
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 2.10kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 25)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 25)
+Dockerfile:25
+--------------------
+  23 |     
+  24 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  25 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  26 |     
+  27 |     ARG TRITON_VERSION \
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 10-triton (build/10-triton).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/10-triton. Subsequent dependent builds might fail.
+Build process for build/10-triton exited with code 1
+Continuing with next build...
+Processing numbered directory: build/11-diffusers
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/11-diffusers
+Image Name: 11-diffusers
+Platform: linux/arm64
+Tag: kairin/jetc:11-diffusers
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:11-diffusers --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/11-diffusers
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 1.82kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)
+Dockerfile:30
+--------------------
+  28 |     # Use ARG for dynamic base image injection, with a default value
+  29 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  30 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  31 |     
+  32 |     # Set a default version if not provided
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 11-diffusers (build/11-diffusers).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/11-diffusers. Subsequent dependent builds might fail.
+Build process for build/11-diffusers exited with code 1
+Continuing with next build...
+Processing numbered directory: build/12-huggingface_hub
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/12-huggingface_hub
+Image Name: 12-huggingface_hub
+Platform: linux/arm64
+Tag: kairin/jetc:12-huggingface_hub
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:12-huggingface_hub --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/12-huggingface_hub
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 3.67kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 28)
+Dockerfile:28
+--------------------
+  26 |     # Use ARG for dynamic base image injection, with a default value
+  27 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  28 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  29 |     
+  30 |     # Set default version if not provided
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 12-huggingface_hub (build/12-huggingface_hub).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/12-huggingface_hub. Subsequent dependent builds might fail.
+Build process for build/12-huggingface_hub exited with code 1
+Continuing with next build...
+Processing numbered directory: build/13-transformers
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/13-transformers
+Image Name: 13-transformers
+Platform: linux/arm64
+Tag: kairin/jetc:13-transformers
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:13-transformers --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/13-transformers
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 2.07kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 18)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 18)
+Dockerfile:18
+--------------------
+  16 |     # Use ARG for dynamic base image injection, with a default value
+  17 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  18 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  19 |     
+  20 |     # Set default values for build arguments
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 13-transformers (build/13-transformers).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/13-transformers. Subsequent dependent builds might fail.
+Build process for build/13-transformers exited with code 1
+Continuing with next build...
+Processing numbered directory: build/14-xformers
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/14-xformers
+Image Name: 14-xformers
+Platform: linux/arm64
+Tag: kairin/jetc:14-xformers
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:14-xformers --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/14-xformers
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 3.38kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 30)
+Dockerfile:30
+--------------------
+  28 |     # Use ARG for dynamic base image injection, with a default value
+  29 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  30 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  31 |     
+  32 |     # Get CUDA version for dynamic version selection
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 14-xformers (build/14-xformers).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/14-xformers. Subsequent dependent builds might fail.
+Build process for build/14-xformers exited with code 1
+Continuing with next build...
+Processing numbered directory: build/15-flash-attention
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/15-flash-attention
+Image Name: 15-flash-attention
+Platform: linux/arm64
+Tag: kairin/jetc:15-flash-attention
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:15-flash-attention --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/15-flash-attention
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 3.28kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)
+Dockerfile:29
+--------------------
+  27 |     # Use ARG for dynamic base image injection, with a default value
+  28 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  29 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  30 |     
+  31 |     # Build Arguments
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 15-flash-attention (build/15-flash-attention).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/15-flash-attention. Subsequent dependent builds might fail.
+Build process for build/15-flash-attention exited with code 1
+Continuing with next build...
+Processing numbered directory: build/16-stable-diffusion
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/16-stable-diffusion
+Image Name: 16-stable-diffusion
+Platform: linux/arm64
+Tag: kairin/jetc:16-stable-diffusion
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:16-stable-diffusion --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/16-stable-diffusion
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 8.28kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 32)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 32)
+Dockerfile:32
+--------------------
+  30 |     # Use ARG for dynamic base image injection, with a default value
+  31 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  32 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  33 |     
+  34 |     # Install dependencies and set up Stable Diffusion repositories
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 16-stable-diffusion (build/16-stable-diffusion).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/16-stable-diffusion. Subsequent dependent builds might fail.
+Build process for build/16-stable-diffusion exited with code 1
+Continuing with next build...
+Processing numbered directory: build/17-stable-diffusion-webui
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/17-stable-diffusion-webui
+Image Name: 17-stable-diffusion-webui
+Platform: linux/arm64
+Tag: kairin/jetc:17-stable-diffusion-webui
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:17-stable-diffusion-webui --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/17-stable-diffusion-webui
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 8.30kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 17)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.3s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+Dockerfile:17
+--------------------
+
+ 1 warning found (use docker --debug to expand):
+  15 |     # Use ARG for dynamic base image injection, with a default value
+  16 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  17 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  18 |     
+  19 |     # Determine appropriate branch/tag based on L4T version and install extensions
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 17-stable-diffusion-webui (build/17-stable-diffusion-webui).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/17-stable-diffusion-webui. Subsequent dependent builds might fail.
+Build process for build/17-stable-diffusion-webui exited with code 1
+Continuing with next build...
+Processing numbered directory: build/18-comfyui
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/18-comfyui
+Image Name: 18-comfyui
+Platform: linux/arm64
+Tag: kairin/jetc:18-comfyui
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:18-comfyui --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/18-comfyui
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 4.18kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 29)
+Dockerfile:29
+--------------------
+  27 |     # Use ARG for dynamic base image injection, with a default value
+  28 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  29 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  30 |     
+  31 |     ARG COMFYUI_REPO=comfyanonymous/ComfyUI
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 18-comfyui (build/18-comfyui).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/18-comfyui. Subsequent dependent builds might fail.
+Build process for build/18-comfyui exited with code 1
+Continuing with next build...
+Processing numbered directory: build/19-bitsandbytes
+Using base image: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+--------------------------------------------------
+Building image from folder: build/19-bitsandbytes
+Image Name: 19-bitsandbytes
+Platform: linux/arm64
+Tag: kairin/jetc:19-bitsandbytes
+Base Image (FROM via ARG): kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu
+Skip Intermediate Push/Pull: n
+--------------------------------------------------
+Using --no-cache
+Using --push
+Running: docker buildx build --platform linux/arm64 -t kairin/jetc:19-bitsandbytes --build-arg BASE_IMAGE=kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu --no-cache --push build/19-bitsandbytes
+[+] Building 0.4s (2/2) FINISHED                                                                         docker-container:jetson-builder
+ => [internal] load build definition from Dockerfile                                                                                0.0s
+ => => transferring dockerfile: 3.26kB                                                                                              0.0s
+ => WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 33)               0.0s
+ => ERROR [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu                                      0.2s
+------
+ > [internal] load metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu:
+------
+
+ 1 warning found (use docker --debug to expand):
+ - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 33)
+Dockerfile:33
+--------------------
+  31 |     # Use ARG for dynamic base image injection, with a default value
+  32 |     ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+  33 | >>> FROM --platform=linux/arm64 ${BASE_IMAGE}
+  34 |     
+  35 |     # Define arguments with default values
+--------------------
+ERROR: failed to solve: kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: failed to resolve source metadata for docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: docker.io/kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu: not found
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Error: Failed to build image for 19-bitsandbytes (build/19-bitsandbytes).
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Build, push or pull failed for build/19-bitsandbytes. Subsequent dependent builds might fail.
+Build process for build/19-bitsandbytes exited with code 1
+Continuing with next build...
+--- Building Other Directories ---
+No non-numbered directories found in build.
+--------------------------------------------------
+Folder build process complete!
+--- Verifying and Pulling All Attempted Images (if needed) ---
+Skipping pre-tagging pull verification due to earlier build failures.
+--------------------------------------------------
+--- Creating Final Timestamped Tag ---
+Skipping final timestamped tag creation due to previous errors.
+--------------------------------------------------
+Build, Push, Pull, and Tagging process complete!
+Total images successfully built/pushed/pulled/verified: 0
+Warning: One or more steps failed. See logs above.
+--------------------------------------------------
+(Image pulling and verification now happens during build process)
+No final image tag recorded or build failed, skipping further operations.
+--------------------------------------------------
+--- Verifying all SUCCESSFULLY PROCESSED images exist locally ---
+No images were recorded as successfully built/pushed/pulled/verified, skipping final verification.
+--------------------------------------------------
+Script finished with one or more errors.
+--------------------------------------------------
+
+╭─░▒▓      /media/kkk/Apps/jetc/buildx  on    main *4 ▓▒░·····························································································································································░▒▓ 1 ✘  took 2m 35s    at 18:57:11   ▓▒░─╮
+╰─                                                                                                                                                                                                                                                                       ─╯
