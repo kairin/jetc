@@ -28,6 +28,30 @@ handle_build_error() {
 }
 
 # =========================================================================
+# Function to check if the system is using systemd as the init system
+# =========================================================================
+is_systemd() {
+  if [[ "$(ps -p 1 -o comm=)" == "systemd" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# =========================================================================
+# Function to create bus connection or handle absence of systemd
+# =========================================================================
+create_bus_connection() {
+  if is_systemd; then
+    echo "System is using systemd. Creating bus connection..."
+    # Add your systemd-specific bus connection creation logic here
+  else
+    echo "System is not using systemd. Handling absence of systemd..."
+    # Add your alternative method to create the bus connection or handle the absence of systemd here
+  fi
+}
+
+# =========================================================================
 # Main Build Process
 # =========================================================================
 

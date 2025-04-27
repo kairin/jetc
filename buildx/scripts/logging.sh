@@ -35,6 +35,12 @@ EOF
   echo "- Summary: ${SUMMARY_LOG}"
 }
 
+# Centralized logging function
+log_error() {
+  local message="$1"
+  echo "$message" | tee -a "${ERROR_LOG}" "${MAIN_LOG}"
+}
+
 # Log command output to files while also showing on console
 log_command() {
   local command="$@"

@@ -15,3 +15,12 @@ if command -v docker &>/dev/null; then
     fi
   fi
 fi
+
+# Initialize CURRENT_BASE_IMAGE with a valid value
+CURRENT_BASE_IMAGE="${SELECTED_BASE_IMAGE}"
+
+# Add a check to verify that CURRENT_BASE_IMAGE is not empty after initialization
+if [[ -z "$CURRENT_BASE_IMAGE" ]]; then
+  echo "Error: CURRENT_BASE_IMAGE is still empty after initialization. Exiting."
+  exit 1
+fi

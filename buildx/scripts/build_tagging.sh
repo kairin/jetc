@@ -45,3 +45,11 @@ if [[ "$BUILD_FAILED" -ne 0 ]]; then
     echo "Warning: One or more steps failed. See logs above."
 fi
 echo "--------------------------------------------------"
+
+# Add final verification step to ensure CURRENT_BASE_IMAGE is set to a valid image tag
+if [[ -z "$CURRENT_BASE_IMAGE" ]]; then
+    echo "Error: CURRENT_BASE_IMAGE is empty. Exiting."
+    exit 1
+else
+    echo "CURRENT_BASE_IMAGE is set to: $CURRENT_BASE_IMAGE"
+fi

@@ -64,3 +64,11 @@ else
     exit 0
 fi
 generate_error_summary
+
+# Add final verification step to ensure CURRENT_BASE_IMAGE is set to a valid image tag
+if [[ -z "$CURRENT_BASE_IMAGE" ]]; then
+    echo "Error: CURRENT_BASE_IMAGE is empty. Exiting."
+    exit 1
+else
+    echo "CURRENT_BASE_IMAGE is set to: $CURRENT_BASE_IMAGE"
+fi
