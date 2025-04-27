@@ -1,11 +1,32 @@
+# COMMIT-TRACKING: UUID-20240806-120000-OPTM
+# Description: Consolidate commit-tracking headers and enforce --platform=linux/arm64 in FROM.
+# Author: GitHub Copilot
+#
+# File location diagram:
+# jetc/                          <- Main project folder
+# ├── README.md                  <- Project documentation
+# ├── buildx/                    <- Buildx directory
+# │   ├── build/                   <- Build stages directory
+# │   │   └── 04-python/           <- Current directory
+# │   │       └── Dockerfile       <- THIS FILE
+# └── ...                        <- Other project files
+# =========================================================================
+# IMPORTANT: This Dockerfile is designed to be built with Docker buildx.
+# All builds MUST use Docker buildx to ensure consistent
+# multi-platform and efficient build processes.
+# =========================================================================
+
 #---
 # name: python
 # group: build
-# depends: [build-essential, pip_cache]
-# notes: installs core `python3` packages and `pip`
+# config: config.py
+# depends: [build-essential]
+# test: test.sh
 #---
-ARG BASE_IMAGE=kairin/001:03-ninja
-FROM ${BASE_IMAGE}
+# Use ARG for dynamic base image injection, with a default value
+ARG TARGETPLATFORM=linux/arm64
+ARG BASE_IMAGE="kairin/001:jetc-nvidia-pytorch-25.03-py3-igpu"
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 ARG PYTHON_VERSION_ARG
 

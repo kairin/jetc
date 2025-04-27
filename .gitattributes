@@ -1,0 +1,6 @@
+# Archive folder: tracked in git but not included in git archives or when someone clones
+archive/** export-ignore
+archive/** filter=git-crypt diff=git-crypt
+
+# _old_forAI_training folder: tracked in git but not included in git archives or when someone clones
+_old_forAI_training/** export-ignore

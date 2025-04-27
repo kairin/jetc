@@ -1,114 +1,43 @@
-# opencv
+<!-- COMMIT-TRACKING: UUID-20240803-193500-RESTRUCTURE -->
+<!-- Description: Update README for builder/runtime Dockerfile split. -->
+<!-- Author: GitHub Copilot -->
 
-> [`CONTAINERS`](#user-content-containers) [`IMAGES`](#user-content-images) [`RUN`](#user-content-run) [`BUILD`](#user-content-build)
+# OpenCV Dockerfile Structure
 
-<details open>
-<summary><b><a id="containers">CONTAINERS</a></b></summary>
-<br>
+This directory contains Dockerfiles for building and installing OpenCV with CUDA support for Jetson platforms.
 
-| **`opencv:4.8.1`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Aliases | `opencv` |
-| &nbsp;&nbsp;&nbsp;Builds | [![`opencv-481_jp60`](https://img.shields.io/github/actions/workflow/status/dusty-nv/jetson-containers/opencv-481_jp60.yml?label=opencv-481:jp60)](https://github.com/dusty-nv/jetson-containers/actions/workflows/opencv-481_jp60.yml) |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==35.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda`](/packages/cuda/cuda) [`cudnn`](/packages/cuda/cudnn) [`python`](/packages/build/python) [`numpy`](/packages/numpy) |
-| &nbsp;&nbsp;&nbsp;Dependants | [`audiocraft`](/packages/audio/audiocraft) [`deepstream`](/packages/deepstream) [`efficientvit`](/packages/vit/efficientvit) [`gstreamer`](/packages/gstreamer) [`jetson-inference`](/packages/jetson-inference) [`jetson-utils`](/packages/jetson-utils) [`l4t-diffusion`](/packages/l4t/l4t-diffusion) [`l4t-ml`](/packages/l4t/l4t-ml) [`l4t-pytorch`](/packages/l4t/l4t-pytorch) [`l4t-tensorflow:tf1`](/packages/l4t/l4t-tensorflow) [`l4t-tensorflow:tf2`](/packages/l4t/l4t-tensorflow) [`nanoowl`](/packages/vit/nanoowl) [`ros:foxy-desktop`](/packages/ros) [`ros:foxy-ros-base`](/packages/ros) [`ros:foxy-ros-core`](/packages/ros) [`ros:galactic-desktop`](/packages/ros) [`ros:galactic-ros-base`](/packages/ros) [`ros:galactic-ros-core`](/packages/ros) [`ros:humble-desktop`](/packages/ros) [`ros:humble-ros-base`](/packages/ros) [`ros:humble-ros-core`](/packages/ros) [`ros:iron-desktop`](/packages/ros) [`ros:iron-ros-base`](/packages/ros) [`ros:iron-ros-core`](/packages/ros) [`ros:noetic-desktop`](/packages/ros) [`ros:noetic-ros-base`](/packages/ros) [`ros:noetic-ros-core`](/packages/ros) [`sam`](/packages/vit/sam) [`stable-diffusion-webui`](/packages/diffusion/stable-diffusion-webui) [`tam`](/packages/vit/tam) [`voicecraft`](/packages/audio/voicecraft) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Images | [`dustynv/opencv:4.8.1-r36.2.0`](https://hub.docker.com/r/dustynv/opencv/tags) `(2023-12-07, 5.1GB)` |
-| &nbsp;&nbsp;&nbsp;Notes | install or build OpenCV (with CUDA) from Jetson pip server |
+## File Structure
 
-| **`opencv:4.8.1-builder`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Aliases | `opencv:builder` |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==35.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda`](/packages/cuda/cuda) [`cudnn`](/packages/cuda/cudnn) [`python`](/packages/build/python) [`numpy`](/packages/numpy) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Notes | install or build OpenCV (with CUDA) from Jetson pip server |
+1.  **`Dockerfile.builder`**:
+    *   Builds OpenCV C++ libraries (`.deb` packages) and Python bindings (`opencv-contrib-python` wheel) from source.
+    *   Clones OpenCV, opencv_contrib, and opencv-python repositories.
+    *   Applies necessary patches (`patches.diff`).
+    *   Configures the build using CMake with CUDA enabled.
+    *   Compiles the code using `make`.
+    *   Packages the C++ libraries into `.deb` files.
+    *   Builds the Python wheel using `pip wheel`.
+    *   Outputs artifacts (`.whl`, `.deb`) to an `/artifacts` directory in the final stage (`artifacts_stage`).
+    *   Optionally uploads artifacts if `TWINE_REPOSITORY_URL` (for wheels) or a suitable mechanism (for debs) is configured.
 
-| **`opencv:4.9.0`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==36.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda`](/packages/cuda/cuda) [`cudnn`](/packages/cuda/cudnn) [`python`](/packages/build/python) [`numpy`](/packages/numpy) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Notes | install or build OpenCV (with CUDA) from Jetson pip server |
+2.  **`Dockerfile.runtime`**:
+    *   Installs OpenCV into a base image.
+    *   Installs necessary runtime dependencies.
+    *   Installs OpenCV either:
+        *   From pre-built `.deb` packages specified by the `OPENCV_URL` build argument.
+        *   From the `opencv-contrib-python` wheel via `pip` (assuming the wheel built by `Dockerfile.builder` is available in a configured Python package index).
+    *   Includes verification steps to ensure OpenCV is installed correctly and functional (including a basic CUDA check).
 
-| **`opencv:4.9.0-builder`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==36.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda`](/packages/cuda/cuda) [`cudnn`](/packages/cuda/cudnn) [`python`](/packages/build/python) [`numpy`](/packages/numpy) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Notes | install or build OpenCV (with CUDA) from Jetson pip server |
+3.  **`config.py`**:
+    *   Defines package configurations for different OpenCV versions and JetPack releases.
+    *   Specifies which Dockerfile (`Dockerfile.builder` or `Dockerfile.runtime`) to use for each package variant.
+    *   Sets appropriate build arguments (`OPENCV_VERSION`, `CUDA_ARCH_BIN`, `OPENCV_URL`, etc.).
 
-| **`opencv:4.5.0`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Aliases | `opencv` |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==32.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda`](/packages/cuda/cuda) [`cudnn`](/packages/cuda/cudnn) [`python`](/packages/build/python) [`numpy`](/packages/numpy) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Notes | install or build OpenCV (with CUDA) from Jetson pip server |
+4.  **`patches.diff`**:
+    *   Contains patches applied during the build process in `Dockerfile.builder`.
 
-| **`opencv:4.5.0-builder`** | |
-| :-- | :-- |
-| &nbsp;&nbsp;&nbsp;Aliases | `opencv:builder` |
-| &nbsp;&nbsp;&nbsp;Requires | `L4T ['==32.*']` |
-| &nbsp;&nbsp;&nbsp;Dependencies | [`build-essential`](/packages/build/build-essential) [`cuda`](/packages/cuda/cuda) [`cudnn`](/packages/cuda/cudnn) [`python`](/packages/build/python) [`numpy`](/packages/numpy) |
-| &nbsp;&nbsp;&nbsp;Dockerfile | [`Dockerfile`](Dockerfile) |
-| &nbsp;&nbsp;&nbsp;Notes | install or build OpenCV (with CUDA) from Jetson pip server |
+## Build Process
 
-</details>
+*   The `opencv:<version>-builder` packages use `Dockerfile.builder` to compile OpenCV and produce artifacts.
+*   The `opencv:<version>` (pip) and `opencv:<version>-deb` packages use `Dockerfile.runtime` to install the pre-built library/wheel into a target image.
 
-<details open>
-<summary><b><a id="images">CONTAINER IMAGES</a></b></summary>
-<br>
-
-| Repository/Tag | Date | Arch | Size |
-| :-- | :--: | :--: | :--: |
-| &nbsp;&nbsp;[`dustynv/opencv:4.8.1-r36.2.0`](https://hub.docker.com/r/dustynv/opencv/tags) | `2023-12-07` | `arm64` | `5.1GB` |
-| &nbsp;&nbsp;[`dustynv/opencv:r32.7.1`](https://hub.docker.com/r/dustynv/opencv/tags) | `2023-12-06` | `arm64` | `0.5GB` |
-| &nbsp;&nbsp;[`dustynv/opencv:r35.2.1`](https://hub.docker.com/r/dustynv/opencv/tags) | `2023-12-05` | `arm64` | `5.0GB` |
-| &nbsp;&nbsp;[`dustynv/opencv:r35.3.1`](https://hub.docker.com/r/dustynv/opencv/tags) | `2023-08-29` | `arm64` | `5.1GB` |
-| &nbsp;&nbsp;[`dustynv/opencv:r35.4.1`](https://hub.docker.com/r/dustynv/opencv/tags) | `2023-10-07` | `arm64` | `5.0GB` |
-
-> <sub>Container images are compatible with other minor versions of JetPack/L4T:</sub><br>
-> <sub>&nbsp;&nbsp;&nbsp;&nbsp;• L4T R32.7 containers can run on other versions of L4T R32.7 (JetPack 4.6+)</sub><br>
-> <sub>&nbsp;&nbsp;&nbsp;&nbsp;• L4T R35.x containers can run on other versions of L4T R35.x (JetPack 5.1+)</sub><br>
-</details>
-
-<details open>
-<summary><b><a id="run">RUN CONTAINER</a></b></summary>
-<br>
-
-To start the container, you can use [`jetson-containers run`](/docs/run.md) and [`autotag`](/docs/run.md#autotag), or manually put together a [`docker run`](https://docs.docker.com/engine/reference/commandline/run/) command:
-```bash
-# automatically pull or build a compatible container image
-jetson-containers run $(autotag opencv)
-
-# or explicitly specify one of the container images above
-jetson-containers run dustynv/opencv:4.8.1-r36.2.0
-
-# or if using 'docker run' (specify image and mounts/ect)
-sudo docker run --runtime nvidia -it --rm --network=host dustynv/opencv:4.8.1-r36.2.0
-```
-> <sup>[`jetson-containers run`](/docs/run.md) forwards arguments to [`docker run`](https://docs.docker.com/engine/reference/commandline/run/) with some defaults added (like `--runtime nvidia`, mounts a `/data` cache, and detects devices)</sup><br>
-> <sup>[`autotag`](/docs/run.md#autotag) finds a container image that's compatible with your version of JetPack/L4T - either locally, pulled from a registry, or by building it.</sup>
-
-To mount your own directories into the container, use the [`-v`](https://docs.docker.com/engine/reference/commandline/run/#volume) or [`--volume`](https://docs.docker.com/engine/reference/commandline/run/#volume) flags:
-```bash
-jetson-containers run -v /path/on/host:/path/in/container $(autotag opencv)
-```
-To launch the container running a command, as opposed to an interactive shell:
-```bash
-jetson-containers run $(autotag opencv) my_app --abc xyz
-```
-You can pass any options to it that you would to [`docker run`](https://docs.docker.com/engine/reference/commandline/run/), and it'll print out the full command that it constructs before executing it.
-</details>
-<details open>
-<summary><b><a id="build">BUILD CONTAINER</b></summary>
-<br>
-
-If you use [`autotag`](/docs/run.md#autotag) as shown above, it'll ask to build the container for you if needed.  To manually build it, first do the [system setup](/docs/setup.md), then run:
-```bash
-jetson-containers build opencv
-```
-The dependencies from above will be built into the container, and it'll be tested during.  Run it with [`--help`](/jetson_containers/build.py) for build options.
-</details>
+This separation allows for building OpenCV once and installing it multiple times, or using pre-built versions provided by NVIDIA or other sources.
